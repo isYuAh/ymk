@@ -1,0 +1,44 @@
+.songs {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+}
+.songs .container {
+    flex: 1;
+}
+.simplebar {
+    height: 100%;
+}
+.songTable {
+    font-family: PingFang SC;
+    width: 100%;
+    display: grid;
+    grid-auto-rows: 38px;
+}
+.songTable .song {
+    color: var(--ymk-text-color);
+    padding: 7px 20px;
+    display: grid;
+    column-gap: 20px;
+    grid-template-columns: 12fr 10fr;
+    transition: background .15s;
+}
+.songTable .song:hover, .songTable .song.active {
+    background-color: rgba(0,0,0,.35);
+    /* background-color: #18191C; */
+    color: #fff;
+}
+.songTable .songInfo {
+    font-size: 15px;
+    display: inline-block;
+    line-height: 24px;
+    height: 24px;
+    word-break: break-all;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+.songInfo sub {
+    margin-left: 4px;
+    color: var(--ymk-text-color);
+    font-family: NovecentoWide;
+}

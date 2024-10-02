@@ -1,0 +1,67 @@
+.uianim-enter-active,
+.uianim-leave-active {
+    transition: all .2s;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+.uianim-enter-from,
+.uianim-leave-to {
+    margin-top: 0;
+}
+.uianim-leave-to {
+    margin-top: -5px;
+    opacity: 0;
+}
+.uianim-enter-from {
+    margin-top: 5px;
+    opacity: 0;
+}
+.heightAnim-enter-active,
+.heightAnim-leave-active {
+    transition: all .25s;
+    overflow: hidden;
+    position: absolute;
+}
+.heightAnim-enter-from,
+.heightAnim-leave-to {
+    height: 0;
+    opacity: 0;
+}
+.heightAnim-enter-to,
+.heightAnim-leave-from {
+    height: 400px;
+    opacity: 1;
+}
+.playcontroller-enter-active,
+.playcontroller-leave-active {
+    transition: all .2s;
+}
+.playcontroller-enter-from,
+.playcontroller-leave-to {
+    margin-top: 0;
+}
+.playcontroller-leave-to {
+    margin-top: -5px;
+    opacity: 0;
+}
+.playcontroller-enter-from {
+    margin-top: 5px;
+    opacity: 0;
+}
+.message-enter-active,
+.message-leave-active {
+    position: fixed;
+    transition: all .1s;
+}
+.message-leave-fron,
+.message-enter-to {
+    bottom: 20px;
+}
+.message-enter-from,
+.message-leave-to {
+    bottom: 10px;
+    opacity: 0;
+}

@@ -1,0 +1,39 @@
+@font-face {
+    font-family: "HarmonyOS Sans";
+    src:
+        url("./HarmonyOS_Sans_SC_Regular.ttf");
+}
+@font-face {
+    font-family: "PingFang SC";
+    src:
+        url("./PingFang SC.ttf");
+}
+@font-face {
+    font-family: "SourceSansCNM";
+    src:
+        url("./SourceHanSansCN-M.otf");
+}
+@font-face {
+    font-family: "Bender";
+    src:
+        url("./Bender.otf");
+}
+@font-face {
+    font-family: "NovecentoWide";
+    src:
+        url("./Novecento-Wide-Bold-2.otf");
+}
+@font-face {
+    font-family: "FZTYSJ";
+    src:
+        url("./FangZhengTeYaSongJian.ttf");
+}
+
+* {
+    box-sizing: border-box;
+    outline: none;
+}
+.forbidSelect {
+    -webkit-user-select: none;
+    user-select: none;
+}
