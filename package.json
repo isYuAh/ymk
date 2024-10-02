@@ -50,6 +50,10 @@
       "oneClick": false,
       "perMachine": true,
       "allowToChangeInstallationDirectory": true
+    },
+    "protocol": {
+      "name": "Yumuzk",
+      "schemes": ["yumuzk"]
     }
   },
   "dependencies": {

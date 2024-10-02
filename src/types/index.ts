@@ -141,3 +141,9 @@ export type messageController = {
     text: string,
     timer: number,
 }
+
+export type mouseMenuItem = {
+    title: string,
+    action: (...args: any[]) => void,
+    show?: boolean
+}

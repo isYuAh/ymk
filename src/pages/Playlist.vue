@@ -1,8 +1,5 @@
 <template>
 <div class="partContainer forbidSelect">
-  <MouseMenu :arg="mm.arg" :show="mm.show" :menulist="mm.menulist"
-             :position="mm.position"
-  />
   <simplebar class="simplebar">
     <Transition name="uianim">
       <div v-if="zks.nowTab === 'Playlist'" class="playlistControllers">
@@ -17,7 +14,13 @@
         v-for="(p, index) in zks.playlistsParts" class="playlistPart">
       <div class="divideTitle">{{p.title}}</div>
       <div class="lists">
-        <div @contextmenu.prevent="showMenu($event, list, index + p.begin)" @click="checkDetail(index + p.begin)" v-for="(list, index) in zks.playlists.slice(p.begin, p.begin + p.count)" class="item">
+        <div @contextmenu.prevent="useZKStore().showMouseMenu([{
+            title: '添加歌曲',
+            action: showAddSongToDialog,
+          },{
+            title: '删除',
+            action: menu_deletePlaylist
+          }], {playlist: list, pi: index + p.begin})" @click="checkDetail(index + p.begin)" v-for="(list, index) in zks.playlists.slice(p.begin, p.begin + p.count)" class="item">
           <TargetBorder>
             <div class="img">
               <img referrerpolicy="no-referrer" :src="list.pic" alt="">
@@ -32,7 +35,7 @@
 </template>
 
 <script setup lang='ts'>
-import {useZKStore} from '../stores/useZKstore';
+import {useZKStore} from '@/stores/useZKstore';
 import {
   type list,
   type list_trace_bilibili_fav,
@@ -50,7 +53,6 @@ import 'simplebar-vue/dist/simplebar.min.css'
 import {showMsg} from '@/utils/u';
 import axios, {type AxiosResponse} from 'axios';
 import PreviewDialog from "@/components/Dialogs/PreviewDialog.vue";
-import MouseMenu from "@/components/MouseMenu.vue";
 import AddSongToDialog from '@/components/Dialogs/addSongToDialog.vue';
 
 const {deletePlaylistFile, writePlaylistFile, showImportPlaylistDialog, getBilibiliFav} = (window as any).ymkAPI;
@@ -78,61 +80,20 @@ let PartVShow = computed(() => {
   }
   return r;
 })
-let mm = ref({
-  position: {
-    left: 20,
-    top: 40
-  },
-  show: false,
-  arg: {
-    playlist: <list>(null as any),
-    pi: -1
-  },
-  menulist: [
-    {
-      title: '删除',
-      ev: menu_deletePlaylist,
-      show: true,
-    },
-    {
-      title: "添加歌曲",
-      ev: showAddSongToDialog,
-      show: true,
-    },
-    {
-      title: '关闭',
-      ev: () => mm.value.show = false,
-    }
-  ]
-})
-function showMenu(e: any, playlist: list, pi: number) {
-  mm.value.position = {
-    left: e.x,
-    top: e.y
-  }
-  mm.value.arg.playlist = playlist;
-  mm.value.arg.pi = pi; //playlist Index
-  mm.value.menulist[0].show = pi < zks.value.playlistsParts[0].count;
-  mm.value.menulist[1].show = pi < zks.value.playlistsParts[0].count;
-  mm.value.show = true;
-}
 function menu_deletePlaylist() {
-  if (mm.value.arg.pi < zks.value.playlistsParts[0].count) {
-    let p = zks.value.playlists[mm.value.arg.pi];
+  if (zks.value.mouseMenu.args.pi < zks.value.playlistsParts[0].count) {
+    let p = zks.value.playlists[zks.value.mouseMenu.args.pi];
     if (p.originFilename.endsWith('json')) {
       deletePlaylistFile(p.originFilename).then(() => {
         showMsg(zks.value.message, 4000, `删除${p.title}成功`);
         emitter.emit('refreshPlaylists',{notReset: false});
       }).catch(() => {
         showMsg(zks.value.message, 4000, `删除${p.originFilename}文件失败`);
-      }).finally(() => {
-        mm.value.show = false;
       })
     }
   }
 }
 function parseComponent(comIndex: number, components: playlistComponent[]) {
-    // console.log(comIndex, components[comIndex], '$');
     let component = components[comIndex];
     if (comIndex >= components.length) {
         zks.value.nowTab = 'PlaylistDetail';
@@ -244,10 +205,10 @@ function checkDetail(index: number, remote = false, raw: list = ({} as any)) {
     }
 }
 function addSongTo(song: song, save: boolean) {
-  if (!song.type || mm.value.arg.pi < 0) {
+  if (!song.type || zks.value.mouseMenu.args.pi < 0) {
     return;
   }
-  let pl = mm.value.arg.playlist;
+  let pl = zks.value.mouseMenu.args.playlist;
   let components = pl.playlist;
   let first = components[0];
   let originFn = pl.originFilename;
@@ -259,11 +220,11 @@ function addSongTo(song: song, save: boolean) {
       songs: [song],
     })
   }
-  if (mm.value.arg.pi === zks.value.playlist.listIndex) {
+  if (zks.value.mouseMenu.args.pi === zks.value.playlist.listIndex) {
     zks.value.playlist.songs.unshift(song)
   }
   if (save) {
-    writePlaylistFile(originFn, JSON.stringify(toRaw(zks.value.playlists[mm.value.arg.pi]))).then(() => {
+    writePlaylistFile(originFn, JSON.stringify(toRaw(zks.value.playlists[zks.value.mouseMenu.args.pi]))).then(() => {
       showMsg(zks.value.message, 4000, '添加成功');
     }).catch(() => {
       showMsg(zks.value.message, 4000, `写入文件${originFn}失败`);
@@ -287,6 +248,7 @@ emitter.on('addSongTo', ({song,save}) => addSongTo(song,save))
 emitter.on('checkDetail', ({index,remote,raw}) => checkDetail(index,remote,raw))
 onUnmounted(() => {
   emitter.off('checkDetail');
+  emitter.off('addSongTo')
 })
 </script>
 

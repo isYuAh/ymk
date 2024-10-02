@@ -30,7 +30,7 @@ import {inject, ref} from 'vue';
 import emitter from "@/emitter";
 import {storeToRefs} from "pinia";
 import {type playlistComponent, type song} from "@/types";
-import {type AxiosResponse} from "axios";
+import axios, {type AxiosResponse} from "axios";
 import {showMsg} from "@/utils/u";
 const {zks, config} = storeToRefs(useZKStore());
 let previewLink = ref('');
@@ -45,7 +45,6 @@ function preview() {
       ) {
         let match = previewLink.value.match(/\/playlist\?id=(\d+)/);
         if (match) {
-          console.log('$match', match[1]);
           axios.get(`${config.value.neteaseApi.url}playlist/detail?id=${match[1]}`).then((res: AxiosResponse) => {
             let playlist: playlistComponent[];
             if (!asData.value) {
@@ -85,7 +84,6 @@ function preview() {
       ) {
         let match = previewLink.value.match(/id=(\d+)/);
         if (match) {
-          console.log('$match', match[1]);
           axios.post(config.value.qqApi.url + "api/y/get_playlistDetail", {
             type: "qq",
             id: match[1],

@@ -1,14 +1,11 @@
 <template>
 <div class="transitionContainer">
-  <MouseMenu :arg="mm.arg" :show="mm.show" :menulist="mm.menulist"
-             :position="mm.position"
-  />
     <div @click="zks.nowTab = 'Playlist';" class="returnBtn">
         <svg t="1711457272465" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4244" width="48" height="48"><path d="M963.2 0L1024 67.2 512 614.4 0 67.2 60.8 0 512 480 963.2 0z" fill="currentColor" p-id="4245"></path></svg>
     </div>
     <div class="partContainer">
         <div class="listInfo">
-            <div class="faceImg">
+            <div class="faceImg forbidSelect">
                 <img :src="zks.playlist.raw.pic" alt="">
             </div>
             <div class="info forbidSelect">
@@ -41,7 +38,13 @@
                         <div
                             @dblclick="playSong_withCheck(ITEM.item)"
                             class="song" 
-                            @contextmenu.prevent="showMenu($event, ITEM.item, ITEM.refIndex)"
+                            @contextmenu.prevent="useZKStore().showMouseMenu([{
+                              title: '编辑',
+                              action: menu_edit
+                            },{
+                              title: '删除',
+                              action: menu_deleteSong
+                            }], {song: ITEM.item,si: ITEM.refIndex})"
                             :data-song="ITEM.item"
                             v-for="ITEM in showingSonglist">
                             <div class="songInfo title">{{ ITEM.item.title }}<sub>{{ ITEM.item.type }}</sub></div>
@@ -57,11 +60,10 @@
 
 <script setup lang='ts'>
 import { type list_data, type song } from '@/types'
-import MouseMenu from '@/components/MouseMenu.vue';
 import simplebar from 'simplebar-vue';
 import 'simplebar-vue/dist/simplebar.min.css'
-import {computed, ref, toRaw, watch} from 'vue';
-import { useZKStore } from '../stores/useZKstore';
+import {computed, onMounted, onUnmounted, ref, toRaw, watch} from 'vue';
+import { useZKStore } from '@/stores/useZKstore';
 import {storeToRefs} from "pinia";
 import emitter from '@/emitter';
 import '@/assets/songlist.css'
@@ -73,6 +75,7 @@ let filter = ref('');
 let FuseVal = ref(new Fuse(zks.value.playlist.songs, {
   keys: ['title', 'singer']
 }))
+const edit = ref(false)
 // console.dir('$FuseVal', FuseVal.value)
 let showingSonglist = computed(() => {
   // console.log('$filterValue', filter.value)
@@ -90,36 +93,10 @@ function playAll() {
         emitter.emit('playSong',{song: zks.value.play.playlist[0]})
     }
 }
-let mm = ref({
-    position: {
-        left: 20,
-        top: 40
-    },
-    show: false,
-    arg: {
-        song: <song>(null as any),
-        si: -1
-    },
-    menulist: [
-        {
-            title: '删除',
-            ev: menu_deleteSong,
-            show: true,
-        },
-        {
-            title: '关闭',
-            ev: () => mm.value.show = false,
-        }
-    ]
-})
-function showMenu(e: any, song: song, si: number) {
-    mm.value.position = {
-        left: e.x,
-        top: e.y
-    }
-    mm.value.arg.song = song;
-    mm.value.arg.si = si;
-    mm.value.show = true;
+
+function menu_edit() {
+  edit.value=!edit.value
+
 }
 function menu_deleteSong(arg: any) {
     if (arg.song && arg.si >= 0) {
@@ -149,15 +126,7 @@ function menu_deleteSong(arg: any) {
             
         }
     }
-    mm.value.show = false;
 }
-watch(() => zks.value.playlist.listIndex, () => {
-  if (zks.value.playlist.listIndex === -2) {
-    mm.value.menulist[0].show = false;
-  }else {
-    mm.value.menulist[0].show = zks.value.playlist.raw.playlist.every((s) => s.type === 'data')
-  }
-}, {immediate: true})
 function playSong_withCheck(song: song) {
     if (zks.value.play.playlist.length) {
         emitter.emit('playSong',{song})
@@ -183,6 +152,7 @@ function collectPlaylist() {
     showMsg(zks.value.message, 4000, `写入文件${id}.json失败`);
   });
 }
+
 </script>
 
 

@@ -13,9 +13,6 @@
 </div>
 
 <div v-show="!zks.showFullPlay" class="play forbidSelect">
-  <MouseMenu :arg="mm.arg" :show="mm.show" :menulist="mm.menulist"
-             :position="mm.position"
-  />
   <Transition name="heightAnim">
     <div class="playlistSonglist" v-show="zks.showPlaylistSonglist">
       <div class="fourHeightContainer">
@@ -28,7 +25,12 @@
                     @dblclick="playSong({song, justtry: false})"
                     :class="{song: true, active: zks.play.indexInPlaylist === index}"
                     :data-song="song"
-                    @contextmenu.prevent="showMenu($event, index)"
+                    @contextmenu.prevent="useZKStore().showMouseMenu([
+                       {
+                         title: '删除',
+                         action: deleteSongInPlaylistSonglist
+                       }
+                    ], index)"
                     v-for="(song, index) in zks.play.playlist">
                   <div class="songInfo title">{{ song.title }}<sub>{{ song.type }}</sub></div>
                   <div class="songInfo author">{{ song.singer }}</div>
@@ -109,7 +111,6 @@ import 'simplebar-vue/dist/simplebar.min.css'
 import md5 from 'md5'
 //@ts-ignore
 import SonglistTooltip from "@/components/SonglistTooltip.vue";
-import MouseMenu from "@/components/MouseMenu.vue";
 let songSource = ref<HTMLVideoElement>();
 let progressFill = ref<HTMLDivElement>();
 let progressChooseFill = ref<HTMLDivElement>();
@@ -216,38 +217,6 @@ watchEffect(() => {
     }]
   }
 })
-
-//菜单相关
-let mm = ref({
-  position: {
-    left: 20,
-    top: 40
-  },
-  show: false,
-  arg: {
-    si: -1
-  },
-  menulist: [
-    {
-      title: '删除',
-      ev: deleteSongInPlaylistSonglist,
-      show: true,
-    },
-    {
-      title: '关闭',
-      ev: () => mm.value.show = false,
-    }
-  ]
-})
-function showMenu(e: any, si: number) {
-  mm.value.position = {
-    left: e.x,
-    top: e.y
-  }
-  mm.value.arg.si = si;
-  mm.value.show = true;
-}
-//END菜单相关
 
 async function playSong({song, justtry = false}: playSongParams) {
   zks.value.play.song = {
@@ -542,11 +511,7 @@ function changeCurTimeTo(to: number) {
         songSource.value.currentTime = to;
     }
 }
-function deleteSongInPlaylistSonglist(index?: number | object) {
-  console.log(index, mm.value.arg.si)
-  if (index === undefined || typeof index !== 'number') {
-    index = mm.value.arg.si;
-  }
+function deleteSongInPlaylistSonglist(index: number) {
   if (index < 0 || index >= zks.value.play.playlist.length) {
     return
   }
@@ -554,7 +519,6 @@ function deleteSongInPlaylistSonglist(index?: number | object) {
   if (zks.value.play.indexInPlaylist === index) {
     playSong({song: zks.value.play.playlist[minmax(index, 0, zks.value.play.playlist.length - 1)]});
   }
-  mm.value.show = false;
 }
 function playPrevSong() {
     if (zks.value.play.mode === 'list' || zks.value.play.mode === '') {
@@ -773,10 +737,10 @@ onUnmounted(() => {
   /*color: #18191C;*/
 }
 .play .playlistSonglist {
-  box-shadow: 0 0 10px rgba(0,0,0,.8);
+  box-shadow: 0 0 10px rgba(0,0,0,.4);
   left: 0;
   right: 0;
-  background-color: rgba(0,0,0,.8);
+  background-color: rgba(0,0,0,.6);
   position: absolute;
   bottom: 64px;
 }

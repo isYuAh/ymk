@@ -1,9 +1,11 @@
 <template>
-<RouterView></RouterView>
+  <MouseMenu />
+  <RouterView></RouterView>
 </template>
 
 <script setup lang='ts'>
 import { RouterView } from 'vue-router';
+import MouseMenu from "@/components/MouseMenu.vue";
 </script>
 
 <style scoped>

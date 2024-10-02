@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type {list, messageController, song, songInPlay, song_lrc_item, playlistPart} from '@/types'
+import type {list, messageController, song, songInPlay, song_lrc_item, playlistPart, mouseMenuItem} from '@/types'
 import CollectDialog from '@/components/Dialogs/CollectDialog.vue';
 import { ref, shallowRef, watch} from 'vue';
 import emitter from "@/emitter";
@@ -73,6 +73,21 @@ export const useZKStore = defineStore('ZK', () => {
     },
     wbi: {},
     history: [],
+    mouseMenu: {
+      menu: <mouseMenuItem[]>[{
+        title: 'test1',
+        action: () => console.log('test')
+      },{
+        title: 'test2',
+        action: () => console.log('TTTTT')
+      }],
+      args: <any>null,
+      show: false,
+      position: {
+        left: 0,
+        top: 0
+      }
+    },
   });
   const config = ref<any>({});
   const colors = ref<any>({});
@@ -96,5 +111,15 @@ export const useZKStore = defineStore('ZK', () => {
     }
     watch([() => zks.value.play.mode, colors, neteaseUser, config], () => {config.value.mode = zks.value.play.mode; saveConfig()}, {deep: true});
   })
-  return {zks, config, colors, neteaseUser, saveConfig};
+
+  async function showMouseMenu(menu?: mouseMenuItem[], arg: any = null) {
+    if (menu) {
+      zks.value.mouseMenu.menu = menu;
+    }
+    zks.value.mouseMenu.args = arg;
+    zks.value.mouseMenu.position = await (window as any).ymkAPI.getCursorPos()
+    zks.value.mouseMenu.show = true;
+  }
+
+  return {zks, config, colors, neteaseUser, saveConfig, showMouseMenu};
 });

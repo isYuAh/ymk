@@ -12,7 +12,7 @@ function showChoosePlaylistDialog(options) {
 function deletePlaylistFile(fn) {
     return ipcRenderer.invoke('deletePlaylistFile', fn)
 }
-function writePlaylistFile({fn, t}) {
+function writePlaylistFile(fn, t) {
     return ipcRenderer.invoke('writePlaylistFile', {fn, t})
 }
 function getConfig() {
@@ -45,6 +45,9 @@ function getBilibiliVideoPlayurl(params) {
 function getBilibiliFav(params) {
     return ipcRenderer.invoke('getBilibiliFav', params)
 }
+function getCursorPos() {
+    return ipcRenderer.invoke('getCursorPos')
+}
 
 contextBridge.exposeInMainWorld('ymkAPI', {
     getLocalPlaylists,
@@ -63,4 +66,5 @@ contextBridge.exposeInMainWorld('ymkAPI', {
     getBilibiliVideoView,
     getBilibiliVideoPlayurl,
     getBilibiliFav,
+    getCursorPos,
 })
