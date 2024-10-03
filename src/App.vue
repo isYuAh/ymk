@@ -16,5 +16,6 @@ import MouseMenu from "@/components/MouseMenu.vue";
   --ymk-progress-bg-color: #fff;
   --ymk-progress-fill-color: #fff;
   --ymk-progress-choose-fill-color: #fff;
+  --ymk-container-bg-color: rgba(0,0,0,.2);
 }
 </style>

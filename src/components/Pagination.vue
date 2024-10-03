@@ -34,8 +34,8 @@ let props = withDefaults(
 })
 let pageCount = computed(() => Math.ceil(props.total / props.countInPage))
 let groupCount = computed(() => Math.ceil(pageCount.value / props.countInGroup));
-let nowGroup = ref(0);
-let nowPage = ref(1);
+let nowGroup = defineModel<number>('group', {required: true});
+let nowPage = defineModel<number>({required: true});
 watch(() => props.total, () => {
     console.log(props.total, pageCount.value, groupCount.value, nowPage.value, nowGroup.value);
 })
@@ -46,12 +46,12 @@ function nextPage() {
     }else {
         nowPage.value++;
     }
-    emit('changePage', nowPage.value);
+    emit('changePage');
 }
 function nextGroup() {
     nowGroup.value++;
     nowPage.value=Math.min(nowPage.value+props.countInGroup, pageCount.value);
-    emit('changePage', nowPage.value);
+    emit('changePage');
 }
 function lastPage() {
     if ((nowPage.value % props.countInGroup) === 1) {
@@ -60,16 +60,16 @@ function lastPage() {
     }else {
         nowPage.value--;
     }
-    emit('changePage', nowPage.value);
+    emit('changePage');
 }
 function lastGroup() {
     nowGroup.value--;
     nowPage.value=Math.max(nowPage.value-props.countInGroup, 1);
-    emit('changePage', nowPage.value);
+    emit('changePage');
 }
 function pageBlockClick(to: number) {
     nowPage.value = minmax(to, 1, pageCount.value);
-    emit('changePage', nowPage.value);
+    emit('changePage');
 }
 let emit = defineEmits(['changePage'])
 </script>
@@ -79,6 +79,7 @@ let emit = defineEmits(['changePage'])
     display: flex;
     align-items: center;
     justify-content: center;
+    color: var(--ymk-text-color);
 }
 .pages {
     display: flex;

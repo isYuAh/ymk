@@ -50,13 +50,12 @@ import path from 'path-browserify';
 import emitter from '@/emitter';
 import simplebar from "simplebar-vue";
 import 'simplebar-vue/dist/simplebar.min.css'
-import {showMsg} from '@/utils/u';
 import axios, {type AxiosResponse} from 'axios';
 import PreviewDialog from "@/components/Dialogs/PreviewDialog.vue";
 import AddSongToDialog from '@/components/Dialogs/addSongToDialog.vue';
 
 const {deletePlaylistFile, writePlaylistFile, showImportPlaylistDialog, getBilibiliFav} = (window as any).ymkAPI;
-const {zks, config} = storeToRefs(useZKStore());
+const {zks, config, neteaseUser} = storeToRefs(useZKStore());
 let PartVShow = computed(() => {
   let r = <boolean[]>[];
   if (zks.value.nowTab === 'Playlist') {
@@ -85,10 +84,10 @@ function menu_deletePlaylist() {
     let p = zks.value.playlists[zks.value.mouseMenu.args.pi];
     if (p.originFilename.endsWith('json')) {
       deletePlaylistFile(p.originFilename).then(() => {
-        showMsg(zks.value.message, 4000, `删除${p.title}成功`);
+        useZKStore().showMessage(`删除${p.title}成功`);
         emitter.emit('refreshPlaylists',{notReset: false});
       }).catch(() => {
-        showMsg(zks.value.message, 4000, `删除${p.originFilename}文件失败`);
+        useZKStore().showMessage(`删除${p.originFilename}文件失败`);
       })
     }
   }
@@ -148,9 +147,21 @@ function parseComponent(comIndex: number, components: playlistComponent[]) {
     }else if (component.type === 'trace_netease_playlist') {
         axios.get(config.value.neteaseApi.url + 'playlist/detail', {
           params: {
+              timestamp: new Date().getTime(),
               id: component.id,
+              cookie: neteaseUser.value.cookie
           }
         }).then(res => {
+          if (components.length === 1) {
+            zks.value.playlist.extraInfo.type = 'pureNeteasePlaylist';
+            if (res.data.playlist.subscribed) {
+              zks.value.playlist.extraInfo.infos.subscribe = 1; //已收藏
+            }else if (res.data.playlist.creator.userId == neteaseUser.value.uid) {
+              zks.value.playlist.extraInfo.infos.subscribe = 0; //自己的歌单
+            }else {
+              zks.value.playlist.extraInfo.infos.subscribe = 2; //未收藏
+            }
+          }
           zks.value.playlist.songs.push(...res.data.playlist.tracks.map((track: any) => {
             return <song>{
               pic: track.al.picUrl,
@@ -193,6 +204,7 @@ function checkDetail(index: number, remote = false, raw: list = ({} as any)) {
         zks.value.playlist.songs = [];
         let components = list.playlist;
         let comIndex = 0;
+        zks.value.playlist.extraInfo.type = 'unknown';
         parseComponent(comIndex, components);
       }
     }else {
@@ -201,6 +213,7 @@ function checkDetail(index: number, remote = false, raw: list = ({} as any)) {
       zks.value.playlist.raw = raw;
       let components = raw.playlist;
       let comIndex = 0;
+      zks.value.playlist.extraInfo.type = 'unknown';
       parseComponent(comIndex, components);
     }
 }
@@ -225,9 +238,9 @@ function addSongTo(song: song, save: boolean) {
   }
   if (save) {
     writePlaylistFile(originFn, JSON.stringify(toRaw(zks.value.playlists[zks.value.mouseMenu.args.pi]))).then(() => {
-      showMsg(zks.value.message, 4000, '添加成功');
+      useZKStore().showMessage('添加成功');
     }).catch(() => {
-      showMsg(zks.value.message, 4000, `写入文件${originFn}失败`);
+      useZKStore().showMessage(`写入文件${originFn}失败`);
     })
   }
 }

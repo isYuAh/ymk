@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import {inject, onMounted, onUnmounted, ref} from "vue";
 import {useZKStore} from "@/stores/useZKstore";
-import {type AxiosResponse} from "axios";
-import {showMsg} from "@/utils/u";
+import axios, {type AxiosResponse} from "axios";
 import {storeToRefs} from "pinia";
 import emitter from "@/emitter";
 
@@ -68,12 +67,12 @@ function checkStatus(refresh: boolean = false, force = false) {
             });
             if (status.data.code === 800) {
               clearInterval(timer);
-              showMsg(zks.value.message, 4000, `二维码过期，请重新切换到这个页面`);
+              useZKStore().showMessage(`二维码过期，请重新切换到这个页面`);
             }
             qrstatus.value = status.data.message;
             if (status.data.code === 803) {
               clearInterval(timer);
-              showMsg(zks.value.message, 4000, `${status.data.message}`);
+              useZKStore().showMessage(`${status.data.message}`);
               neteaseUser.value.cookie = status.data.cookie;
               // console.log('$cookie', status.data.cookie);
               checkStatus(true);

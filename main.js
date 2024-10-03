@@ -97,6 +97,12 @@ if (!gotTheLock) {
     function writeConfig(_, config) {
         return fs.writeFileSync(path.resolve('./res', 'config.json'), config)
     }
+    function getSpecificConfig(_, fn) {
+        return JSON.parse(fs.readFileSync(path.resolve('./res', `${fn}.json`)).toString())
+    }
+    function writeSpecificConfig(_, fn, config) {
+        return fs.writeFileSync(path.resolve('./res', `${fn}.json`), config)
+    }
     function readClipboard() {
         return clipboard.readText();
     }
@@ -143,6 +149,8 @@ if (!gotTheLock) {
         ipcMain.handle('writePlaylistFile', writePlaylistFile)
         ipcMain.handle('getConfig', getConfig)
         ipcMain.handle('writeConfig', writeConfig)
+        ipcMain.handle('getSpecificConfig', getSpecificConfig)
+        ipcMain.handle('writeSpecificConfig', writeSpecificConfig)
         ipcMain.handle('readClipboard', readClipboard)
         ipcMain.handle('isMinimized', () => mainWindow.isMinimized())
         ipcMain.handle('getBilibiliVideoView', getBilibiliVideoView)

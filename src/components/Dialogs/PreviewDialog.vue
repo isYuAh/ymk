@@ -31,14 +31,13 @@ import emitter from "@/emitter";
 import {storeToRefs} from "pinia";
 import {type playlistComponent, type song} from "@/types";
 import axios, {type AxiosResponse} from "axios";
-import {showMsg} from "@/utils/u";
 const {zks, config} = storeToRefs(useZKStore());
 let previewLink = ref('');
 let asData = ref(true);
 let selectComponent = ref<HTMLSelectElement>();
 function preview() {
   if (selectComponent.value) {
-    showMsg(zks.value.message, 4000, '加载中')
+    useZKStore().showMessage('加载中')
     if (selectComponent.value.value === 'auto') {
       if (previewLink.value.startsWith('https://music.163.com/#/playlist?id=') ||
         previewLink.value.startsWith('music.163.com/#/playlist?id=')

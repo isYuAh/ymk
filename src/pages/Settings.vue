@@ -3,7 +3,6 @@ import simplebar from "simplebar-vue";
 import 'simplebar-vue/dist/simplebar.min.css'
 import {ref} from "vue";
 import {useZKStore} from "@/stores/useZKstore";
-import {showMsg} from "@/utils/u";
 import {storeToRefs} from "pinia";
 import PickColors from 'vue-pick-colors'
 const {zks, config, colors} = storeToRefs(useZKStore());
@@ -15,7 +14,11 @@ let apiConfig = ref({
 function saveApiConfig () {
   config.value.neteaseApi.url = apiConfig.value.neteaseUrl;
   config.value.qqApi.url = apiConfig.value.qqUrl;
-  showMsg(zks.value.message, 4000, '保存成功')
+  useZKStore().showMessage('保存成功')
+}
+function saveColorsConfig () {
+  useZKStore().saveColors();
+  useZKStore().showMessage('保存成功')
 }
 </script>
 
@@ -41,9 +44,14 @@ function saveApiConfig () {
     <div class="SettingsPane">
       <div class="title">颜色</div>
       <div class="content">
-        <div v-for="(_, k) in colors" class="colorInput">
-          <div class="label">{{k}}</div>
-          <PickColors show-alpha format="rgb" :format-options="['rgb', 'hex']" v-model:value="colors[k]" />
+        <div class="colorsSetter">
+          <div v-for="(_, k) in colors" class="colorInput">
+            <div class="label">{{k}}</div>
+            <PickColors style="vertical-align: top" show-alpha format="rgb" :format-options="['rgb', 'hex']" v-model:value="colors[k]" />
+          </div>
+        </div>
+        <div class="controlBtns">
+          <div @click="saveColorsConfig" class="controlBtn">保存</div>
         </div>
       </div>
     </div>
@@ -117,5 +125,10 @@ input {
   padding: 0 15px;
   height: 35px;
   line-height: 35px;
+}
+.colorsSetter {
+  display: grid;
+  grid-gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
 }
 </style>

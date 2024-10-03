@@ -52,9 +52,10 @@ watch([() => zks.value.mouseMenu.show, () => zks.value.mouseMenu.position], (v) 
     position: fixed;
     box-shadow: 0 0 5px rgba(0, 0, 0, .4);
     background-color: #fff;
+    border-radius: 6px;
     padding: 10px 0;
     left: 50px;
-    min-width: 150px;
+    min-width: 100px;
 }
 .menuItem {
     text-align: center;

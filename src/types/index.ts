@@ -81,7 +81,9 @@ export type song_web = {
 } & song_basic;
 export type song_netease = {
     type: 'netease',
-    id: string
+    id: string,
+    playable: boolean,
+    reason: string
 } & song_basic;
 export type song_netease_outer = {
     type: 'netease_outer',

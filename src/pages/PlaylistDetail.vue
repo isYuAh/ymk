@@ -11,7 +11,8 @@
             <div class="info forbidSelect">
                 <div class="top">
                   <div class="title">{{ zks.playlist.raw.title }}</div>
-                  <div v-show="zks.playlist.raw.originFilename === 'REMOTE'" @click="collectPlaylist" class="collectPlaylist">收藏</div>
+                  <button @click="subscribeToggle" class="subscribeBtn" v-if="zks.playlist.extraInfo.type === 'pureNeteasePlaylist' && zks.playlist.extraInfo.infos.subscribe > 0">{{zks.playlist.extraInfo.infos.subscribe === 1 ? '取消收藏' : '收藏'}}</button>
+<!--                  <button @click="console.log(zks.playlist)">{{zks.playlist.extraInfo}}</button>-->
                 </div>
                 <div class="bottom">
                     <div class="total">TOTAL {{ zks.playlist.songs.length }}</div>
@@ -26,40 +27,37 @@
                 </div>
             </div>
         </div>
-        <div class="divider forbidSelect">
+        <div class="tablePartContainer">
+          <div class="divider forbidSelect">
             <div class="dividerTip">歌曲列表</div>
             <div class="divideLine"></div>
             <input v-model="filter" class="search" placeholder="搜索" />
-        </div>
-        <div class="songs">
+          </div>
+          <div class="songs">
             <div class="container">
-                <simplebar data-auto-hide class="simplebar">
-                    <div class="songTable forbidSelect">
-                        <div
-                            @dblclick="playSong_withCheck(ITEM.item)"
-                            class="song" 
-                            @contextmenu.prevent="useZKStore().showMouseMenu([{
-                              title: '编辑',
-                              action: menu_edit
-                            },{
-                              title: '删除',
-                              action: menu_deleteSong
-                            }], {song: ITEM.item,si: ITEM.refIndex})"
-                            :data-song="ITEM.item"
-                            v-for="ITEM in showingSonglist">
-                            <div class="songInfo title">{{ ITEM.item.title }}<sub>{{ ITEM.item.type }}</sub></div>
-                            <div class="songInfo author">{{ ITEM.item.singer }}</div>
-                        </div>
-                    </div>
-                </simplebar>
+              <simplebar data-auto-hide class="simplebar">
+                <div class="songTable forbidSelect">
+                  <div
+                      @dblclick="playSong_withCheck(ITEM.item)"
+                      class="song"
+                      :class="{disabled: ITEM.item.type==='netease' && 'playable' in ITEM.item ? !ITEM.item.playable : false}"
+                      @contextmenu.prevent="tryShowMenu({song: ITEM.item,si: ITEM.refIndex})"
+                      :data-song="ITEM.item"
+                      v-for="ITEM in showingSonglist">
+                    <div class="songInfo title">{{ ITEM.item.title }}<sub>{{ ITEM.item.type }}</sub></div>
+                    <div class="songInfo author">{{ ITEM.item.singer }}</div>
+                  </div>
+                </div>
+              </simplebar>
             </div>
+          </div>
         </div>
     </div>
 </div>
 </template>
 
 <script setup lang='ts'>
-import { type list_data, type song } from '@/types'
+import {type list_data, type list_trace_netease_playlist, type song} from '@/types'
 import simplebar from 'simplebar-vue';
 import 'simplebar-vue/dist/simplebar.min.css'
 import {computed, onMounted, onUnmounted, ref, toRaw, watch} from 'vue';
@@ -67,25 +65,47 @@ import { useZKStore } from '@/stores/useZKstore';
 import {storeToRefs} from "pinia";
 import emitter from '@/emitter';
 import '@/assets/songlist.css'
-import { showMsg } from '@/utils/u';
 import Fuse from "fuse.js";
+import axios from "axios";
 const {writePlaylistFile} = (window as any).ymkAPI;
-const {zks} = storeToRefs(useZKStore());
+const {zks, config, neteaseUser} = storeToRefs(useZKStore());
 let filter = ref('');
 let FuseVal = ref(new Fuse(zks.value.playlist.songs, {
   keys: ['title', 'singer']
 }))
-const edit = ref(false)
-// console.dir('$FuseVal', FuseVal.value)
 let showingSonglist = computed(() => {
-  // console.log('$filterValue', filter.value)
   if (!filter.value) {
     return zks.value.playlist.songs.map((element, index) => ({item: element, refIndex: index}))
   }else {
-    // console.log('$fvSearch', FuseVal.value.search(filter.value))
     return FuseVal.value.search(filter.value)
   }
 })
+function tryShowMenu(a: any) {
+  if (zks.value.playlist.raw.playlist.length != 1 || zks.value.playlist.raw.playlist[0].type !== 'data') return
+  useZKStore().showMouseMenu([{
+    title: '编辑',
+    action: menu_edit,
+  },{
+    title: '删除',
+    action: menu_deleteSong,
+  }], a)
+}
+function subscribeToggle() {
+  let t = zks.value.playlist.extraInfo.infos.subscribe === 1 ? 2 : 1
+  axios.get(`${config.value.neteaseApi.url}playlist/subscribe`, {
+    params: {
+      timestamp: new Date().getTime(),
+      t,
+      id: (zks.value.playlist.raw.playlist[0] as list_trace_netease_playlist).id,
+      cookie: neteaseUser.value.cookie
+    }
+  }).then(res => {
+    if (res.data.code == 200) {
+      zks.value.playlist.extraInfo.infos.subscribe = t;
+      useZKStore().showMessage(`${t === 1 ? '' : '取消'}收藏成功`)
+    }
+  })
+}
 function playAll() {
     // zks.value.play.mode = 'list';
     zks.value.play.playlist = structuredClone(toRaw(zks.value.playlist.songs))
@@ -95,7 +115,6 @@ function playAll() {
 }
 
 function menu_edit() {
-  edit.value=!edit.value
 
 }
 function menu_deleteSong(arg: any) {
@@ -119,9 +138,9 @@ function menu_deleteSong(arg: any) {
             (np.playlist[componentIndex] as list_data).songs.splice(ser - 1, 1);
             zks.value.playlist.songs.splice(arg.si, 1);
             writePlaylistFile(originFn, JSON.stringify(toRaw(np))).then(() => {
-                showMsg(zks.value.message, 4000, '删除成功');
+                useZKStore().showMessage('删除成功');
             }).catch(() => {
-                showMsg(zks.value.message, 4000, `写入文件${originFn}失败`);
+                useZKStore().showMessage(`写入文件${originFn}失败`);
             })
             
         }
@@ -146,10 +165,10 @@ function collectPlaylist() {
     intro: zks.value.playlist.raw.intro,
     playlist: zks.value.playlist.raw.playlist,
   })).then(() => {
-    showMsg(zks.value.message, 4000, '收藏成功');
+    useZKStore().showMessage('收藏成功');
     emitter.emit('refreshPlaylists', {notReset: true});
   }).catch(() => {
-    showMsg(zks.value.message, 4000, `写入文件${id}.json失败`);
+    useZKStore().showMessage(`写入文件${id}.json失败`);
   });
 }
 
@@ -267,6 +286,14 @@ function collectPlaylist() {
 .listInfo .info .bottom .PlayAll:hover .fill {
     width: calc(100% - 20px);
 }
+.tablePartContainer {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 4px var(--ymk-container-bg-color);
+  /*backdrop-filter: blur(2px);*/
+  background-color: var(--ymk-container-bg-color);
+}
 .divider {
     display: flex;
     width: 100%;
@@ -289,7 +316,7 @@ function collectPlaylist() {
     padding-bottom: 5px;
 }
 .divideLine {
-    height: 0.5px;
+    height: 1px;
     flex: 1;
     background-color: #e2e3e5;
 }
@@ -297,148 +324,22 @@ function collectPlaylist() {
     width: 100%;
     height: 100%;
 }
+.songTable .song.disabled {
+  color: #aaa
+}
 .songTable .song {
     grid-template-columns: 12fr 10fr;
 }
+
+.subscribeBtn {
+  cursor: pointer;
+  height: 40px;
+  line-height: 40px;
+  min-width: 60px;
+  outline: none;
+  padding: 0 10px;
+  background-color: rgba(0,0,0,.6);
+  color: var(--ymk-text-color);
+  border: 1px solid #18191C;
+}
 </style>
-<!-- playBar -->
-<!-- <style scoped>
-.play {
-    box-shadow: 0 0 4px rgba(0, 0, 0, .1);
-    height: 64px;
-}
-.play {
-    position: relative;
-    user-select: none;
-    display: flex;
-    align-items: center;
-    display: none;
-}
-.play .progress-tooltip {
-    font-family: PingFang SC;
-    position: absolute;
-    top: -29px;
-    background-color: rgba(0, 0, 0);
-    padding: 2px 5px;
-    line-height: 20px;
-    color: #fff;
-    z-index: 1;
-}
-.play .progress {
-    cursor: pointer;
-    height: 4px;
-    left: 0;
-    right: 0;
-    background-color: #f2f3f4;
-    position: absolute;
-    top: 0;
-    transition: all .1s;
-}
-.play .progress .fill {
-    position: absolute;
-    height: 4px;
-    top: 0;
-    width: 0%;
-    background-color: #ec452c;
-    transition: alls .1s;
-}
-.play .progress .chooseFill {
-    position: absolute;
-    height: 4px;
-    top: 0;
-    width: 0%;
-    background-color: #d2d3d4;
-}
-.play .songface {
-    margin-left: 10px;
-    width: 48px;
-    height: 48px;
-}
-.play .songface img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-.play .songInformation {
-    width: 358px;
-    padding-left: 10px;
-    padding-right: 20px;
-}
-.play .songInformation .title {
-    font-family: PingFang SC;
-    font-size: 16px;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    word-break: break-all;
-    overflow: hidden;
-    line-height: 16px;
-    height: 16px;
-}
-.play .songInformation .singer {
-    margin-top: 5px;
-    padding-left: 7px;
-    color: #61666D;
-    font-size: 14px;
-}
-.play .controlButtons {
-    display: flex;
-}
-.play .controlButtons .playbutton {
-    width: 24px;
-    height: 24px;
-    color: #11;
-    margin: 0 20px;
-}
-.play .durationInfo {
-    display: flex;
-    flex-direction: column;
-    max-height: 100%;
-    overflow: hidden;
-    align-items: center;
-    justify-content: center;
-    width: 100px;
-}
-.play .durationInfo .infoItem {
-    font-family: HarmonyOS SC;
-    font-weight: bold;
-    color: #444;
-    font-size: 12px;
-    margin: 2px 10px;
-}
-.play .volumeController {
-    margin-left: 20px;
-    display: flex;
-    flex-direction: column;
-}
-.play .volumeController .volumeTip {
-    font-size: 12px;
-    font-weight: bold;
-}
-.play .volumeController .volumeProgress {
-    position: relative;
-    border: 1.5px solid #61666D;
-    width: 150px;
-    height: 14px;
-}
-.play .volumeController .volumeProgress .volumeProgressFill {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 100%;
-    background-color: #61666D;
-    transition: alls .1s;
-}
-.play .playmodeController {
-    height: 24px;
-    margin-left: 20px;
-}
-.play .playmodeController .modeitem {
-    cursor: pointer;
-    color: #61666D;
-    width: 24px;
-    height: 24px;
-}
-.play .playmodeController .modeitem:hover {
-    color: #18191C;
-}
-</style> -->

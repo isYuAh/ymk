@@ -102,7 +102,7 @@
 import {onUnmounted, ref, watch, watchEffect} from 'vue';
 import axios, { AxiosError, type AxiosResponse } from 'axios';
 import { type playSongParams } from '@/types';
-import { minmax, secondsToMmss, getFormattedDateWithPadding, showMsg } from '@/utils/u';
+import { minmax, secondsToMmss, getFormattedDateWithPadding } from '@/utils/u';
 import { useZKStore } from '@/stores/useZKstore'
 import emitter from '@/emitter'
 import simplebar from 'simplebar-vue';
@@ -125,7 +125,7 @@ let keepCurrentTimeCausedByError = ref(-1);
 // let lrcConfig = ref<song_lrc_item[]>([])
 function videoOnError(e: Event) {
   console.log(e);
-  showMsg(zks.value.message, 5000, JSON.stringify(e));
+  useZKStore().showMessage(JSON.stringify(e));
   if (songSource.value) {
     keepCurrentTimeCausedByError.value = songSource.value.currentTime;
     playSong({song: zks.value.play.song.origin})
@@ -239,7 +239,6 @@ async function playSong({song, justtry = false}: playSongParams) {
       lrc: []
     }
   }
-
   zks.value.play.lang = 'origin';
   if (!justtry) {
     let findIndex = -1;
@@ -292,20 +291,6 @@ async function playSong({song, justtry = false}: playSongParams) {
       })
     });
   }
-      // else if (song.type === 'local') {
-      //     if (songfaceImg.value) {
-      //         if (song.pic) {
-      //             zks.value.play.show_songface = true;
-      //             songfaceImg.value.src = song.pic;
-      //         }else {
-      //             zks.value.play.show_songface = false;
-      //         }
-      //     }
-      //     if (songSource.value) {
-      //         zks.value.play.song.url = tauri.convertFileSrc(song.path);
-      //         songSource.value.src = zks.value.play.song.url;
-      //     }
-  // }
   else if (song.type === 'web') {
     if (songfaceImg.value) {
       if (song.pic) {
@@ -358,6 +343,11 @@ async function playSong({song, justtry = false}: playSongParams) {
     let rawDetail = {} as any;
     axios.get(config.value.neteaseApi.url + 'song/detail', {params: {ids: song.id}}).then((res: AxiosResponse) => {
       rawDetail = res.data;
+      Object.assign(song, useZKStore().checkSongPlayable(rawDetail.songs[0], rawDetail.privileges[0]))
+      if (!song.playable) {
+        useZKStore().showMessage(song.reason);
+        return;
+      }
       if (songfaceImg.value) {
         if (song.pic) {
           zks.value.play.show_songface = true;
@@ -373,76 +363,31 @@ async function playSong({song, justtry = false}: playSongParams) {
         }
       }
     }).catch(() => {
-      // console.log('使用NeteaseWebAPI请求详细信息');
-      // Netease.getSongDetail(axios, song.id).then((res: any) => {
-      //   rawDetail = res.data;
-      //   if (res.data.songs[0].al.picUrl) {
-      //     zks.value.play.show_songface = true;
-      //     zks.value.play.song.pic = res.data.songs[0].al.picUrl;
-      //     songfaceImg.value!.src = res.data.songs[0].al.picUrl
-      //   }else {
-      //     zks.value.play.show_songface = false;
-      //   }
-      // })
     }).finally(() => {
-      let md5Str = md5(getFormattedDateWithPadding() + `https://music.163.com/#/song?id=${song.id}exhighmusiccn_v1`);
-      if (rawDetail.privileges[0].chargeInfoList[0].chargeType != 0 && neteaseUser.value.vipType == '0') {
-        let max = 5;
-        let tryOnce = () => {
-          max--;
-          axios.post('https://api.toubiec.cn/api/music_v1.php', {
-            "url": `https://music.163.com/#/song?id=${song.id}`,
-            "level": "exhigh",
-            "type": "song",
-            "token": md5Str
-          }, {
-            headers: {
-              Timestamp: Date.now(),
-              token: md5Str
-            }
-          }).then((res: AxiosResponse) => {
-            console.log('$res', res.data);
-            if (max >= 0) {
-              if (res.data.song_info.level === '极高音质 (HQ)') {
-                if (songSource.value) {
-                  zks.value.play.song.url = res.data.url_info.url;
-                  songSource.value.src = zks.value.play.song.url;
-                }
-              } else {
-                tryOnce();
-              }
-            } else {
-              if (songSource.value) {
-                zks.value.play.song.url = res.data.url_info.url;
-                songSource.value.src = zks.value.play.song.url;
-              }
-            }
-          })
-        }
-        tryOnce();
-      } else {
-        axios.get(config.value.neteaseApi.url + 'song/url', {
-          params: {
-            id: song.id,
-            cookie: neteaseUser.value.cookie
-          }
-        }).then(res => {
-          if (res.data.data[0]) {
-            if (songSource.value) {
-              zks.value.play.song.url = res.data.data[0].url;
-              songSource.value.src = zks.value.play.song.url;
-            }
-          }
-        }).catch((err: AxiosError) => {
-          if (err.response?.status === 404) {
-            if (songSource.value) {
-              zks.value.play.song.url = `http://music.163.com/song/media/outer/url?id=${song.id}.mp3`;
-              songSource.value.src = zks.value.play.song.url;
-            }
-            console.log('使用outerAPI请求歌曲');
-          }
-        })
+      if (!song.playable) {
+        return;
       }
+      axios.get(config.value.neteaseApi.url + 'song/url', {
+        params: {
+          id: song.id,
+          cookie: neteaseUser.value.cookie
+        }
+      }).then(res => {
+        if (res.data.data[0]) {
+          if (songSource.value) {
+            zks.value.play.song.url = res.data.data[0].url;
+            songSource.value.src = zks.value.play.song.url;
+          }
+        }
+      }).catch((err: AxiosError) => {
+        if (err.response?.status === 404) {
+          if (songSource.value) {
+            zks.value.play.song.url = `http://music.163.com/song/media/outer/url?id=${song.id}.mp3`;
+            songSource.value.src = zks.value.play.song.url;
+          }
+          console.log('使用outerAPI请求歌曲');
+        }
+      })
       if (zks.value.play.song.lrc.status === 'disabled' || zks.value.play.song.translationLrc.status === 'disabled') {
         axios.get(config.value.neteaseApi.url + 'lyric', {params: {id: song.id}}).then((res: AxiosResponse) => {
           if (res.data.lrc.lyric && zks.value.play.song.lrc.status === 'disabled') {

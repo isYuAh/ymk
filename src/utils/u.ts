@@ -10,12 +10,6 @@ export function secondsToMmss(seconds: number) {
 export function minmax(value: number, min: number, max: number) {
     return Math.min(max, Math.max(value, min))
 }
-export function showMsg(controller: messageController, time: number, text: string) {
-    controller.text = text;
-    controller.show = true;
-    clearTimeout(controller.timer);
-    controller.timer = setTimeout(() => controller.show = false, time);
-}
 
 export function getFormattedDateWithPadding() {
     // 获取当前日期

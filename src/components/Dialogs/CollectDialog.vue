@@ -15,7 +15,6 @@
 
 <script setup lang='ts'>
 import { useZKStore } from '@/stores/useZKstore';
-import { showMsg } from '@/utils/u';
 import { ref, toRaw } from 'vue';
 import {storeToRefs} from "pinia";
 const {writePlaylistFile} = (window as any).ymkAPI;
@@ -38,9 +37,9 @@ function collect() {
             zks.value.playlist.songs.unshift(zks.value.dialogData.waitCollect)
         }
         writePlaylistFile(originFn, JSON.stringify(toRaw(zks.value.playlists[selectComponent.value.selectedIndex]))).then(() => {
-            showMsg(zks.value.message, 4000, '添加成功');
+            useZKStore().showMessage('添加成功');
         }).catch(() => {
-            showMsg(zks.value.message, 4000, `写入文件${originFn}失败`);
+            useZKStore().showMessage(`写入文件${originFn}失败`);
         })
         zks.value.dialog.show = false;
     }

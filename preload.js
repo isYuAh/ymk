@@ -21,6 +21,12 @@ function getConfig() {
 function writeConfig(t) {
     return ipcRenderer.invoke('writeConfig', t)
 }
+function getSpecificConfig(fn) {
+    return ipcRenderer.invoke('getSpecificConfig', fn)
+}
+function writeSpecificConfig(fn, t) {
+    return ipcRenderer.invoke('writeSpecificConfig', fn, t)
+}
 function readClipboard() {
     return ipcRenderer.invoke('readClipboard')
 }
@@ -67,4 +73,6 @@ contextBridge.exposeInMainWorld('ymkAPI', {
     getBilibiliVideoPlayurl,
     getBilibiliFav,
     getCursorPos,
+    getSpecificConfig,
+    writeSpecificConfig,
 })

@@ -5,7 +5,8 @@
     '--ymk-progress-bg-color': colors.progressBgColor,
     '--ymk-progress-fill-color': colors.progressFillColor,
     '--ymk-progress-choose-fill-color': colors.progressChooseFillColor,
-    '--ymk-text-shadow-color': '#000',
+    '--ymk-text-shadow-color': colors.textShadowColor,
+    '--ymk-container-bg-color': colors.containerBgColor,
   }">
     <div class="backgroundFrame">
       <video autoplay muted loop :src="bgSrc"></video>
@@ -107,14 +108,14 @@ zks.value.dialog.dialogEl = shallowRef(CollectDialog);
 //     return response;
 //   }, function (error) {
 //     console.log(error);
-//     showMsg(ZKStore.message, 4000, error);
+//     useZKStore().showMessage(ZKStore.message, 4000, error);
 //     return Promise.reject(error);
 //   });
 // client.interceptors.response.use(function (response) {
 //   return response;
 // }, function (error) {
 //   console.log(error);
-//   showMsg(ZKStore.message, 4000, error);
+//   useZKStore().showMessage(ZKStore.message, 4000, error);
 //   return Promise.reject(error);
 // });
 function turnToPlaylistDetail() {
