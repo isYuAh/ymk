@@ -102,14 +102,11 @@
 import {onUnmounted, ref, watch, watchEffect} from 'vue';
 import axios, { AxiosError, type AxiosResponse } from 'axios';
 import { type playSongParams } from '@/types';
-import { minmax, secondsToMmss, getFormattedDateWithPadding } from '@/utils/u';
+import { minmax, secondsToMmss } from '@/utils/u';
 import { useZKStore } from '@/stores/useZKstore'
 import emitter from '@/emitter'
 import simplebar from 'simplebar-vue';
 import 'simplebar-vue/dist/simplebar.min.css'
-//@ts-ignore
-import md5 from 'md5'
-//@ts-ignore
 import SonglistTooltip from "@/components/SonglistTooltip.vue";
 let songSource = ref<HTMLVideoElement>();
 let progressFill = ref<HTMLDivElement>();
@@ -122,7 +119,6 @@ const {zks, neteaseUser, config} = storeToRefs(useZKStore());
 let songfaceImg = ref<HTMLImageElement>();
 let songInformation = ref<HTMLDivElement>();
 let keepCurrentTimeCausedByError = ref(-1);
-// let lrcConfig = ref<song_lrc_item[]>([])
 function videoOnError(e: Event) {
   console.log(e);
   useZKStore().showMessage(JSON.stringify(e));

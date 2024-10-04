@@ -125,19 +125,9 @@ export type playSongParams = {
     song: song,
     justtry?: boolean
 }
-export type checkDetailParams = {
-    index: number,
-    remote?: boolean,
-    raw?: list
-}
 export type refreshPlaylistsParams = {
     notReset: boolean
 }
-export type addSongToParams = {
-    song: song,
-    save: boolean
-}
-
 export type messageController = {
     show: boolean,
     text: string,

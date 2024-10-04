@@ -7,7 +7,7 @@
     '--ymk-progress-choose-fill-color': colors.progressChooseFillColor,
     '--ymk-text-shadow-color': colors.textShadowColor,
     '--ymk-container-bg-color': colors.containerBgColor,
-  }">
+  }" @drop.prevent="dropEvent" @dragover.prevent>
     <div class="backgroundFrame">
       <video autoplay muted loop :src="bgSrc"></video>
     </div>
@@ -91,6 +91,7 @@ if ("mediaSession" in navigator) {
   navigator.mediaSession.setActionHandler("nexttrack", () => emitter.emit('playNextSong'))
 }
 const {zks, neteaseUser, config, colors} = storeToRefs(useZKStore());
+const playlistToolkit = useZKStore().playlistToolkit
 //监听cookie
 const bgSrc = computed(() => {
   return `http://localhost:35652/api/bg?fn=${config.value.bg}`
@@ -104,22 +105,8 @@ import BlankPage from "@/pages/BlankPage.vue";
 import {storeToRefs} from "pinia";
 import axios from "axios";
 zks.value.dialog.dialogEl = shallowRef(CollectDialog);
-// axios.interceptors.response.use(function (response) {
-//     return response;
-//   }, function (error) {
-//     console.log(error);
-//     useZKStore().showMessage(ZKStore.message, 4000, error);
-//     return Promise.reject(error);
-//   });
-// client.interceptors.response.use(function (response) {
-//   return response;
-// }, function (error) {
-//   console.log(error);
-//   useZKStore().showMessage(ZKStore.message, 4000, error);
-//   return Promise.reject(error);
-// });
 function turnToPlaylistDetail() {
-  if ('title' in zks.value.playlist.raw) {
+  if (zks.value.playlist.listIndex !== -1) {
     zks.value.nowTab = 'PlaylistDetail'
   }
 }
@@ -136,19 +123,12 @@ function turnToPlaylistDetail() {
       })
     }
     const ps = await getLocalPlaylists();
-    zks.value.playlists.push(...ps)
-    zks.value.playlistsParts.push({
-      title: '本地',
-      begin: 0,
-      count: ps.length
-    })
+    playlistToolkit.pushPlaylistPart('本地', ps)
     if (neteaseUser.value.cookie) {
       let res = await axios.post(`${config.value.neteaseApi.url}user/playlist?uid=${neteaseUser.value.uid}`, {
         cookie: neteaseUser.value.cookie,
       })
-      let c = res.data.playlist.length;
-      console.log(c, zks.value.playlistsParts[zks.value.playlistsParts.length - 1].count);
-      zks.value.playlists.push(...res.data.playlist.map((playlist: any) => ({
+      playlistToolkit.pushPlaylistPart('网易云', res.data.playlist.map((playlist: any) => ({
         title: playlist.name,
         pic: playlist.coverImgUrl,
         intro: 'FROM NETEASE',
@@ -158,16 +138,10 @@ function turnToPlaylistDetail() {
           id: playlist.id
         }]
       })))
-      zks.value.playlistsParts.push({
-        title: '网易云',
-        begin: zks.value.playlistsParts[zks.value.playlistsParts.length - 1].begin + zks.value.playlistsParts[zks.value.playlistsParts.length - 1].count,
-        count: c,
-      })
     }
     {
       let res = await axios.get(`${config.value.neteaseApi.url}personalized`);
-      let c = res.data.result.length;
-      zks.value.playlists.push(...res.data.result.map((playlist: any) => ({
+      playlistToolkit.pushPlaylistPart('网易云推荐', res.data.result.map((playlist: any) => ({
         title: playlist.name,
         pic: playlist.picUrl,
         intro: 'NETEASE RECOMMEND',
@@ -176,15 +150,9 @@ function turnToPlaylistDetail() {
           type: 'trace_netease_playlist',
           id: playlist.id
         }]
-      })))
-      zks.value.playlistsParts.push({
-        title: '网易云推荐',
-        begin: zks.value.playlistsParts[zks.value.playlistsParts.length - 1].begin + zks.value.playlistsParts[zks.value.playlistsParts.length - 1].count,
-        count: c,
-        other: {
-          type: 'recommend_netease',
-          showInMainPage: false
-        }
+      })), -1, {
+        type: 'recommend_netease',
+        showInMainPage: false
       })
     }
   }
@@ -193,6 +161,11 @@ function turnToPlaylistDetail() {
     refreshPlaylists(conf);
   });
 })();
+
+function dropEvent(e: DragEvent) {
+  console.log(e)
+}
+
 onUnmounted(() => {
   emitter.off('refreshPlaylists')
 })

@@ -1,9 +1,21 @@
 import { defineStore } from 'pinia';
-import type {list, messageController, song, songInPlay, song_lrc_item, playlistPart, mouseMenuItem} from '@/types'
+import type {
+  list,
+  messageController,
+  song,
+  songInPlay,
+  song_lrc_item,
+  playlistPart,
+  mouseMenuItem,
+  playlistComponent, list_trace_bilibili_fav
+} from '@/types'
 import CollectDialog from '@/components/Dialogs/CollectDialog.vue';
-import {computed, ref, shallowRef, watch} from 'vue';
+import {computed, ref, shallowRef, toRaw, watch} from 'vue';
 import emitter from "@/emitter";
 import {minmax} from "@/utils/u";
+import axios, {type AxiosResponse} from "axios";
+
+const {getBilibiliFav, writePlaylistFile} = (window as any).ymkAPI;
 
 export const useZKStore = defineStore('ZK', () => {
   const {writeConfig, getConfig, writeSpecificConfig, getSpecificConfig} = (window as any).ymkAPI;
@@ -30,7 +42,7 @@ export const useZKStore = defineStore('ZK', () => {
     showFullPlay: false,
     showPlaylistSonglist: false,
     playlist: {
-      listIndex: -1,
+      listIndex: -1, //-1:无 -2:非本地
       raw: <list>{},
       songs: <song[]>[],
       extraInfo: {
@@ -98,7 +110,7 @@ export const useZKStore = defineStore('ZK', () => {
   const neteaseUser = ref<any>({});
   const isLogin = computed(() => neteaseUser.value.cookie && neteaseUser.value.cookie != '')
   function saveConfig() {
-    writeConfig(JSON.stringify({config: config.value, neteaseUser: neteaseUser.value, colors: colors.value}))
+    writeConfig(JSON.stringify({config: config.value, neteaseUser: neteaseUser.value}))
   }
   function saveColors() {
     writeSpecificConfig('colors', JSON.stringify(colors.value))
@@ -181,6 +193,173 @@ export const useZKStore = defineStore('ZK', () => {
     zks.value.message.timer = setTimeout(() => zks.value.message.show = false, time);
   }
 
+  function pushPlaylistPart(title: string, playlists: list[], begin = -1, other = {}) {
+    if (begin === -1) {
+      begin = zks.value.playlistsParts.length === 0 ? 0 : zks.value.playlistsParts[zks.value.playlistsParts.length - 1].begin + zks.value.playlistsParts[zks.value.playlistsParts.length - 1].count
+    }
+    zks.value.playlists.push(...playlists)
+    zks.value.playlistsParts.push({
+      title: title,
+      begin: begin,
+      count: playlists.length,
+      other,
+    })
+  }
+
+  function parseComponent(comIndex: number, components: playlistComponent[]) {
+    let component = components[comIndex];
+    if (comIndex >= components.length) {
+      zks.value.nowTab = 'PlaylistDetail';
+      return;
+    }
+    if (component.type === 'data') {
+      zks.value.loading.text = `加载 Data 数据 ${comIndex + 1} / ${components.length}`;
+      zks.value.playlist.songs.push(...component.songs);
+      comIndex++;
+      parseComponent(comIndex, components);
+    }else if (component.type === 'trace_bilibili_fav') {
+      let pn = 0;
+      let getNextPage = function() {
+        zks.value.loading.text = `Bilibili 已加载 ${Math.max(pn)} 页 ${comIndex + 1} / ${components.length}`;
+        pn++;
+        getBilibiliFav({
+          media_id: (component as list_trace_bilibili_fav).favid,
+          pn: pn,
+          ps: 20,
+        }).then((res: any) => {
+          zks.value.playlist.songs.push(...res.data.data.medias.map((m: any) => ({
+            type: 'bilibili',
+            BV: m.bvid,
+            title: m.title,
+            pic: m.cover,
+            singer: m.upper.name})))
+          console.log(res.data.data.has_more, pn);
+          if (res.data.data.has_more) {
+            getNextPage()
+          }else {
+            comIndex++;
+            parseComponent(comIndex, components);
+          }
+        })
+      }
+      getNextPage()
+    }else if (component.type === 'trace_siren') {
+      let songsApi = 'https://monster-siren.hypergryph.com/api/songs';
+      zks.value.loading.text = `加载 塞壬唱片 ${comIndex + 1} / ${components.length}`;
+      axios.get(songsApi).then(res => {
+        zks.value.playlist.songs.push(...res.data.data.list.map((s: any) => {
+          return <song>{
+            title: s.name,
+            singer: s.artists.join(' / '),
+            type: 'siren',
+            cid: s.cid
+          }
+        }))
+        comIndex++;
+        parseComponent(comIndex, components);
+      })
+    }else if (component.type === 'trace_netease_playlist') {
+      axios.get(config.value.neteaseApi.url + 'playlist/detail', {
+        params: {
+          timestamp: new Date().getTime(),
+          id: component.id,
+          cookie: neteaseUser.value.cookie
+        }
+      }).then(res => {
+        if (components.length === 1) {
+          zks.value.playlist.extraInfo.type = 'pureNeteasePlaylist';
+          if (res.data.playlist.subscribed) {
+            zks.value.playlist.extraInfo.infos.subscribe = 1; //已收藏
+          }else if (res.data.playlist.creator.userId == neteaseUser.value.uid) {
+            zks.value.playlist.extraInfo.infos.subscribe = 0; //自己的歌单
+          }else {
+            zks.value.playlist.extraInfo.infos.subscribe = 2; //未收藏
+          }
+        }
+        zks.value.playlist.songs.push(...res.data.playlist.tracks.map((track: any) => {
+          return <song>{
+            pic: track.al.picUrl,
+            title: track.name,
+            type: 'netease',
+            singer: track.ar.map((ar: any) => (ar.name)).join(' & '),
+            id: track.id,
+          }
+        }))
+        comIndex++;
+        parseComponent(comIndex, components);
+      })
+    }else if (component.type === 'trace_qq_playlist') {
+      if (!config.value.qqApi.enable) {
+        comIndex++;
+        parseComponent(comIndex, components);
+        return;
+      }
+      axios.post(config.value.qqApi.url + 'api/y/get_playlistDetail', {
+        type: "qq",
+        id: component.id
+      }).then((res: AxiosResponse) => {
+        let result = res.data.data[0];
+        zks.value.playlist.songs.push(...result.songlist.map((r: any) => ({...r, type: 'qq'})));
+        comIndex++;
+        parseComponent(comIndex, components);
+      })
+    }
+  }
+  function checkDetail(index: number, raw?: list) {
+    zks.value.nowTab = 'Loading';
+    zks.value.loading.text = '';
+    if (index >= 0) {
+      if (zks.value.playlist.listIndex === index) {
+        zks.value.nowTab = 'PlaylistDetail';
+      }else {
+        let list = zks.value.playlists[index];
+        zks.value.playlist.listIndex = index
+        zks.value.playlist.raw = list;
+        zks.value.playlist.songs = [];
+        let components = list.playlist;
+        let comIndex = 0;
+        zks.value.playlist.extraInfo.type = 'unknown';
+        parseComponent(comIndex, components);
+      }
+    }else {
+      zks.value.playlist.listIndex = -2;
+      zks.value.playlist.songs = [];
+      zks.value.playlist.raw = raw!;
+      let components = raw!.playlist;
+      let comIndex = 0;
+      zks.value.playlist.extraInfo.type = 'unknown';
+      parseComponent(comIndex, components);
+    }
+  }
+  function addSongTo({song, playlistIndex, save = true} : {song: song, playlistIndex: number, save?: boolean}) {
+    let pi;
+    if (playlistIndex != undefined && playlistIndex > 0) {
+      pi = playlistIndex;
+    }else return;
+    let pl = zks.value.playlists[pi];
+    let components = pl.playlist;
+    let first = components[0];
+    let originFn = pl.originFilename;
+    if (first.type === 'data') {
+      first.songs.unshift(song);
+    }else {
+      components.unshift({
+        type: "data",
+        songs: [song],
+      })
+    }
+    if (pi === zks.value.playlist.listIndex) {
+      zks.value.playlist.songs.unshift(song)
+    }
+    if (save) {
+      writePlaylistFile(originFn, JSON.stringify(toRaw(zks.value.playlists[zks.value.mouseMenu.args.pi]))).then(() => {
+        useZKStore().showMessage('添加成功');
+      }).catch(() => {
+        useZKStore().showMessage(`写入文件${originFn}失败`);
+      })
+    }
+  }
+
   return {
     zks,
     config,
@@ -191,5 +370,11 @@ export const useZKStore = defineStore('ZK', () => {
     showMouseMenu,
     checkSongPlayable,
     mapCheckSongPlayable,
-    showMessage};
+    showMessage,
+    playlistToolkit: {
+      pushPlaylistPart,
+      checkDetail,
+      addSongTo,
+    }
+  };
 });

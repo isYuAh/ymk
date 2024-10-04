@@ -32,6 +32,7 @@ import {storeToRefs} from "pinia";
 import {type playlistComponent, type song} from "@/types";
 import axios, {type AxiosResponse} from "axios";
 const {zks, config} = storeToRefs(useZKStore());
+const {checkDetail} = useZKStore().playlistToolkit;
 let previewLink = ref('');
 let asData = ref(true);
 let selectComponent = ref<HTMLSelectElement>();
@@ -51,7 +52,7 @@ function preview() {
                 type: "trace_netease_playlist",
                 id: res.data.playlist.id,
               }]
-            }else {
+            } else {
               playlist = <playlistComponent[]>[{
                 type: "data",
                 songs: res.data.playlist.tracks.map((track: any) => {
@@ -65,16 +66,12 @@ function preview() {
                 })
               }]
             }
-            emitter.emit('checkDetail', {
-              index: -1,
-              remote: true,
-              raw: {
-                title: res.data.playlist.name,
-                pic: res.data.playlist.coverImgUrl,
-                intro: 'NETEASE PREVIEW',
-                originFilename: 'REMOTE',
-                playlist: playlist
-              }
+            checkDetail(-2, {
+              title: res.data.playlist.name,
+              pic: res.data.playlist.coverImgUrl,
+              intro: 'NETEASE PREVIEW',
+              originFilename: 'REMOTE',
+              playlist: playlist
             })
           })
         }
@@ -96,33 +93,25 @@ function preview() {
             }else {
               playlist = res.data.data.songlist.map((s:any) => ({...s, type: 'qq'}));
             }
-            emitter.emit('checkDetail', {
-              index: -1,
-              remote: true,
-              raw: {
-                title: res.data.data.info.title,
-                pic: res.data.data.info.pic,
-                intro: 'QQ PREVIEW',
-                originFilename: 'REMOTE',
-                playlist: playlist
-              }
+            checkDetail(-2, {
+              title: res.data.data.info.title,
+              pic: res.data.data.info.pic,
+              intro: 'QQ PREVIEW',
+              originFilename: 'REMOTE',
+              playlist: playlist
             })
           })
         }
       }
     }else if (selectComponent.value.value === 'siren') {
-      emitter.emit('checkDetail', {
-        index: -1,
-        remote: true,
-        raw: {
-          pic: "https://web.hycdn.cn/siren/pic/20210322/56cbcd1d0093d8ee8ee22bf6d68ab4a6.jpg",
-          title: "塞壬唱片",
-          intro: "siren preview",
-          playlist: [{
-            type: "trace_siren"
-          }],
-          originFilename: 'REMOTE'
-        }
+      checkDetail(-2, {
+        pic: "https://web.hycdn.cn/siren/pic/20210322/56cbcd1d0093d8ee8ee22bf6d68ab4a6.jpg",
+        title: "塞壬唱片",
+        intro: "siren preview",
+        playlist: [{
+          type: "trace_siren"
+        }],
+        originFilename: 'REMOTE'
       })
     }else if (selectComponent.value.value === 'qq') {
       axios.post(config.value.qqApi.url + "api/y/get_playlistDetail", {
@@ -138,16 +127,12 @@ function preview() {
         }else {
           playlist = res.data.data.songlist.map((s:any) => ({...s, type: 'qq'}));
         }
-        emitter.emit('checkDetail', {
-          index: -1,
-          remote: true,
-          raw: {
-            title: res.data.data.info.title,
-            pic: res.data.data.info.pic,
-            intro: 'QQ PREVIEW',
-            originFilename: 'REMOTE',
-            playlist: playlist
-          }
+        checkDetail(-2, {
+          title: res.data.data.info.title,
+          pic: res.data.data.info.pic,
+          intro: 'QQ PREVIEW',
+          originFilename: 'REMOTE',
+          playlist: playlist
         })
       })
     }else if (selectComponent.value.value === 'netease') {
@@ -172,16 +157,12 @@ function preview() {
             })
           }]
         }
-        emitter.emit('checkDetail', {
-          index: -1,
-          remote: true,
-          raw: {
-            title: res.data.playlist.name,
-            pic: res.data.playlist.coverImgUrl,
-            intro: 'NETEASE PREVIEW',
-            originFilename: 'REMOTE',
-            playlist: playlist
-          }
+        checkDetail(-2, {
+          title: res.data.playlist.name,
+          pic: res.data.playlist.coverImgUrl,
+          intro: 'NETEASE PREVIEW',
+          originFilename: 'REMOTE',
+          playlist: playlist
         })
       })
     }

@@ -1,9 +1,8 @@
-import server from 'NeteaseCloudMusicApi/server.js'
 import {app, BrowserWindow, ipcMain, dialog, clipboard, screen} from 'electron'
 import path from 'path';
 import { fileURLToPath } from 'url';
 import * as fs from "node:fs";
-import {checkFolders} from "./utils.js";
+import {checkFolders, startNcmServer} from "./utils.js";
 import express from "express";
 import {WBI} from "./WBI.js";
 import axios from "axios";
@@ -32,10 +31,7 @@ if (!gotTheLock) {
             app.setAsDefaultProtocolClient('yumuzk')
         }
     }
-
-    server.serveNcmApi({
-        port: 35651,
-    })
+    startNcmServer()
     const appServer = express();
     appServer.get('/api/bg', (req, res) => {
         res.sendFile(path.resolve('./res', req.query.fn));

@@ -72,28 +72,31 @@ async function autoDetectFromClipboard() {
   }
 }
 function addSong() {
-  let song = {
+  let song: song = {
     title: title.value,
     singer: singer.value,
     type: selectComponent.value!.value,
-  } as Record<string, any>;
+  } as any;
   switch(selectComponent.value!.value) {
     case 'netease':
-      song.id = id.value;
+      (song as any).id = id.value;
       break;
     case 'qq':
-      song.mid = id.value;
+      (song as any).mid = id.value;
       break;
     case 'siren':
-      song.id = id.value;
+      (song as any).id = id.value;
       break;
     case 'bilibili':
-      song.BV = id.value;
+      (song as any).BV = id.value;
       break;
     default:
       return;
   }
-  emitter.emit('addSongTo', {song: (song as song), save: true});
+  useZKStore().playlistToolkit.addSongTo({
+    song,
+    playlistIndex: zks.value.mouseMenu.args.pi,
+  })
   zks.value.dialog.show = false;
 }
 </script>
