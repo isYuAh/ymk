@@ -101,7 +101,7 @@
 <script setup lang='ts'>
 import {onUnmounted, ref, watch, watchEffect} from 'vue';
 import axios, { AxiosError, type AxiosResponse } from 'axios';
-import { type playSongParams } from '@/types';
+import {type playSongParams, type songInPlay} from '@/types';
 import { minmax, secondsToMmss } from '@/utils/u';
 import { useZKStore } from '@/stores/useZKstore'
 import emitter from '@/emitter'
@@ -215,7 +215,7 @@ watchEffect(() => {
 })
 
 async function playSong({song, justtry = false}: playSongParams) {
-  zks.value.play.song = {
+  let tmpSong: songInPlay = {
     title: song.title,
     type: song.type,
     singer: song.singer,
@@ -235,17 +235,6 @@ async function playSong({song, justtry = false}: playSongParams) {
       lrc: []
     }
   }
-  zks.value.play.lang = 'origin';
-  if (!justtry) {
-    let findIndex = -1;
-    for (let i = 0; i < zks.value.play.playlist.length; i++) {
-      if (JSON.stringify(zks.value.play.playlist[i]) === JSON.stringify(song)) {
-        findIndex = i;
-        break;
-      }
-    }
-    zks.value.play.indexInPlaylist = findIndex;
-  }
   if (song.lrc) {
     zks.value.play.song.lrc = {
       ...song.lrc,
@@ -260,188 +249,158 @@ async function playSong({song, justtry = false}: playSongParams) {
       lrc: []
     }
   }
+  const tasks: Promise<void>[] = []
   if (song.type === 'bilibili') {
-    getBilibiliVideoView(song.BV).then((res: any) => {
-      if (songfaceImg.value) {
-        if (zks.value.play.song.pic) {
-          zks.value.play.show_songface = true;
-          songfaceImg.value.src = zks.value.play.song.pic;
-        } else if (res.data.pic) {
-          zks.value.play.show_songface = true;
-          zks.value.play.song.pic = res.data.pic;
-          songfaceImg.value.src = res.data.pic;
-        } else {
-          zks.value.play.show_songface = false;
+    tasks.push(new Promise((resolve, reject) => {
+      getBilibiliVideoView(song.BV).then((res: any) => {
+        if (res.data.pic) {
+          tmpSong.pic = res.data.pic;
         }
-      }
-      let cid = res.data.cid;
-      getBilibiliVideoPlayurl({
-        bvid: song.BV,
-        cid,
-        platform: "html5"
-      }).then((res: AxiosResponse) => {
-        if (songSource.value) {
-          zks.value.play.song.url = res.data.durl[0].url;
-          songSource.value.src = zks.value.play.song.url;
-        }
-      })
-    });
+        let cid = res.data.cid;
+        getBilibiliVideoPlayurl({
+          bvid: song.BV,
+          cid,
+          platform: "html5"
+        }).then((res: AxiosResponse) => {
+          tmpSong.url = res.data.durl[0].url;
+          resolve();
+        }).catch(() => reject(new Error('获取视频播放地址失败')))
+      }).catch(() => reject(new Error('获取视频信息失败')));
+    }))
   }
   else if (song.type === 'web') {
-    if (songfaceImg.value) {
-      if (song.pic) {
-        zks.value.play.show_songface = true;
-        songfaceImg.value.src = song.pic;
-      } else {
-        zks.value.play.show_songface = false;
-      }
-    }
-    if (songSource.value) {
-      zks.value.play.song.url = song.url;
-      songSource.value.src = song.url;
-    }
-  } else if (song.type === 'netease_outer') {
-    if (songfaceImg.value) {
-      if (song.pic) {
-        zks.value.play.show_songface = true;
-        songfaceImg.value.src = song.pic;
-      } else {
-        zks.value.play.show_songface = false;
-      }
-    }
-    if (songSource.value) {
-      zks.value.play.song.url = `http://music.163.com/song/media/outer/url?id=${song.id}.mp3`;
-      songSource.value.src = zks.value.play.song.url;
-    }
-  } else if (song.type === 'siren') {
-    axios.get(`https://monster-siren.hypergryph.com/api/song/${song.cid}`).then(res => {
-      if (zks.value.play.song.lrc.status === 'disabled' && res.data.data.lyricUrl) {
-        zks.value.play.song.lrc = {
-          status: 'enable',
-          type: 'web',
-          path: res.data.data.lyricUrl,
-          lrc: []
+    tmpSong.url = song.url;
+  }
+  else if (song.type === 'netease_outer') {
+    tmpSong.url = `http://music.163.com/song/media/outer/url?id=${song.id}.mp3`;
+  }
+  else if (song.type === 'siren') {
+    tasks.push(new Promise((resolve, reject) => {
+      axios.get(`https://monster-siren.hypergryph.com/api/song/${song.cid}`).then(res => {
+        if (tmpSong.lrc.status === 'disabled' && res.data.data.lyricUrl) {
+          tmpSong.lrc = {
+            status: 'enable',
+            type: 'web',
+            path: res.data.data.lyricUrl,
+            lrc: []
+          }
         }
-      }
-      if (songSource.value) {
-        zks.value.play.song.url = res.data.data.sourceUrl;
-        songSource.value.src = zks.value.play.song.url;
-      }
-      if (songfaceImg.value) {
-        zks.value.play.show_songface = true;
+        tmpSong.url = res.data.data.sourceUrl;
         axios.get(`https://monster-siren.hypergryph.com/api/album/${res.data.data.albumCid}/detail`).then(res => {
-          zks.value.play.song.pic = res.data.data.coverUrl;
-          songfaceImg.value!.src = zks.value.play.song.pic;
-        })
-      }
-    })
-  } else if (song.type === 'netease') {
+          tmpSong.pic = res.data.data.coverUrl;
+          resolve();
+        }).catch(() => reject());
+      })
+    }))
+  }
+  else if (song.type === 'netease') {
     let rawDetail = {} as any;
-    axios.get(config.value.neteaseApi.url + 'song/detail', {params: {ids: song.id}}).then((res: AxiosResponse) => {
-      rawDetail = res.data;
-      Object.assign(song, useZKStore().checkSongPlayable(rawDetail.songs[0], rawDetail.privileges[0]))
-      if (!song.playable) {
-        useZKStore().showMessage(song.reason);
-        return;
+    tasks.push(new Promise((resolve, reject) => {
+      axios.get(config.value.neteaseApi.url + 'song/detail', {params: {ids: song.id}}).then((res: AxiosResponse) => {
+        rawDetail = res.data;
+        Object.assign(song, useZKStore().checkSongPlayable(rawDetail.songs[0], rawDetail.privileges[0]))
+        if (!song.playable) {
+          reject(new Error(song.reason))
+          return;
+        }
+        if (res.data.songs[0].al.picUrl) {
+          tmpSong.pic = res.data.songs[0].al.picUrl;
+        }
+        axios.get(config.value.neteaseApi.url + 'song/url', {
+          params: {
+            id: song.id,
+            cookie: neteaseUser.value.cookie
+          }
+        }).then(res => {
+          if (res.data.data[0]) {
+            tmpSong.url = res.data.data[0].url;
+            if (tmpSong.lrc.status === 'disabled' || tmpSong.translationLrc.status === 'disabled') {
+              axios.get(config.value.neteaseApi.url + 'lyric', {params: {id: song.id}}).then((res: AxiosResponse) => {
+                if (res.data.lrc.lyric && tmpSong.lrc.status === 'disabled') {
+                  tmpSong.lrc = {
+                    status: 'enable',
+                    type: 'content',
+                    content: res.data.lrc.lyric,
+                    lrc: []
+                  }
+                }
+                if (res.data.tlyric.lyric && tmpSong.translationLrc.status === 'disabled') {
+                  tmpSong.translationLrc = {
+                    status: 'enable',
+                    type: 'content',
+                    content: res.data.tlyric.lyric,
+                    lrc: []
+                  }
+                }
+                resolve();
+              }).catch(() => reject(new Error('歌词获取失败')))
+            }
+          }else {
+            reject('数据有误');
+          }
+        }).catch((err: AxiosError) => {
+          reject(err.message);
+          // if (err.response?.status === 404) {
+          //   if (songSource.value) {
+          //     tmpSong.url = `http://music.163.com/song/media/outer/url?id=${song.id}.mp3`;
+          //     songSource.value.src = tmpSong.url;
+          //   }
+          //   console.log('使用outerAPI请求歌曲');
+          // }
+        })
+      }).catch((err) => {
+        reject(err.message);
+      })
+    }))
+  }
+  else if (song.type === 'qq') {
+    tasks.push(new Promise((resolve, reject) => {
+      axios.post(config.value.qqApi.url + "api/y/get_song", {
+        type: "qq",
+        mid: song.mid,
+      }).then((res: AxiosResponse) => {
+        let result = res.data.data[0];
+        if (result.pic) {
+          tmpSong.pic = res.data.data.pic;
+        }
+        tmpSong.url = result.url;
+        resolve();
+      }).catch((err: AxiosError) => {reject(err.message)})
+    }))
+  }
+  Promise.all(tasks).then(() => {
+    zks.value.play.song = tmpSong;
+    zks.value.play.lang = 'origin';
+    if (!justtry) {
+      let findIndex = -1;
+      for (let i = 0; i < zks.value.play.playlist.length; i++) {
+        if (JSON.stringify(zks.value.play.playlist[i]) === JSON.stringify(song)) {
+          findIndex = i;
+          break;
+        }
       }
+      zks.value.play.indexInPlaylist = findIndex;
+    }
+    if (tmpSong.pic) {
       if (songfaceImg.value) {
-        if (song.pic) {
-          zks.value.play.show_songface = true;
-          songfaceImg.value.src = song.pic
-        } else {
-          if (res.data.songs[0].al.picUrl) {
-            zks.value.play.show_songface = true;
-            zks.value.play.song.pic = res.data.songs[0].al.picUrl;
-            songfaceImg.value!.src = res.data.songs[0].al.picUrl
-          } else {
-            zks.value.play.show_songface = false;
-          }
-        }
+        songfaceImg.value.src = tmpSong.pic;
+        zks.value.play.show_songface = true;
       }
-    }).catch(() => {
-    }).finally(() => {
-      if (!song.playable) {
-        return;
-      }
-      axios.get(config.value.neteaseApi.url + 'song/url', {
-        params: {
-          id: song.id,
-          cookie: neteaseUser.value.cookie
-        }
-      }).then(res => {
-        if (res.data.data[0]) {
-          if (songSource.value) {
-            zks.value.play.song.url = res.data.data[0].url;
-            songSource.value.src = zks.value.play.song.url;
-          }
-        }
-      }).catch((err: AxiosError) => {
-        if (err.response?.status === 404) {
-          if (songSource.value) {
-            zks.value.play.song.url = `http://music.163.com/song/media/outer/url?id=${song.id}.mp3`;
-            songSource.value.src = zks.value.play.song.url;
-          }
-          console.log('使用outerAPI请求歌曲');
+    }else {{
+      zks.value.play.show_songface = false;
+    }}
+    if (songSource.value) {
+      songSource.value.src = tmpSong.url;
+      songSource.value.addEventListener('loadedmetadata', () => {
+        if (songSource.value) {
+          zks.value.play.duration = songSource.value.duration;
+          zks.value.play.durationTime = secondsToMmss(songSource.value.duration)
+          zks.value.play.status = 'play';
         }
       })
-      if (zks.value.play.song.lrc.status === 'disabled' || zks.value.play.song.translationLrc.status === 'disabled') {
-        axios.get(config.value.neteaseApi.url + 'lyric', {params: {id: song.id}}).then((res: AxiosResponse) => {
-          if (res.data.lrc.lyric && zks.value.play.song.lrc.status === 'disabled') {
-            console.log(res.data.lrc);
-            zks.value.play.song.lrc = {
-              status: 'enable',
-              type: 'content',
-              content: res.data.lrc.lyric,
-              lrc: []
-            }
-          }
-          if (res.data.tlyric.lyric && zks.value.play.song.translationLrc.status === 'disabled') {
-            console.log(res.data.tlyric);
-            zks.value.play.song.translationLrc = {
-              status: 'enable',
-              type: 'content',
-              content: res.data.tlyric.lyric,
-              lrc: []
-            }
-          }
-        })
-      }
-    })
-  } else if (song.type === 'qq') {
-    console.log(song)
-    axios.post(config.value.qqApi.url + "api/y/get_song", {
-      type: "qq",
-      mid: song.mid,
-    }).then((res: AxiosResponse) => {
-      let result = res.data.data[0];
-      if (songfaceImg.value) {
-        if (zks.value.play.song.pic) {
-          zks.value.play.show_songface = true;
-          songfaceImg.value.src = zks.value.play.song.pic;
-        } else if (result.pic) {
-          zks.value.play.show_songface = true;
-          zks.value.play.song.pic = res.data.data.pic;
-          songfaceImg.value.src = res.data.data.pic;
-        } else {
-          zks.value.play.show_songface = false;
-        }
-      }
-      if (songSource.value) {
-        zks.value.play.song.url = result.url;
-        songSource.value.src = zks.value.play.song.url;
-      }
-    })
-  }
-  if (songSource.value) {
-    songSource.value.addEventListener('loadedmetadata', () => {
-      if (songSource.value) {
-        zks.value.play.duration = songSource.value.duration;
-        zks.value.play.durationTime = secondsToMmss(songSource.value.duration)
-        zks.value.play.status = 'play';
-      }
-    })
-  }
-};
+    }
+  }).catch((err) => useZKStore().showMessage(err.message))
+}
 function changeVolumeTo(to: number) {
     if (songSource.value) {
         songSource.value.volume = to;

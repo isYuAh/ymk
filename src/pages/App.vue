@@ -63,7 +63,7 @@
 <script setup lang="ts">
 import '@/assets/anim.css'
 import { useZKStore } from '@/stores/useZKstore'
-import { type song } from '@/types';
+import {type list, type song} from '@/types';
 import { onUnmounted, provide, shallowRef, watch, computed } from 'vue';
 import Playlist from '@/pages/Playlist.vue';
 import PlaylistDetail from '@/pages/PlaylistDetail.vue';
@@ -80,8 +80,8 @@ const {exit, minimize, getLocalPlaylists} = (window as any).ymkAPI
 
 if ("mediaSession" in navigator) {
   navigator.mediaSession.metadata = new MediaMetadata({
-    title: "Unforgettable",
-    artist: "Nat King Cole"
+    title: "",
+    artist: ""
   });
   navigator.mediaSession.setActionHandler("play", () => zks.value.play.status = 'play');
   navigator.mediaSession.setActionHandler("pause", () => zks.value.play.status = 'pause');
@@ -99,12 +99,10 @@ const bgSrc = computed(() => {
 watch(() => neteaseUser.value.cookie, (nv) => {
   document.cookie = nv;
 })
-import CollectDialog from '@/components/Dialogs/CollectDialog.vue'
 import Settings from "@/pages/Settings.vue";
 import BlankPage from "@/pages/BlankPage.vue";
 import {storeToRefs} from "pinia";
 import axios from "axios";
-zks.value.dialog.dialogEl = shallowRef(CollectDialog);
 function turnToPlaylistDetail() {
   if (zks.value.playlist.listIndex !== -1) {
     zks.value.nowTab = 'PlaylistDetail'
@@ -113,7 +111,7 @@ function turnToPlaylistDetail() {
 
 (async ()=> {
   async function refreshPlaylists({notReset}: {notReset: boolean}) {
-    zks.value.playlists = [];
+    zks.value.playlists = <list[]>[];
     zks.value.playlistsParts = [];
     zks.value.playlist.listIndex = -1;
     if (!notReset) {

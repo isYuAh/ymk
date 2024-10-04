@@ -102,7 +102,7 @@ function addSong() {
 </script>
 
 <template>
-  <div class="dialogPreviewContainer">
+  <div class="dialogPreviewContainer DEF-DIALOG-CONTENT">
     <div class="header">添加歌曲</div>
     <div class="content">
       <div class="typeChoose">
@@ -136,41 +136,4 @@ function addSong() {
 </template>
 
 <style scoped>
-.dialogPreviewContainer {
-  border: 1px;
-  background-color: #fff;
-  padding: 10px;
-  border-radius: 6px;
-  box-shadow: 0 0 5px rgba(0, 0, 0, .4)
-}
-.dialogPreviewContainer .header {
-  font-family: SourceSansCNM;
-  font-size: 18px;
-  margin-bottom: 10px;
-}
-.footer, .content {
-  margin-top: 20px;
-}
-.dialogBtn {
-  border: none;
-  background-color: #18191C;
-  color: #fff;
-  padding: 10px 15px;
-  margin: 0 5px;
-}
-.dialogBtn:hover {
-  cursor: pointer;
-}
-select, input {
-  margin: 5px 0;
-  font-family: SourceSansCNM;
-  font-size: 18px;
-  padding: 5px 10px;
-  border: 1px solid #000000;
-}
-
-.asDataLabel {
-  vertical-align: text-top;
-  padding-left: 2px;
-}
 </style>

@@ -1,5 +1,5 @@
 <template>
-<div class="dialogPreviewContainer">
+<div class="dialogPreviewContainer DEF-DIALOG-CONTENT">
     <div class="header">收藏</div>
     <div class="content">
         <select ref="selectComponent" style="width: 400px" name="" id="">
@@ -26,15 +26,15 @@ function collect() {
         let first = components[0];
         let originFn = zks.value.playlists[selectComponent.value.selectedIndex].originFilename;
         if (first.type === 'data') {
-            first.songs.unshift(zks.value.dialogData.waitCollect);
+            first.songs.unshift(zks.value.dialog.data.waitCollect);
         }else {
             components.unshift({
                 type: "data",
-                songs: [zks.value.dialogData.waitCollect],
+                songs: [zks.value.dialog.data.waitCollect],
             })
         }
         if (selectComponent.value.selectedIndex === zks.value.playlist.listIndex) {
-            zks.value.playlist.songs.unshift(zks.value.dialogData.waitCollect)
+            zks.value.playlist.songs.unshift(zks.value.dialog.data.waitCollect)
         }
         writePlaylistFile(originFn, JSON.stringify(toRaw(zks.value.playlists[selectComponent.value.selectedIndex]))).then(() => {
             useZKStore().showMessage('添加成功');
@@ -50,36 +50,5 @@ function cancel() {
 </script>
 
 <style scoped>
-.dialogPreviewContainer {
-    border: 1px;
-    background-color: #fff;
-    padding: 10px;
-    border-radius: 6px;
-    box-shadow: 0 0 5px rgba(0, 0, 0, .4)
-}
-.dialogPreviewContainer .header {
-    font-family: SourceSansCNM;
-    font-size: 18px;
-    margin-bottom: 10px;
-}
-.footer, .content {
-    margin-top: 20px;
-}
-.dialogBtn {
-    border: none;
-    background-color: #18191C;
-    color: #fff;
-    padding: 10px 15px;
-    margin: 0 5px;
-}
-.dialogBtn:hover {
-    cursor: pointer;
-}
-select, input {
-  margin: 5px 0;
-  font-family: SourceSansCNM;
-  font-size: 18px;
-  padding: 5px 10px;
-  border: 1px solid #000000;
-}
+
 </style>

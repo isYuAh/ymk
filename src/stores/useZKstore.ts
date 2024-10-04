@@ -10,10 +10,11 @@ import type {
   playlistComponent, list_trace_bilibili_fav
 } from '@/types'
 import CollectDialog from '@/components/Dialogs/CollectDialog.vue';
-import {computed, ref, shallowRef, toRaw, watch} from 'vue';
+import {type Component, computed, ref, shallowRef, toRaw, watch} from 'vue';
 import emitter from "@/emitter";
 import {minmax} from "@/utils/u";
 import axios, {type AxiosResponse} from "axios";
+import AddSongToDialog from "@/components/Dialogs/addSongToDialog.vue";
 
 const {getBilibiliFav, writePlaylistFile} = (window as any).ymkAPI;
 
@@ -28,10 +29,8 @@ export const useZKStore = defineStore('ZK', () => {
     },
     dialog: {
       show: false,
-      dialogEl: <any>shallowRef(CollectDialog),
-    },
-    dialogData: {
-      waitCollect: <song>(null as any)
+      dialogEl: <any>null,
+      data: <any>null,
     },
     message: <messageController>{
       show: false,
@@ -142,6 +141,14 @@ export const useZKStore = defineStore('ZK', () => {
     zks.value.mouseMenu.args = arg;
     zks.value.mouseMenu.position = await (window as any).ymkAPI.getCursorPos()
     zks.value.mouseMenu.show = true;
+  }
+
+  function showDialog(dialogComponent: Component, data?: any) {
+    if (data) {
+      zks.value.dialog.data = data;
+    }
+    zks.value.dialog.dialogEl = shallowRef(dialogComponent);
+    zks.value.dialog.show = true;
   }
 
   function checkSongPlayable(song: any, privilege?: any) {
@@ -353,11 +360,20 @@ export const useZKStore = defineStore('ZK', () => {
     }
     if (save) {
       writePlaylistFile(originFn, JSON.stringify(toRaw(zks.value.playlists[zks.value.mouseMenu.args.pi]))).then(() => {
-        useZKStore().showMessage('添加成功');
+        showMessage('添加成功');
       }).catch(() => {
-        useZKStore().showMessage(`写入文件${originFn}失败`);
+        showMessage(`写入文件${originFn}失败`);
       })
     }
+  }
+
+  function saveSpecificPlaylist(playlist: list) {
+    if (!playlist.originFilename.endsWith(".json")) return;
+    writePlaylistFile(playlist.originFilename, JSON.stringify(toRaw(playlist))).then(() => {
+      showMessage(`保存成功${playlist.originFilename}`);
+    }).catch(() => {
+      showMessage(`写入文件${playlist.originFilename}失败`);
+    })
   }
 
   return {
@@ -371,10 +387,12 @@ export const useZKStore = defineStore('ZK', () => {
     checkSongPlayable,
     mapCheckSongPlayable,
     showMessage,
+    showDialog,
     playlistToolkit: {
       pushPlaylistPart,
       checkDetail,
       addSongTo,
+      saveSpecificPlaylist,
     }
   };
 });

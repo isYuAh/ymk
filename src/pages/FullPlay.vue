@@ -90,7 +90,7 @@ import { computed, inject, nextTick, ref, watch } from 'vue';
 import { minmax } from '@/utils/u';
 import type { songInPlay, song_lrcConfig } from '@/types';
 import axios, { type AxiosResponse } from 'axios';
-const {isMinimized, onResize} = (window as any).ymkAPI;
+const {isMinimized, onResize, openUrl} = (window as any).ymkAPI;
 const {zks} = storeToRefs(useZKStore());
 let playProgress = ref<HTMLDivElement>();
 let volumeProgress = ref<HTMLDivElement>();
@@ -105,11 +105,11 @@ let LRC = computed(() => {
 })
 
 function openOriginLink(url: string) {
-    //TODO::
+    url && openUrl(url)
 }
 function parseOriginLink(song: songInPlay) {
     if (song.origin.type === "bilibili") {
-        return `https://www.bilibili.com/video/${song.origin.BV}/`
+        return `https://www.bilibili.com/video/${song.origin.BV.startsWith("BV") ? '' : 'BV'}${song.origin.BV}/`
     }else if (song.origin.type === 'netease' || song.origin.type === 'netease_other' || song.origin.type === 'netease_outer') {
         return `https://music.163.com/#/song?id=${song.origin.id}`
     }else if (song.origin.type === 'siren') {

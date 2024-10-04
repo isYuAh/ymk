@@ -36,25 +36,17 @@
 
 <script setup lang='ts'>
 import {useZKStore} from '@/stores/useZKstore';
-import {
-  type list,
-  type list_trace_bilibili_fav,
-  type playlistComponent,
-  type song
-} from '@/types';
-import {computed, onUnmounted, shallowRef, toRaw} from 'vue';
+import {computed, toRaw} from 'vue';
 import {storeToRefs} from "pinia";
 import TargetBorder from '../components/TargetBorder.vue'
 //@ts-ignore
-import path from 'path-browserify';
 import emitter from '@/emitter';
 import simplebar from "simplebar-vue";
 import 'simplebar-vue/dist/simplebar.min.css'
-import axios, {type AxiosResponse} from 'axios';
 import PreviewDialog from "@/components/Dialogs/PreviewDialog.vue";
 import AddSongToDialog from '@/components/Dialogs/addSongToDialog.vue';
 
-const {deletePlaylistFile, writePlaylistFile, showImportPlaylistDialog, getBilibiliFav} = (window as any).ymkAPI;
+const {deletePlaylistFile, showImportPlaylistDialog} = (window as any).ymkAPI;
 const {zks} = storeToRefs(useZKStore());
 const {checkDetail} = useZKStore().playlistToolkit
 let PartVShow = computed(() => {
@@ -98,12 +90,10 @@ function importPlaylist() {
 function testFunc() {
 }
 function showAddSongToDialog() {
-  zks.value.dialog.dialogEl = shallowRef(AddSongToDialog);
-  zks.value.dialog.show = true;
+  useZKStore().showDialog(AddSongToDialog)
 }
 function showPreviewDialog() {
-  zks.value.dialog.dialogEl = shallowRef(PreviewDialog);
-  zks.value.dialog.show = true;
+  useZKStore().showDialog(PreviewDialog)
 }
 </script>
 

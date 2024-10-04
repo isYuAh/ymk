@@ -42,7 +42,6 @@
                       class="song"
                       :class="{disabled: ITEM.item.type==='netease' && 'playable' in ITEM.item ? !ITEM.item.playable : false}"
                       @contextmenu.prevent="tryShowMenu({song: ITEM.item,si: ITEM.refIndex})"
-                      :data-song="ITEM.item"
                       v-for="ITEM in showingSonglist">
                     <div class="songInfo title">{{ ITEM.item.title }}<sub>{{ ITEM.item.type }}</sub></div>
                     <div class="songInfo author">{{ ITEM.item.singer }}</div>
@@ -67,6 +66,7 @@ import emitter from '@/emitter';
 import '@/assets/songlist.css'
 import Fuse from "fuse.js";
 import axios from "axios";
+import EditSongDialog from "@/components/Dialogs/EditSongDialog.vue";
 const {writePlaylistFile} = (window as any).ymkAPI;
 const {zks, config, neteaseUser} = storeToRefs(useZKStore());
 let filter = ref('');
@@ -81,7 +81,7 @@ let showingSonglist = computed(() => {
   }
 })
 function tryShowMenu(a: any) {
-  if (zks.value.playlist.raw.playlist.length != 1 || zks.value.playlist.raw.playlist[0].type !== 'data') return
+  if (zks.value.playlist.raw.playlist.length !== 1 || zks.value.playlist.raw.playlist[0].type !== 'data') return
   useZKStore().showMouseMenu([{
     title: '编辑',
     action: menu_edit,
@@ -114,8 +114,11 @@ function playAll() {
     }
 }
 
-function menu_edit() {
-
+function menu_edit(arg: any) {
+  useZKStore().showDialog(EditSongDialog, {
+    song: structuredClone(toRaw(arg.song)),
+    si: arg.si
+  })
 }
 function menu_deleteSong(arg: any) {
     if (arg.song && arg.si >= 0) {

@@ -1,4 +1,4 @@
-import {app, BrowserWindow, ipcMain, dialog, clipboard, screen} from 'electron'
+import {app, BrowserWindow, ipcMain, dialog, clipboard, screen, shell} from 'electron'
 import path from 'path';
 import { fileURLToPath } from 'url';
 import * as fs from "node:fs";
@@ -125,6 +125,9 @@ if (!gotTheLock) {
             top: sp.y - wp[1],
         };
     }
+    function openUrl(_, url) {
+        shell.openExternal(url)
+    }
 
     const createWindow = () => {
         mainWindow = new BrowserWindow({
@@ -153,6 +156,7 @@ if (!gotTheLock) {
         ipcMain.handle('getBilibiliVideoPlayurl', getBilibiliVideoPlayurl)
         ipcMain.handle('getBilibiliFav', getBilibiliFav)
         ipcMain.handle('getCursorPos', getCursorPos)
+        ipcMain.handle('openUrl', openUrl)
         ipcMain.on('minimize', () => mainWindow.minimize())
         ipcMain.on('exit', () => mainWindow.close())
         mainWindow.on('resize', () => mainWindow.webContents.send('resize'))

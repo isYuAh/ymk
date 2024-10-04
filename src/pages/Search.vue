@@ -4,7 +4,6 @@
         <div class="searchInputContainer">
             <input
             @focus="showSuggestBar = true"
-            @blur="showSuggestBar = false"
             @keydown.enter="search(0)"
             @keydown.up.prevent="lastSuggest"
             @keydown.down.prevent="nextSuggest"
@@ -15,8 +14,8 @@
             </div>
             <div v-show="showSuggestBar && searchInput!.value" class="suggestBar">
                 <div
-                @click="suggestSelected = index;search()"
-                v-for="(suggest, index) in suggests.slice(virtualSuggestStart, virtualSuggestStart + 10)" :class="{suggest:true, active: suggestSelected === index}">{{ suggest }}</div>
+                @click="acceptSuggest(suggest)"
+                v-for="(suggest, index) in suggests" :class="{suggest:true, active: suggestSelected === index}">{{ suggest }}</div>
             </div>
         </div>
     </div>
@@ -25,7 +24,7 @@
             <simplebar data-auto-hide class="simplebar">
                 <div class="songTable forbidSelect">
                     <div
-                        @dblclick="tryPlaysong(song as song_netease)"
+                        @dblclick="tryPlaySong(song as song_netease)"
                         class="song"
                         :class="{disabled: !(song as any).playable}"
                         v-for="song in resultList">
@@ -44,19 +43,18 @@
 </template>
 
 <script setup lang='ts'>
-import { ref, inject, toRaw, shallowRef } from "vue";
+import {ref, inject, toRaw, shallowRef, nextTick} from "vue";
 import '@/assets/songlist.css'
 import simplebar from "simplebar-vue";
 import 'simplebar-vue/dist/simplebar.min.css'
 import {type song, type song_netease} from "@/types";
 import axios, { type AxiosResponse } from "axios";
 import {storeToRefs} from "pinia";
-import LoadingMask from '@/components/LoadingMask.vue'
 import Pagination from '@/components/Pagination.vue'
 import emitter from "@/emitter";
 import { useZKStore } from "@/stores/useZKstore";
 import CollectDialog from "@/components/Dialogs/CollectDialog.vue";
-const {zks, config, neteaseUser} = storeToRefs(useZKStore());
+const {config, neteaseUser} = storeToRefs(useZKStore());
 let searchInput = ref<HTMLInputElement>();
 let resultList = ref<song[]>([])
 let total = ref(0);
@@ -66,10 +64,16 @@ const nowGroup = ref(0)
 let showSuggestBar = ref(false);
 const tmpSearchVal = ref('')
 let suggests = ref<string[]>([])
-let virtualSuggestStart = ref(0);
 let suggestSelected = ref(-1);
+function acceptSuggest(text: string) {
+  if (!searchInput.value) return;
+  searchInput.value.value = text;
+  suggestSelected.value = -1;
+}
 function search(offset = 0) {
+  console.log(searchInput.value, suggestSelected.value)
     if (searchInput.value) {
+      showSuggestBar.value = false;
         if (suggestSelected.value === -1) {
             let query = searchInput.value.value;
             if (query !== tmpSearchVal.value) {
@@ -118,7 +122,7 @@ function lastSuggest() {
     }
 }
 function nextSuggest() {
-    if (suggestSelected.value < 9) {
+    if (suggestSelected.value < 5) {
         suggestSelected.value++;
     }
 }
@@ -133,18 +137,18 @@ function refreshSuggests () {
             }
         }).then((res: AxiosResponse) => {
             if (res.data.result.allMatch) {
-                suggests.value = res.data.result.allMatch.map((match: any) => match.keyword)
+                suggests.value = res.data.result.allMatch.slice(0, 6).map((match: any) => match.keyword)
                 suggestSelected.value = -1;
             }
         })
     }
 }
 function dealSearchResultSong(_e:any, song: song) {
-    zks.value.dialogData.waitCollect = toRaw(song);
-    zks.value.dialog.dialogEl = shallowRef(CollectDialog);
-    zks.value.dialog.show = true;
+  useZKStore().showDialog(CollectDialog, {
+    waitCollect: structuredClone(toRaw(song))
+  })
 }
-function tryPlaysong(song: song_netease) {
+function tryPlaySong(song: song_netease) {
   if (song.playable) {
     emitter.emit('playSong', {song, justtry: true})
   }else {

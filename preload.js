@@ -54,6 +54,9 @@ function getBilibiliFav(params) {
 function getCursorPos() {
     return ipcRenderer.invoke('getCursorPos')
 }
+function openUrl(url) {
+    return ipcRenderer.invoke('openUrl', url)
+}
 
 contextBridge.exposeInMainWorld('ymkAPI', {
     getLocalPlaylists,
@@ -75,4 +78,5 @@ contextBridge.exposeInMainWorld('ymkAPI', {
     getCursorPos,
     getSpecificConfig,
     writeSpecificConfig,
+    openUrl,
 })
