@@ -54,7 +54,7 @@
                     </Transition>
                 </div>
                 <div
-                v-show="zks.play.song.lrc.status !== 'disabled' && zks.play.song.translationLrc.status !== 'disabled'"
+                v-show="nextLang in zks.play.song.lrc"
                 @click="toggleTranslation" class="translate">
                     <svg t="1711805276586" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5600"><path d="M661.333333 725.333333c-17.066667 0-32-8.533333-38.4-25.6L586.666667 618.666667h-149.333334l-36.266666 81.066666c-8.533333 21.333333-34.133333 32-55.466667 21.333334-21.333333-8.533333-32-34.133333-21.333333-55.466667l46.933333-106.666667v-2.133333l102.4-234.666667c6.4-14.933333 21.333333-25.6 38.4-25.6s32 10.666667 38.4 25.6l102.4 234.666667v2.133333l46.933333 106.666667c8.533333 21.333333 0 46.933333-21.333333 55.466667-6.4 2.133333-10.666667 4.266667-17.066667 4.266666z m-187.733333-192h74.666667L512 448l-38.4 85.333333z" fill="currentColor" p-id="5601"></path><path d="M921.6 469.333333c-19.2 0-38.4-14.933333-42.666667-34.133333C842.666667 258.133333 684.8 128 503.466667 128 347.733333 128 211.2 221.866667 151.466667 360.533333l49.066666-17.066666c21.333333-6.4 46.933333 4.266667 53.333334 27.733333 6.4 21.333333-4.266667 46.933333-27.733334 53.333333l-128 42.666667c-14.933333 4.266667-29.866667 2.133333-42.666666-8.533333-10.666667-10.666667-14.933333-25.6-12.8-40.533334C87.466667 200.533333 281.6 42.666667 503.466667 42.666667s416 157.866667 460.8 375.466666c4.266667 23.466667-10.666667 44.8-34.133334 51.2h-8.533333zM503.466667 981.333333C281.6 981.333333 87.466667 823.466667 42.666667 605.866667c-4.266667-23.466667 10.666667-44.8 34.133333-51.2 23.466667-4.266667 44.8 10.666667 51.2 34.133333C164.266667 765.866667 322.133333 896 503.466667 896c153.6 0 290.133333-91.733333 349.866666-226.133333l-27.733333 10.666666c-21.333333 8.533333-46.933333-2.133333-55.466667-23.466666-8.533333-21.333333 2.133333-46.933333 23.466667-55.466667l110.933333-42.666667c14.933333-6.4 32-2.133333 42.666667 6.4 12.8 10.666667 17.066667 25.6 14.933333 40.533334C919.466667 823.466667 725.333333 981.333333 503.466667 981.333333z" fill="currentColor" p-id="5602"></path></svg>
                 </div>
@@ -63,12 +63,12 @@
     </div>
     <div class="right">
         <Transition name="uianim">
-            <div v-if="LRC.status === 'parsed'" ref="lrcContentEl" class="lrcContent">
+            <div v-if="Object.keys(zks.play.song.lrc)" ref="lrcContentEl" class="lrcContent" @wheel="lyricWheelEvent">
                 <div ref="lrcContainerEl" class="lrcContainer">
-                    <div v-for="(l, i) in LRC.lrc" :class="{lrcItem: true, active: i === zks.play.highlightLrcIndex}">{{ l.text }}</div>
+                    <div @click="turnSongToSpecificLyric(l)" v-for="(l, i) in LRC" :class="{lrcItem: true, active: i === zks.play.highlightLrcIndex}">{{ l.text }}</div>
                 </div>
             </div>
-            <div v-else-if="LRC.status !== 'parsed'" class="lrcStatus">
+            <div v-else class="lrcStatus">
                 <div class="status">「 No lrc 」</div>
             </div>
         </Transition>
@@ -86,24 +86,18 @@ import { useZKStore } from '@/stores/useZKstore';
 import AroundTragetBorder from '@/components/AroundTargetBorder.vue'
 import emitter from '@/emitter';
 import {storeToRefs} from "pinia";
-import { computed, inject, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { minmax } from '@/utils/u';
-import type { songInPlay, song_lrcConfig } from '@/types';
-import axios, { type AxiosResponse } from 'axios';
+import type {song_lrc_item, songInPlay} from '@/types';
 const {isMinimized, onResize, openUrl} = (window as any).ymkAPI;
 const {zks} = storeToRefs(useZKStore());
 let playProgress = ref<HTMLDivElement>();
 let volumeProgress = ref<HTMLDivElement>();
 let lrcContentEl = ref<HTMLDivElement>();
 let lrcContainerEl = ref<HTMLDivElement>();
-let LRC = computed(() => {
-    if (zks.value.play.lang === 'translation' && zks.value.play.song.translationLrc.status !== 'disabled') {
-        return zks.value.play.song.translationLrc
-    }else {
-        return zks.value.play.song.lrc
-    }
-})
-
+let lyricAutoScrollLock = false;
+let lyricAutoScrollLockTimer = -2;
+const LRC = computed(() => zks.value.play.song.lrc[zks.value.play.lang] || [])
 function openOriginLink(url: string) {
     url && openUrl(url)
 }
@@ -119,6 +113,19 @@ function parseOriginLink(song: songInPlay) {
     }
 }
 
+function turnSongToSpecificLyric(lrcItem: song_lrc_item) {
+  emitter.emit('changeCurTimeTo', lrcItem.time)
+}
+
+function resetLyricAutoScrollTimer(lock = true, time = 2500) {
+  if (lock) lyricAutoScrollLock = lock;
+  clearTimeout(lyricAutoScrollLockTimer);
+  lyricAutoScrollLockTimer = setTimeout(() => {
+    lyricAutoScrollLock = false;
+    freshLrcElement();
+  }, time);
+}
+
 function changePlayProgress(e: any) {
     if (playProgress.value) {
         emitter.emit('changeCurTimeTo',minmax(zks.value.play.duration * e.layerX / playProgress.value.clientWidth, 0, zks.value.play.duration));
@@ -131,135 +138,66 @@ function changeVolumeProgress(e: any) {
 }
 
 function updateHighlightedIndex() {
-    // 遍历解析后的歌词数组
-    let offset = LRC.value.offset || 0;
-    for (let i = 0; i < LRC.value.lrc.length; i++) {
+  if (!LRC.value) return;
+    let offset = 0;
+    for (let i = 0; i < LRC.value.length; i++) {
         // 如果当前时间小于当前歌词的时间，说明当前播放到了下一句歌词
-        if (zks.value.play.curTimeNum + offset < LRC.value.lrc[i].time) {
+        if (zks.value.play.curTimeNum + offset < LRC.value[i].time) {
             // 返回当前歌词的索引
             zks.value.play.highlightLrcIndex = i - 1 >= 0 ? i - 1 : 0;
             return;
         }
     }
-    // 如果当前时间大于最后一句歌词的时间，则返回最后一句歌词的索引
-    zks.value.play.highlightLrcIndex = LRC.value.lrc.length - 1;
+    zks.value.play.highlightLrcIndex = LRC.value.length - 1;
     return;
 }
+const nextLang = computed(() => {
+  if (zks.value.play.lang === 'origin') {
+    return 'translation'
+  }else {
+    return 'origin'
+  }
+})
 function toggleTranslation() {
-    if (zks.value.play.lang === 'origin') {
-        zks.value.play.lang = 'translation'
-    }else {
-        zks.value.play.lang = 'origin'
-    }
+    zks.value.play.lang = nextLang.value;
 }
 emitter.on('updateActiveLrcIndex', updateHighlightedIndex)
 async function freshLrcElement() {
+  if (!LRC.value) return;
+  if (lyricAutoScrollLock) return;
     if (!await isMinimized()) {
         nextTick(() => {
-            if (zks.value.play.song.lrc.status === 'parsed') {
-                // console.log('$', lrcContainerEl.value, lrcContentEl.value, lrcContainerEl.value!.querySelector('.lrcItem.active'));
-                if (lrcContainerEl.value && lrcContentEl.value) {
-                    let activeLrcItem = <HTMLDivElement>lrcContainerEl.value.querySelector('.lrcItem.active')
-                    if (activeLrcItem) {
-                        // console.dir(activeLrcItem);
-                        // console.dir(lrcContentEl.value);
-                        // console.dir(lrcContentEl.value);
-                        // console.log(activeLrcItem.offsetTop, lrcContentEl.value.clientHeight, activeLrcItem.clientHeight, activeLrcItem.offsetTop -
-                        //                     lrcContentEl.value.clientHeight / 2 +
-                        //                     activeLrcItem.clientHeight / 2);
-                        let targetOffset = activeLrcItem.offsetTop -
-                                            lrcContentEl.value.clientHeight / 2 +
-                                            activeLrcItem.clientHeight / 2;
-                        lrcContainerEl.value.style.top = `${-targetOffset}px`
-                    }
+            if (lrcContainerEl.value && lrcContentEl.value) {
+                let activeLrcItem = <HTMLDivElement>lrcContainerEl.value.querySelector('.lrcItem.active')
+                if (activeLrcItem) {
+                    let targetOffset = activeLrcItem.offsetTop -
+                                        lrcContentEl.value.clientHeight / 2 +
+                                        activeLrcItem.clientHeight / 2;
+                    lrcContainerEl.value.style.transform = `translateY(${-targetOffset}px)`
                 }
             }
         })
     }
 }
+function lyricWheelEvent(e: WheelEvent) {
+  if (!lrcContainerEl.value || !lrcContainerEl.value || !lrcContentEl.value) return;
+  let transformCSS = lrcContainerEl.value.style.transform.match(/translateY\(([-\d.]+)p?x?\)/);
+  if (!transformCSS || !transformCSS[1]) return;
+  let transformVal = Number(transformCSS[1]);
+  let firstItem: HTMLDivElement = lrcContainerEl.value.querySelector('.lrcItem')!;
+  let lastItem: HTMLDivElement = lrcContainerEl.value.querySelector('.lrcItem:last-child')!;
+  if (!firstItem || !lastItem) return;
+  let maxV = lrcContentEl.value.clientHeight / 2 - firstItem.clientHeight / 2 - firstItem.offsetTop;
+  let minV = lrcContentEl.value.clientHeight / 2 - lastItem.clientHeight / 2 - lastItem.offsetTop;
+  resetLyricAutoScrollTimer()
+  lrcContainerEl.value.style.transform = `translateY(${minmax(transformVal - e.deltaY, minV, maxV)}px)`
+}
+freshLrcElement();
 watch([() => zks.value.play.highlightLrcIndex, () => zks.value.play.song.lrc, () => zks.value.showFullPlay, () => zks.value.play.lang], () => {
+    updateHighlightedIndex();
     freshLrcElement();
 }, {deep: true})
 onResize(freshLrcElement);
-
-async function proceedLrc(lrc: song_lrcConfig) {
-    if (lrc.status === 'disabled') {
-        return;
-    }
-    let url = '';
-    if (lrc.type === 'web') {
-        url = lrc.path
-        axios.get(url, {
-            responseType: 'text',
-        }).then((res: AxiosResponse) => {
-            let lines = res.data.split(/\r?\n/);
-            lrc.lrc = [];
-            lines.forEach((line: string) => {
-                const match = /\[(\d{2}):(\d{2}\.\d{2,4})\](.*)/.exec(line);
-                if (match) {
-                    // 提取时间和文字
-                    const minutes = parseInt(match[1], 10);
-                    const seconds = parseFloat(match[2]);
-                    const timeInSeconds = minutes * 60 + seconds;
-                    const text = match[3].trim();
-                    lrc.lrc.push({
-                        time: timeInSeconds,
-                        text: text,
-                    })
-                }
-            })
-            lrc.status = 'parsed';
-        })
-    }
-    // else if (lrc.type === 'local') {
-    //     let content = await readTextFile(lrc.path);
-    //     let lines = content.split(/\r?\n/);
-    //     lrc.lrc = [];
-    //     lines.forEach((line: string) => {
-    //         const match = /\[(\d{2}):(\d{2}\.\d{2,4})\](.*)/.exec(line);
-    //         if (match) {
-    //             // 提取时间和文字
-    //             const minutes = parseInt(match[1], 10);
-    //             const seconds = parseFloat(match[2]);
-    //             const timeInSeconds = minutes * 60 + seconds;
-    //             const text = match[3].trim();
-    //             lrc.lrc.push({
-    //                 time: timeInSeconds,
-    //                 text: text,
-    //             })
-    //         }
-    //     })
-    //     lrc.status = 'parsed';
-    //     return;
-    // }
-    else if (lrc.type === 'content') {
-        let lines = lrc.content.split(/\r?\n/);
-        lrc.lrc = [];
-        lines.forEach((line: string) => {
-            const match = /\[(\d{2}):(\d{2}\.\d{2,4})\](.*)/.exec(line);
-            if (match) {
-                // 提取时间和文字
-                const minutes = parseInt(match[1], 10);
-                const seconds = parseFloat(match[2]);
-                const timeInSeconds = minutes * 60 + seconds;
-                const text = match[3].trim();
-                lrc.lrc.push({
-                    time: timeInSeconds,
-                    text: text,
-                })
-            }
-        })
-        lrc.status = 'parsed';
-        return;
-    }
-}
-watch([() => zks.value.play.song.lrc, () => {zks.value.play.song.translationLrc}, () => zks.value.play.lang], () => {
-    if (zks.value.play.lang === 'translation' && zks.value.play.song.translationLrc.status !== 'disabled') {
-        proceedLrc(zks.value.play.song.translationLrc)
-    }else if (zks.value.play.song.lrc) {
-        proceedLrc(zks.value.play.song.lrc)
-    }
-})
 
 </script>
 
@@ -400,6 +338,7 @@ watch([() => zks.value.play.song.lrc, () => {zks.value.play.song.translationLrc}
 .lrcContainer {
     position: absolute;
     top: 0;
+    transform: translateY(0);
     transition: all .2s;
     left: 10px;
     right: 20px;
@@ -414,7 +353,7 @@ watch([() => zks.value.play.song.lrc, () => {zks.value.play.song.translationLrc}
     transition: all .2s;
     color: var(--ymk-text-color);
 }
-.lrcContainer .lrcItem.active {
+.lrcContainer .lrcItem.active, .lrcContainer .lrcItem:hover {
     background-color: rgba(0,0,0,.8);
     color: #fff;
 }

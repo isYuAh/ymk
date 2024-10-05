@@ -117,6 +117,9 @@ if (!gotTheLock) {
     async function getBilibiliFav(_, params) {
         return (await bilibiliClient.get('https://api.bilibili.com/x/v3/fav/resource/list', {params})).data;
     }
+    async function axiosRequestGet(_, url, config) {
+        return (await axios.get(url, config)).data;
+    }
     function getCursorPos() {
         let sp = screen.getCursorScreenPoint();
         let wp = mainWindow.getPosition()
@@ -127,6 +130,29 @@ if (!gotTheLock) {
     }
     function openUrl(_, url) {
         shell.openExternal(url)
+    }
+    function showImportPlaylistDialog() {
+        dialog.showOpenDialog({
+            title: '请选择歌单文件',
+            filters: [{
+                name: 'JSON',
+                extensions: ['json']
+            }],
+            properties : ['multiSelections']
+        }).then(({canceled, filePaths}) => {
+            if (canceled) return;
+            let tasks = filePaths.map(fp => new Promise((resolve, reject) => {
+                try {
+                    fs.copyFileSync(fp, path.resolve('./res/lists', path.basename(fp)))
+                    resolve();
+                } catch(err) {
+                    reject(err)
+                }
+            }))
+            Promise.all(tasks).catch((e) => mainWindow.webContents.send('showMessage', e.message)).finally(() => {
+                mainWindow.webContents.send('refreshPlaylists')
+            })
+        })
     }
 
     const createWindow = () => {
@@ -155,8 +181,10 @@ if (!gotTheLock) {
         ipcMain.handle('getBilibiliVideoView', getBilibiliVideoView)
         ipcMain.handle('getBilibiliVideoPlayurl', getBilibiliVideoPlayurl)
         ipcMain.handle('getBilibiliFav', getBilibiliFav)
+        ipcMain.handle('axiosRequestGet', axiosRequestGet)
         ipcMain.handle('getCursorPos', getCursorPos)
         ipcMain.handle('openUrl', openUrl)
+        ipcMain.handle('showImportPlaylistDialog', showImportPlaylistDialog);
         ipcMain.on('minimize', () => mainWindow.minimize())
         ipcMain.on('exit', () => mainWindow.close())
         mainWindow.on('resize', () => mainWindow.webContents.send('resize'))

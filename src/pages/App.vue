@@ -8,7 +8,7 @@
     '--ymk-text-shadow-color': colors.textShadowColor,
     '--ymk-container-bg-color': colors.containerBgColor,
   }" @drop.prevent="dropEvent" @dragover.prevent>
-    <div class="backgroundFrame">
+    <div v-if="config.bg !== ''" class="backgroundFrame">
       <video autoplay muted loop :src="bgSrc"></video>
     </div>
     <Transition name="uianim">
@@ -26,7 +26,7 @@
           <div style="-webkit-app-region: no-drag" v-show="!zks.showFullPlay" class="tabs">
             <div @click="zks.nowTab = 'Playlist'" :class="{tab: true, active: zks.nowTab === 'Playlist'}">首页</div>
             <div @click="zks.nowTab = 'PlaylistRecommend_netease'" :class="{tab: true, active: zks.nowTab === 'PlaylistRecommend_netease'}">推荐</div>
-            <div @click="turnToPlaylistDetail" :class="{tab: true, active: zks.nowTab === 'PlaylistDetail'}">歌单</div>
+            <div v-if="zks.playlist.listIndex !== -1" @click="turnToPlaylistDetail" :class="{tab: true, active: zks.nowTab === 'PlaylistDetail'}">歌单</div>
             <div @click="zks.nowTab = 'Search'" :class="{tab: true, active: zks.nowTab === 'Search'}">搜索</div>
             <div v-if="false" @click="zks.nowTab = 'BlankPage'" :class="{tab: true, active: zks.nowTab === 'BlankPage'}">空白</div>
             <div @click="zks.nowTab = 'UserCenter'" :class="{tab: true, active: zks.nowTab === 'UserCenter'}">
@@ -76,7 +76,7 @@ import Message from '@/components/Message.vue';
 import Dialog from '@/components/Dialog.vue'
 import emitter from '@/emitter';
 
-const {exit, minimize, getLocalPlaylists} = (window as any).ymkAPI
+const {exit, minimize} = (window as any).ymkAPI
 
 if ("mediaSession" in navigator) {
   navigator.mediaSession.metadata = new MediaMetadata({
@@ -110,53 +110,9 @@ function turnToPlaylistDetail() {
 }
 
 (async ()=> {
-  async function refreshPlaylists({notReset}: {notReset: boolean}) {
-    zks.value.playlists = <list[]>[];
-    zks.value.playlistsParts = [];
-    zks.value.playlist.listIndex = -1;
-    if (!notReset) {
-      Object.assign(zks.value.playlist, {
-        songs: <song[]>[],
-        raw: {}
-      })
-    }
-    const ps = await getLocalPlaylists();
-    playlistToolkit.pushPlaylistPart('本地', ps)
-    if (neteaseUser.value.cookie) {
-      let res = await axios.post(`${config.value.neteaseApi.url}user/playlist?uid=${neteaseUser.value.uid}`, {
-        cookie: neteaseUser.value.cookie,
-      })
-      playlistToolkit.pushPlaylistPart('网易云', res.data.playlist.map((playlist: any) => ({
-        title: playlist.name,
-        pic: playlist.coverImgUrl,
-        intro: 'FROM NETEASE',
-        originFilename: 'REMOTE',
-        playlist: [{
-          type: 'trace_netease_playlist',
-          id: playlist.id
-        }]
-      })))
-    }
-    {
-      let res = await axios.get(`${config.value.neteaseApi.url}personalized`);
-      playlistToolkit.pushPlaylistPart('网易云推荐', res.data.result.map((playlist: any) => ({
-        title: playlist.name,
-        pic: playlist.picUrl,
-        intro: 'NETEASE RECOMMEND',
-        originFilename: 'REMOTE',
-        playlist: [{
-          type: 'trace_netease_playlist',
-          id: playlist.id
-        }]
-      })), -1, {
-        type: 'recommend_netease',
-        showInMainPage: false
-      })
-    }
-  }
-  refreshPlaylists({notReset: false});
+  await useZKStore().playlistToolkit.refreshPlaylists({notReset: false});
   emitter.on('refreshPlaylists', (conf) => {
-    refreshPlaylists(conf);
+    useZKStore().playlistToolkit.refreshPlaylists(conf);
   });
 })();
 

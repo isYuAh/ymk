@@ -102,7 +102,7 @@
 import {onUnmounted, ref, watch, watchEffect} from 'vue';
 import axios, { AxiosError, type AxiosResponse } from 'axios';
 import {type playSongParams, type songInPlay} from '@/types';
-import { minmax, secondsToMmss } from '@/utils/u';
+import {minmax, proceedLrcText, secondsToMmss} from '@/utils/u';
 import { useZKStore } from '@/stores/useZKstore'
 import emitter from '@/emitter'
 import simplebar from 'simplebar-vue';
@@ -114,7 +114,7 @@ let progressChooseFill = ref<HTMLDivElement>();
 let progress_tooltip = ref<HTMLDivElement>();
 let volumeProgressFill = ref<HTMLDivElement>();
 import {storeToRefs} from "pinia";
-const {getBilibiliVideoView, getBilibiliVideoPlayurl} = (window as any).ymkAPI;
+const {getBilibiliVideoView, getBilibiliVideoPlayurl, axiosRequestGet} = (window as any).ymkAPI;
 const {zks, neteaseUser, config} = storeToRefs(useZKStore());
 let songfaceImg = ref<HTMLImageElement>();
 let songInformation = ref<HTMLDivElement>();
@@ -220,34 +220,9 @@ async function playSong({song, justtry = false}: playSongParams) {
     type: song.type,
     singer: song.singer,
     pic: song.pic || '',
-    lrc: {
-      status: 'disabled',
-      type: 'web',
-      path: '',
-      lrc: []
-    },
+    lrc: {},
     url: '',
     origin: song,
-    translationLrc: {
-      status: 'disabled',
-      type: 'web',
-      path: '',
-      lrc: []
-    }
-  }
-  if (song.lrc) {
-    zks.value.play.song.lrc = {
-      ...song.lrc,
-      status: 'enable',
-      lrc: []
-    }
-  }
-  if (song.translationLrc) {
-    zks.value.play.song.translationLrc = {
-      ...song.translationLrc,
-      status: 'enable',
-      lrc: []
-    }
   }
   const tasks: Promise<void>[] = []
   if (song.type === 'bilibili') {
@@ -276,20 +251,24 @@ async function playSong({song, justtry = false}: playSongParams) {
   }
   else if (song.type === 'siren') {
     tasks.push(new Promise((resolve, reject) => {
+      let subTasks = <Promise<void>[]>[]
       axios.get(`https://monster-siren.hypergryph.com/api/song/${song.cid}`).then(res => {
-        if (tmpSong.lrc.status === 'disabled' && res.data.data.lyricUrl) {
-          tmpSong.lrc = {
-            status: 'enable',
-            type: 'web',
-            path: res.data.data.lyricUrl,
-            lrc: []
-          }
+        if (res.data.data.lyricUrl) {
+          subTasks.push(new Promise((resolve, reject) => {
+            axiosRequestGet(res.data.data.lyricUrl).then((res: any) => {
+              tmpSong.lrc['origin'] = proceedLrcText(res)
+            })
+            resolve();
+          }))
         }
         tmpSong.url = res.data.data.sourceUrl;
-        axios.get(`https://monster-siren.hypergryph.com/api/album/${res.data.data.albumCid}/detail`).then(res => {
-          tmpSong.pic = res.data.data.coverUrl;
-          resolve();
-        }).catch(() => reject());
+        subTasks.push(new Promise((resolve, reject) => {
+          axios.get(`https://monster-siren.hypergryph.com/api/album/${res.data.data.albumCid}/detail`).then((res) => {
+            tmpSong.pic = res.data.data.coverUrl;
+            resolve();
+          }).catch(() => reject());
+        }))
+        Promise.all(subTasks).then((() => resolve())).catch(() => reject())
       })
     }))
   }
@@ -306,49 +285,36 @@ async function playSong({song, justtry = false}: playSongParams) {
         if (res.data.songs[0].al.picUrl) {
           tmpSong.pic = res.data.songs[0].al.picUrl;
         }
-        axios.get(config.value.neteaseApi.url + 'song/url', {
-          params: {
-            id: song.id,
-            cookie: neteaseUser.value.cookie
-          }
-        }).then(res => {
-          if (res.data.data[0]) {
-            tmpSong.url = res.data.data[0].url;
-            if (tmpSong.lrc.status === 'disabled' || tmpSong.translationLrc.status === 'disabled') {
-              axios.get(config.value.neteaseApi.url + 'lyric', {params: {id: song.id}}).then((res: AxiosResponse) => {
-                if (res.data.lrc.lyric && tmpSong.lrc.status === 'disabled') {
-                  tmpSong.lrc = {
-                    status: 'enable',
-                    type: 'content',
-                    content: res.data.lrc.lyric,
-                    lrc: []
-                  }
-                }
-                if (res.data.tlyric.lyric && tmpSong.translationLrc.status === 'disabled') {
-                  tmpSong.translationLrc = {
-                    status: 'enable',
-                    type: 'content',
-                    content: res.data.tlyric.lyric,
-                    lrc: []
-                  }
-                }
-                resolve();
-              }).catch(() => reject(new Error('歌词获取失败')))
-            }
-          }else {
-            reject('数据有误');
-          }
-        }).catch((err: AxiosError) => {
-          reject(err.message);
-          // if (err.response?.status === 404) {
-          //   if (songSource.value) {
-          //     tmpSong.url = `http://music.163.com/song/media/outer/url?id=${song.id}.mp3`;
-          //     songSource.value.src = tmpSong.url;
-          //   }
-          //   console.log('使用outerAPI请求歌曲');
-          // }
-        })
+        resolve();
       }).catch((err) => {
+        reject(err.message);
+      })
+    }))
+    tasks.push(new Promise((resolve, reject) => {
+      axios.get(config.value.neteaseApi.url + 'lyric', {params: {id: song.id}}).then((res: AxiosResponse) => {
+        if (res.data.lrc.lyric) {
+          tmpSong.lrc['origin'] = proceedLrcText(res.data.lrc.lyric);
+        }
+        if (res.data.tlyric.lyric) {
+          tmpSong.lrc['translation'] = proceedLrcText(res.data.tlyric.lyric)
+        }
+        resolve();
+      }).catch(() => reject(new Error('歌词获取失败')))
+    }))
+    tasks.push(new Promise((resolve, reject) => {
+      axios.get(config.value.neteaseApi.url + 'song/url', {
+        params: {
+          id: song.id,
+          cookie: neteaseUser.value.cookie
+        }
+      }).then(res => {
+        if (res.data.data[0]) {
+          tmpSong.url = res.data.data[0].url;
+          resolve();
+        }else {
+          reject('数据有误');
+        }
+      }).catch((err: AxiosError) => {
         reject(err.message);
       })
     }))
@@ -369,12 +335,17 @@ async function playSong({song, justtry = false}: playSongParams) {
     }))
   }
   Promise.all(tasks).then(() => {
-    zks.value.play.song = tmpSong;
+    Object.assign(zks.value.play.song, {
+      ...tmpSong
+    })
     zks.value.play.lang = 'origin';
     if (!justtry) {
       let findIndex = -1;
       for (let i = 0; i < zks.value.play.playlist.length; i++) {
-        if (JSON.stringify(zks.value.play.playlist[i]) === JSON.stringify(song)) {
+        let tmpSong = zks.value.play.playlist[i];
+        if (tmpSong.title === song.title &&
+            tmpSong.singer === song.singer &&
+            tmpSong.type === song.type) {
           findIndex = i;
           break;
         }
@@ -399,7 +370,10 @@ async function playSong({song, justtry = false}: playSongParams) {
         }
       })
     }
-  }).catch((err) => useZKStore().showMessage(err.message))
+  }).catch((err) => {
+    console.log(err.message);
+    useZKStore().showMessage(err.message)
+  })
 }
 function changeVolumeTo(to: number) {
     if (songSource.value) {
@@ -640,7 +614,7 @@ onUnmounted(() => {
   box-shadow: 0 0 10px rgba(0,0,0,.4);
   left: 0;
   right: 0;
-  background-color: rgba(0,0,0,.6);
+  background-color: rgba(0,0,0,.4);
   position: absolute;
   bottom: 64px;
 }

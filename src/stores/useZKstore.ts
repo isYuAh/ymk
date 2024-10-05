@@ -9,14 +9,12 @@ import type {
   mouseMenuItem,
   playlistComponent, list_trace_bilibili_fav
 } from '@/types'
-import CollectDialog from '@/components/Dialogs/CollectDialog.vue';
 import {type Component, computed, ref, shallowRef, toRaw, watch} from 'vue';
 import emitter from "@/emitter";
 import {minmax} from "@/utils/u";
 import axios, {type AxiosResponse} from "axios";
-import AddSongToDialog from "@/components/Dialogs/addSongToDialog.vue";
 
-const {getBilibiliFav, writePlaylistFile} = (window as any).ymkAPI;
+const {getBilibiliFav, writePlaylistFile, getLocalPlaylists, onShowMessage, onRefreshPlaylists} = (window as any).ymkAPI;
 
 export const useZKStore = defineStore('ZK', () => {
   const {writeConfig, getConfig, writeSpecificConfig, getSpecificConfig} = (window as any).ymkAPI;
@@ -58,18 +56,7 @@ export const useZKStore = defineStore('ZK', () => {
         singer: '',
         type: '',
         url: '',
-        lrc: {
-          status: 'disabled',
-          type: 'local',
-          path: '',
-          lrc: [],
-        },
-        translationLrc: {
-          status: 'disabled',
-          type: 'local',
-          path: '',
-          lrc: [],
-        },
+        lrc: {},
         origin: null as any
       },
       curTime: '',
@@ -199,7 +186,52 @@ export const useZKStore = defineStore('ZK', () => {
     clearTimeout(zks.value.message.timer);
     zks.value.message.timer = setTimeout(() => zks.value.message.show = false, time);
   }
-
+  onShowMessage((m: any) => showMessage(m))
+  async function refreshPlaylists({notReset}: {notReset: boolean}) {
+    zks.value.playlists = <list[]>[];
+    zks.value.playlistsParts = [];
+    zks.value.playlist.listIndex = -1;
+    if (!notReset) {
+      Object.assign(zks.value.playlist, {
+        songs: <song[]>[],
+        raw: {}
+      })
+    }
+    const ps = await getLocalPlaylists();
+    pushPlaylistPart('本地', ps)
+    if (neteaseUser.value.cookie) {
+      let res = await axios.post(`${config.value.neteaseApi.url}user/playlist?uid=${neteaseUser.value.uid}`, {
+        cookie: neteaseUser.value.cookie,
+      })
+      pushPlaylistPart('网易云', res.data.playlist.map((playlist: any) => ({
+        title: playlist.name,
+        pic: playlist.coverImgUrl,
+        intro: 'FROM NETEASE',
+        originFilename: 'REMOTE',
+        playlist: [{
+          type: 'trace_netease_playlist',
+          id: playlist.id
+        }]
+      })))
+    }
+    {
+      let res = await axios.get(`${config.value.neteaseApi.url}personalized`);
+      pushPlaylistPart('网易云推荐', res.data.result.map((playlist: any) => ({
+        title: playlist.name,
+        pic: playlist.picUrl,
+        intro: 'NETEASE RECOMMEND',
+        originFilename: 'REMOTE',
+        playlist: [{
+          type: 'trace_netease_playlist',
+          id: playlist.id
+        }]
+      })), -1, {
+        type: 'recommend_netease',
+        showInMainPage: false
+      })
+    }
+  }
+  onRefreshPlaylists(() => refreshPlaylists({notReset: false}))
   function pushPlaylistPart(title: string, playlists: list[], begin = -1, other = {}) {
     if (begin === -1) {
       begin = zks.value.playlistsParts.length === 0 ? 0 : zks.value.playlistsParts[zks.value.playlistsParts.length - 1].begin + zks.value.playlistsParts[zks.value.playlistsParts.length - 1].count
@@ -265,7 +297,8 @@ export const useZKStore = defineStore('ZK', () => {
         comIndex++;
         parseComponent(comIndex, components);
       })
-    }else if (component.type === 'trace_netease_playlist') {
+    } else if (component.type === 'trace_netease_playlist') {
+      zks.value.loading.text = `加载 网易云歌单#${component.id}`;
       axios.get(config.value.neteaseApi.url + 'playlist/detail', {
         params: {
           timestamp: new Date().getTime(),
@@ -391,6 +424,7 @@ export const useZKStore = defineStore('ZK', () => {
     playlistToolkit: {
       pushPlaylistPart,
       checkDetail,
+      refreshPlaylists,
       addSongTo,
       saveSpecificPlaylist,
     }

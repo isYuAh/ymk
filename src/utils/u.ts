@@ -1,4 +1,5 @@
-import {type messageController} from "@/types";
+import {type messageController, type song_lrc_item, type song_lrcConfig} from "@/types";
+import axios, {type AxiosResponse} from "axios";
 
 export function secondsToMmss(seconds: number) {
     var minutes = Math.floor(seconds / 60);
@@ -28,4 +29,23 @@ export function getFormattedDateWithPadding() {
 
     // 拼接成所需格式的字符串
     return `${year}${month}${date}`;
+}
+
+export function proceedLrcText(lrcText: string) {
+    let lines = lrcText.split(/\r?\n/);
+    let result: song_lrc_item[] = [];
+    lines.forEach((line: string) => {
+        const match = /\[(\d{2}):(\d{2}\.\d{2,4})](.*)/.exec(line);
+        if (match) {
+            const minutes = parseInt(match[1], 10);
+            const seconds = parseFloat(match[2]);
+            const timeInSeconds = minutes * 60 + seconds;
+            const text = match[3].trim();
+            result.push({
+                time: timeInSeconds,
+                text: text,
+            })
+        }
+    })
+    return result;
 }

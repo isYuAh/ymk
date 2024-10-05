@@ -54,7 +54,6 @@ let PartVShow = computed(() => {
   if (zks.value.nowTab === 'Playlist') {
     zks.value.playlistsParts.forEach((p, index) => {
       if ('other' in p && 'showInMainPage' in p.other) {
-        console.log(zks.value.nowTab, p.other, p.other.showInMainPage)
         r[index] = p.other.showInMainPage
       }else {
         r[index] = true;

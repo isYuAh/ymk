@@ -63,8 +63,7 @@ export type song_basic = {
     title: string,
     singer: string,
     pic?: string,
-    lrc?: song_lrcConfig,
-    translationLrc?: song_lrcConfig
+    lrc?: Record<string, song_lrcConfig>
 }
 
 export type song_bilibili = {
@@ -116,9 +115,8 @@ export type songInPlay = {
     singer: string,
     type: string,
     url: string,
-    lrc: song_lrcConfig,
+    lrc: Record<string, song_lrc>,
     origin: song,
-    translationLrc: song_lrcConfig
 }
 
 export type playSongParams = {

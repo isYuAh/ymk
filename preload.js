@@ -51,6 +51,9 @@ function getBilibiliVideoPlayurl(params) {
 function getBilibiliFav(params) {
     return ipcRenderer.invoke('getBilibiliFav', params)
 }
+function axiosRequestGet(url, config) {
+    return ipcRenderer.invoke('axiosRequestGet', url, config)
+}
 function getCursorPos() {
     return ipcRenderer.invoke('getCursorPos')
 }
@@ -71,10 +74,16 @@ contextBridge.exposeInMainWorld('ymkAPI', {
     getConfig,
     isMinimized,
     onResize: callback => ipcRenderer.on('resize', (_event, value) => callback(value)),
+    onRefreshPlaylists: callback => ipcRenderer.on('refreshPlaylists', (_event) => callback()),
+    onShowMessage: callback => ipcRenderer.on('showMessage', (_event, m) => callback(m)),
+    offResize: callback => ipcRenderer.off('resize', callback),
+    offRefreshPlaylists: callback => ipcRenderer.off('refreshPlaylists', callback),
+    offShowMessage: callback => ipcRenderer.off('showMessage', callback),
     showImportPlaylistDialog,
     getBilibiliVideoView,
     getBilibiliVideoPlayurl,
     getBilibiliFav,
+    axiosRequestGet,
     getCursorPos,
     getSpecificConfig,
     writeSpecificConfig,

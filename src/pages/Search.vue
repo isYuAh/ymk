@@ -69,9 +69,9 @@ function acceptSuggest(text: string) {
   if (!searchInput.value) return;
   searchInput.value.value = text;
   suggestSelected.value = -1;
+  search()
 }
 function search(offset = 0) {
-  console.log(searchInput.value, suggestSelected.value)
     if (searchInput.value) {
       showSuggestBar.value = false;
         if (suggestSelected.value === -1) {
