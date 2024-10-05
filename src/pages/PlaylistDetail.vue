@@ -1,6 +1,6 @@
 <template>
 <div class="transitionContainer">
-    <div @click="zks.nowTab = 'Playlist';" class="returnBtn">
+    <div @click="router.push('/playlist')" class="returnBtn">
         <svg t="1711457272465" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4244" width="48" height="48"><path d="M963.2 0L1024 67.2 512 614.4 0 67.2 60.8 0 512 480 963.2 0z" fill="currentColor" p-id="4245"></path></svg>
     </div>
     <div class="partContainer">
@@ -67,6 +67,8 @@ import '@/assets/songlist.css'
 import Fuse from "fuse.js";
 import axios from "axios";
 import EditSongDialog from "@/components/Dialogs/EditSongDialog.vue";
+import {useRouter} from "vue-router";
+const router = useRouter();
 const {writePlaylistFile} = (window as any).ymkAPI;
 const {zks, config, neteaseUser} = storeToRefs(useZKStore());
 let filter = ref('');
@@ -290,12 +292,12 @@ function collectPlaylist() {
     width: calc(100% - 20px);
 }
 .tablePartContainer {
-  min-height: 0;
   display: flex;
   flex-direction: column;
   box-shadow: 0 0 4px var(--ymk-container-bg-color);
   /*backdrop-filter: blur(2px);*/
   background-color: var(--ymk-container-bg-color);
+  min-height: 100%;
 }
 .divider {
     display: flex;

@@ -24,16 +24,16 @@
         <div style="-webkit-app-region: drag" class="title">Yumuzk</div>
         <Transition appear name="playcontroller">
           <div style="-webkit-app-region: no-drag" v-show="!zks.showFullPlay" class="tabs">
-            <div @click="zks.nowTab = 'Playlist'" :class="{tab: true, active: zks.nowTab === 'Playlist'}">首页</div>
-            <div @click="zks.nowTab = 'PlaylistRecommend_netease'" :class="{tab: true, active: zks.nowTab === 'PlaylistRecommend_netease'}">推荐</div>
-            <div v-if="zks.playlist.listIndex !== -1" @click="turnToPlaylistDetail" :class="{tab: true, active: zks.nowTab === 'PlaylistDetail'}">歌单</div>
-            <div @click="zks.nowTab = 'Search'" :class="{tab: true, active: zks.nowTab === 'Search'}">搜索</div>
-            <div v-if="false" @click="zks.nowTab = 'BlankPage'" :class="{tab: true, active: zks.nowTab === 'BlankPage'}">空白</div>
-            <div @click="zks.nowTab = 'UserCenter'" :class="{tab: true, active: zks.nowTab === 'UserCenter'}">
+            <RouterLink to="/playlist" :class="{tab: true, active: zks.nowTab === 'playlist'}">首页</RouterLink>
+            <RouterLink to="/recommendedPlaylists" :class="{tab: true, active: zks.nowTab === 'PlaylistRecommend_netease'}">推荐</RouterLink>
+            <RouterLink to="/playlistDetail" v-if="zks.playlist.listIndex !== -1" :class="{tab: true, active: zks.nowTab === 'playlistDetail'}">歌单</RouterLink>
+            <RouterLink to="/search" :class="{tab: true, active: zks.nowTab === 'search'}">搜索</RouterLink>
+<!--            <RouterLink  to="/blank" @click="zks.nowTab = 'blankPage'" :class="{tab: true, active: zks.nowTab === 'blankPage'}">空白</RouterLink>-->
+            <RouterLink to="/userCenter" :class="{tab: true, active: zks.nowTab === 'userCenter'}">
               <div class="text">{{ neteaseUser.nickname || '用户' }}</div>
               <img v-if="neteaseUser.avatarUrl" style="border-radius: 50%;margin-left: 4px;margin-top:6px; height: 28px;" :src="neteaseUser.avatarUrl" alt="">
-            </div>
-            <div @click="zks.nowTab = 'Settings'" :class="{tab: true, active: zks.nowTab === 'Settings'}">设置</div>
+            </RouterLink>
+            <RouterLink to="/settings" :class="{tab: true, active: zks.nowTab === 'Settings'}">设置</RouterLink>
           </div>
         </Transition>
         <div style="-webkit-app-region: no-drag" class="controlbtn">
@@ -42,17 +42,13 @@
         </div>
       </div>
       <div class="content">
-        <div v-show="zks.showFullPlay"></div>
-        <Transition v-show="!zks.showFullPlay" appear name="uianim">
-          <Playlist key="Playlist" v-if="zks.nowTab === 'Playlist'"></Playlist>
-          <Playlist key="PlaylistRecommend_netease" v-else-if="zks.nowTab === 'PlaylistRecommend_netease'"></Playlist>
-          <PlaylistDetail key="PlaylistDetail" v-else-if="zks.nowTab === 'PlaylistDetail'"></PlaylistDetail>
-          <Loading key="Loading" v-else-if="zks.nowTab === 'Loading'"></Loading>
-          <Search key="Search" v-else-if="zks.nowTab === 'Search'"></Search>
-          <UserCenter key="UserCenter" v-else-if="zks.nowTab === 'UserCenter'"></UserCenter>
-          <Settings key="Settings" v-else-if="zks.nowTab === 'Settings'"></Settings>
-          <BlankPage key="BlankPage" v-else-if="zks.nowTab === 'BlankPage'"></BlankPage>
-        </Transition>
+        <router-view v-slot="{ Component }">
+          <transition v-show="!zks.showFullPlay" appear name="uianim">
+            <keep-alive>
+              <component :is="Component" />
+            </keep-alive>
+          </transition>
+        </router-view>
       </div>
       <Playbar></Playbar>
     </div>
@@ -91,7 +87,6 @@ if ("mediaSession" in navigator) {
   navigator.mediaSession.setActionHandler("nexttrack", () => emitter.emit('playNextSong'))
 }
 const {zks, neteaseUser, config, colors} = storeToRefs(useZKStore());
-const playlistToolkit = useZKStore().playlistToolkit
 //监听cookie
 const bgSrc = computed(() => {
   return `http://localhost:35652/api/bg?fn=${config.value.bg}`
@@ -99,22 +94,16 @@ const bgSrc = computed(() => {
 watch(() => neteaseUser.value.cookie, (nv) => {
   document.cookie = nv;
 })
-import Settings from "@/pages/Settings.vue";
-import BlankPage from "@/pages/BlankPage.vue";
-import {storeToRefs} from "pinia";
-import axios from "axios";
-function turnToPlaylistDetail() {
-  if (zks.value.playlist.listIndex !== -1) {
-    zks.value.nowTab = 'PlaylistDetail'
-  }
-}
 
-(async ()=> {
+import {storeToRefs} from "pinia";
+
+async function TMP() {
   await useZKStore().playlistToolkit.refreshPlaylists({notReset: false});
   emitter.on('refreshPlaylists', (conf) => {
     useZKStore().playlistToolkit.refreshPlaylists(conf);
   });
-})();
+}
+TMP();
 
 function dropEvent(e: DragEvent) {
   console.log(e)

@@ -37,7 +37,7 @@
     text-overflow: ellipsis;
     overflow: hidden;
 }
-.songInfo sub {
+.songTable sub {
     margin-left: 4px;
     font-family: NovecentoWide;
 }

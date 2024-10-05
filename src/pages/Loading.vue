@@ -22,12 +22,16 @@ const {zks} = storeToRefs(useZKStore());
     width: 100%;
 }
 .partContainer .text {
-    font-family: NovecentoWide;
-    font-size: 42px;
+  font-family: NovecentoWide;
+  font-size: 42px;
+  color: var(--ymk-text-color);
+  text-shadow: 0 0 5px var(--ymk-text-shadow-color);
 }
 .partContainer .tipMessage {
-    font-family: SourceSansCNM;
-    font-size: 24px;
-    margin-top: 20px;
+  font-family: SourceSansCNM;
+  font-size: 24px;
+  margin-top: 20px;
+  color: var(--ymk-text-color);
+  text-shadow: 0 0 5px var(--ymk-text-shadow-color);
 }
 </style>

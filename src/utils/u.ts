@@ -1,5 +1,4 @@
-import {type messageController, type song_lrc_item, type song_lrcConfig} from "@/types";
-import axios, {type AxiosResponse} from "axios";
+import {type song_lrc_item} from "@/types";
 
 export function secondsToMmss(seconds: number) {
     var minutes = Math.floor(seconds / 60);

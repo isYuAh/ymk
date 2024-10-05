@@ -89,7 +89,7 @@ import {storeToRefs} from "pinia";
 import { computed, nextTick, ref, watch } from 'vue';
 import { minmax } from '@/utils/u';
 import type {song_lrc_item, songInPlay} from '@/types';
-const {isMinimized, onResize, openUrl} = (window as any).ymkAPI;
+const {isMinimized, onRestore, openUrl} = (window as any).ymkAPI;
 const {zks} = storeToRefs(useZKStore());
 let playProgress = ref<HTMLDivElement>();
 let volumeProgress = ref<HTMLDivElement>();
@@ -194,10 +194,9 @@ function lyricWheelEvent(e: WheelEvent) {
 }
 freshLrcElement();
 watch([() => zks.value.play.highlightLrcIndex, () => zks.value.play.song.lrc, () => zks.value.showFullPlay, () => zks.value.play.lang], () => {
-    updateHighlightedIndex();
     freshLrcElement();
 }, {deep: true})
-onResize(freshLrcElement);
+onRestore(updateHighlightedIndex);
 
 </script>
 
@@ -251,12 +250,6 @@ onResize(freshLrcElement);
     height: 100%;
     object-fit: cover;
     box-shadow: 0 0 15px rgba(0,0,0,.8);
-}
-.partContainer .left .singleLineTextEl {
-    text-overflow: ellipsis;
-    overflow: hidden;
-    word-break: break-all;
-    white-space: nowrap;
 }
 .partContainer .left .title {
     margin-top: 15px;
@@ -344,7 +337,7 @@ onResize(freshLrcElement);
     right: 20px;
 }
 .lrcContainer .lrcItem {
-    line-height: 32px;
+    padding: 10px 0;
     font-family: SourceSansCNM;
     margin: 5px 0;
     font-size: 16px;
@@ -354,8 +347,9 @@ onResize(freshLrcElement);
     color: var(--ymk-text-color);
 }
 .lrcContainer .lrcItem.active, .lrcContainer .lrcItem:hover {
-    background-color: rgba(0,0,0,.8);
-    color: #fff;
+  cursor: pointer;
+  background-color: rgba(0,0,0,.4);
+  color: #fff;
 }
 .partContainer .playmodeController {
     height: 24px;

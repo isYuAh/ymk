@@ -99,7 +99,7 @@
 </template>
 
 <script setup lang='ts'>
-import {onUnmounted, ref, watch, watchEffect} from 'vue';
+import {onMounted, onUnmounted, ref, watch, watchEffect} from 'vue';
 import axios, { AxiosError, type AxiosResponse } from 'axios';
 import {type playSongParams, type songInPlay} from '@/types';
 import {minmax, proceedLrcText, secondsToMmss} from '@/utils/u';
@@ -115,6 +115,7 @@ let progress_tooltip = ref<HTMLDivElement>();
 let volumeProgressFill = ref<HTMLDivElement>();
 import {storeToRefs} from "pinia";
 const {getBilibiliVideoView, getBilibiliVideoPlayurl, axiosRequestGet} = (window as any).ymkAPI;
+const {checkMusicPlayable} = useZKStore().songToolkit
 const {zks, neteaseUser, config} = storeToRefs(useZKStore());
 let songfaceImg = ref<HTMLImageElement>();
 let songInformation = ref<HTMLDivElement>();
@@ -224,6 +225,12 @@ async function playSong({song, justtry = false}: playSongParams) {
     url: '',
     origin: song,
   }
+  let {result, msg} = await checkMusicPlayable(song);
+  if (!result) {
+    useZKStore().showMessage('歌曲无法播放')
+    if (zks.value.play.mode !== 'loop') playNextSong();
+    return;
+  }
   const tasks: Promise<void>[] = []
   if (song.type === 'bilibili') {
     tasks.push(new Promise((resolve, reject) => {
@@ -273,15 +280,8 @@ async function playSong({song, justtry = false}: playSongParams) {
     }))
   }
   else if (song.type === 'netease') {
-    let rawDetail = {} as any;
     tasks.push(new Promise((resolve, reject) => {
       axios.get(config.value.neteaseApi.url + 'song/detail', {params: {ids: song.id}}).then((res: AxiosResponse) => {
-        rawDetail = res.data;
-        Object.assign(song, useZKStore().checkSongPlayable(rawDetail.songs[0], rawDetail.privileges[0]))
-        if (!song.playable) {
-          reject(new Error(song.reason))
-          return;
-        }
         if (res.data.songs[0].al.picUrl) {
           tmpSong.pic = res.data.songs[0].al.picUrl;
         }
@@ -292,14 +292,17 @@ async function playSong({song, justtry = false}: playSongParams) {
     }))
     tasks.push(new Promise((resolve, reject) => {
       axios.get(config.value.neteaseApi.url + 'lyric', {params: {id: song.id}}).then((res: AxiosResponse) => {
-        if (res.data.lrc.lyric) {
+        if ('lrc' in res.data && res.data.lrc.lyric) {
           tmpSong.lrc['origin'] = proceedLrcText(res.data.lrc.lyric);
         }
-        if (res.data.tlyric.lyric) {
+        if ('tlyric' in res.data && res.data.tlyric.lyric) {
           tmpSong.lrc['translation'] = proceedLrcText(res.data.tlyric.lyric)
         }
         resolve();
-      }).catch(() => reject(new Error('歌词获取失败')))
+      }).catch((e) => {
+        console.log(e);
+        reject(new Error('歌词获取失败'))
+      })
     }))
     tasks.push(new Promise((resolve, reject) => {
       axios.get(config.value.neteaseApi.url + 'song/url', {
@@ -409,6 +412,11 @@ function playPrevSong() {
 function playNextSong() {
   playEnded();
 }
+onMounted(() => {
+  if (config.value.volume != undefined) {
+    emitter.emit('changeVolumeTo', minmax(config.value.volume, 0, 1));
+  }
+})
 watch(() => zks.value.play.status, (nv) => {
     if (!songSource.value) return;
     if (nv === 'play') {
@@ -447,7 +455,7 @@ onUnmounted(() => {
 }
 .play {
     height: 64px;
-  background-color: rgba(0,0,0,.2);
+  background-color: rgba(0,0,0,.1);
 }
 .play {
     position: relative;

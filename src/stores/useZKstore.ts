@@ -13,6 +13,7 @@ import {type Component, computed, ref, shallowRef, toRaw, watch} from 'vue';
 import emitter from "@/emitter";
 import {minmax} from "@/utils/u";
 import axios, {type AxiosResponse} from "axios";
+import router from "@/router";
 
 const {getBilibiliFav, writePlaylistFile, getLocalPlaylists, onShowMessage, onRefreshPlaylists} = (window as any).ymkAPI;
 
@@ -21,7 +22,7 @@ export const useZKStore = defineStore('ZK', () => {
   const zks = ref({
     playlists: <list[]>[],
     playlistsParts: <playlistPart[]>[],
-    nowTab: 'Playlist',
+    nowTab: '',
     loading: {
       text: '',
     },
@@ -91,6 +92,11 @@ export const useZKStore = defineStore('ZK', () => {
       }
     },
   });
+  router.beforeEach((to, from) => {
+    if (to.path === '/playlistDetail' && zks.value.playlist.listIndex === -1) return {path: '/playlist'};
+    if (to.path !== '/') zks.value.nowTab = to.path.substring(1)
+    return true
+  })
   const config = ref<any>({});
   const colors = ref<any>({});
   const neteaseUser = ref<any>({});
@@ -106,9 +112,6 @@ export const useZKStore = defineStore('ZK', () => {
       let jp = res;
       config.value = jp.config;
       neteaseUser.value = jp.neteaseUser;
-      if (config.value.volume != undefined) {
-        emitter.emit('changeVolumeTo', minmax(config.value.volume, 0, 1));
-      }
       if (config.value.mode) {
         zks.value.play.mode = config.value.mode;
       }
@@ -138,7 +141,7 @@ export const useZKStore = defineStore('ZK', () => {
     zks.value.dialog.show = true;
   }
 
-  function checkSongPlayable(song: any, privilege?: any) {
+  function checkSongPlayableByData(song: any, privilege?: any) {
     if(privilege === undefined){
       privilege = song?.privilege
     }
@@ -171,12 +174,12 @@ export const useZKStore = defineStore('ZK', () => {
     if(songs?.length === undefined) return
     if(privilegeList.length === 0){
       return songs.map((song: any) => {
-        Object.assign(song, { ...checkSongPlayable(song) })
+        Object.assign(song, { ...checkSongPlayableByData(song) })
         return song
       })
     }
     return songs.map((song: any, i: number) => {
-      Object.assign(song, { ...checkSongPlayable(song, privilegeList[i]) })
+      Object.assign(song, { ...checkSongPlayableByData(song, privilegeList[i]) })
       return song
     })
   }
@@ -214,22 +217,6 @@ export const useZKStore = defineStore('ZK', () => {
         }]
       })))
     }
-    {
-      let res = await axios.get(`${config.value.neteaseApi.url}personalized`);
-      pushPlaylistPart('网易云推荐', res.data.result.map((playlist: any) => ({
-        title: playlist.name,
-        pic: playlist.picUrl,
-        intro: 'NETEASE RECOMMEND',
-        originFilename: 'REMOTE',
-        playlist: [{
-          type: 'trace_netease_playlist',
-          id: playlist.id
-        }]
-      })), -1, {
-        type: 'recommend_netease',
-        showInMainPage: false
-      })
-    }
   }
   onRefreshPlaylists(() => refreshPlaylists({notReset: false}))
   function pushPlaylistPart(title: string, playlists: list[], begin = -1, other = {}) {
@@ -248,7 +235,7 @@ export const useZKStore = defineStore('ZK', () => {
   function parseComponent(comIndex: number, components: playlistComponent[]) {
     let component = components[comIndex];
     if (comIndex >= components.length) {
-      zks.value.nowTab = 'PlaylistDetail';
+      router.push('/playlistDetail')
       return;
     }
     if (component.type === 'data') {
@@ -346,11 +333,11 @@ export const useZKStore = defineStore('ZK', () => {
     }
   }
   function checkDetail(index: number, raw?: list) {
-    zks.value.nowTab = 'Loading';
+    router.push('/loading')
     zks.value.loading.text = '';
     if (index >= 0) {
       if (zks.value.playlist.listIndex === index) {
-        zks.value.nowTab = 'PlaylistDetail';
+        router.push('/playlistDetail')
       }else {
         let list = zks.value.playlists[index];
         zks.value.playlist.listIndex = index
@@ -362,13 +349,17 @@ export const useZKStore = defineStore('ZK', () => {
         parseComponent(comIndex, components);
       }
     }else {
-      zks.value.playlist.listIndex = -2;
-      zks.value.playlist.songs = [];
-      zks.value.playlist.raw = raw!;
-      let components = raw!.playlist;
-      let comIndex = 0;
-      zks.value.playlist.extraInfo.type = 'unknown';
-      parseComponent(comIndex, components);
+      if (JSON.stringify(zks.value.playlist.raw) === JSON.stringify(raw)) {
+        zks.value.nowTab = 'PlaylistDetail';
+      }else {
+        zks.value.playlist.listIndex = -2;
+        zks.value.playlist.songs = [];
+        zks.value.playlist.raw = raw!;
+        let components = raw!.playlist;
+        let comIndex = 0;
+        zks.value.playlist.extraInfo.type = 'unknown';
+        parseComponent(comIndex, components);
+      }
     }
   }
   function addSongTo({song, playlistIndex, save = true} : {song: song, playlistIndex: number, save?: boolean}) {
@@ -399,6 +390,19 @@ export const useZKStore = defineStore('ZK', () => {
       })
     }
   }
+  async function checkMusicPlayable(song: song) {
+    if (song.type === 'netease') {
+      let res = await axios.get(`${config.value.neteaseApi.url}check/music`, {
+        params: {
+          id: song.id,
+          cookie: neteaseUser.value.cookie
+        }
+      })
+      return {result: res.data.success, msg: res.data.message}
+    }else {
+      return {result: true, msg: ''}
+    }
+  }
 
   function saveSpecificPlaylist(playlist: list) {
     if (!playlist.originFilename.endsWith(".json")) return;
@@ -417,8 +421,6 @@ export const useZKStore = defineStore('ZK', () => {
     saveConfig,
     saveColors,
     showMouseMenu,
-    checkSongPlayable,
-    mapCheckSongPlayable,
     showMessage,
     showDialog,
     playlistToolkit: {
@@ -427,6 +429,10 @@ export const useZKStore = defineStore('ZK', () => {
       refreshPlaylists,
       addSongTo,
       saveSpecificPlaylist,
+    },
+    songToolkit: {
+      checkMusicPlayable,
+      mapCheckSongPlayable,
     }
   };
 });

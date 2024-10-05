@@ -65,3 +65,20 @@
     bottom: 10px;
     opacity: 0;
 }
+
+.cube-enter-from,
+.cube-leave-to {
+    transform: scale(0.6);
+    opacity: 0;
+}
+
+.cube-enter-active,
+.cube-leave-active{
+    transition: all 0.8s;
+}
+
+.cube-enter-to,
+.cube-leave-from {
+    transform: scale(1);
+    opacity: 1;
+}

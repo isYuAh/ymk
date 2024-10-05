@@ -68,7 +68,10 @@ if (!gotTheLock) {
         const lists = fs.readdirSync(path.resolve('./res/lists')).filter(file => file.endsWith('.json'))
         let results = []
         for (let f of lists) {
-            results.push(JSON.parse(fs.readFileSync(path.resolve('./res/lists', f)).toString()))
+            results.push({
+                originFilename: f,
+                ...JSON.parse(fs.readFileSync(path.resolve('./res/lists', f)).toString()),
+            })
         }
         return results;
     }
@@ -164,7 +167,8 @@ if (!gotTheLock) {
             webPreferences: {
                 preload: path.resolve(__dirname, './preload.js'),
                 webSecurity: false,
-            }
+            },
+            resizable: false,
         })
 
         ipcMain.handle('getLocalPlaylists', getLocalPlaylists)
@@ -187,7 +191,7 @@ if (!gotTheLock) {
         ipcMain.handle('showImportPlaylistDialog', showImportPlaylistDialog);
         ipcMain.on('minimize', () => mainWindow.minimize())
         ipcMain.on('exit', () => mainWindow.close())
-        mainWindow.on('resize', () => mainWindow.webContents.send('resize'))
+        mainWindow.on('restore', () => mainWindow.webContents.send('restore'))
 
         if (app.isPackaged) {
             mainWindow.loadFile(path.resolve(__dirname, './dist', 'index.html'))

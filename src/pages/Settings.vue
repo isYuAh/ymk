@@ -5,15 +5,22 @@ import {ref} from "vue";
 import {useZKStore} from "@/stores/useZKstore";
 import {storeToRefs} from "pinia";
 import PickColors from 'vue-pick-colors'
-const {zks, config, colors} = storeToRefs(useZKStore());
+const {config, colors} = storeToRefs(useZKStore());
 
 let apiConfig = ref({
   neteaseUrl: config.value.neteaseApi.url,
   qqUrl: config.value.qqApi.url,
 })
+let tmpConfig = ref({
+  bg: config.value.bg
+})
 function saveApiConfig () {
   config.value.neteaseApi.url = apiConfig.value.neteaseUrl;
   config.value.qqApi.url = apiConfig.value.qqUrl;
+  useZKStore().showMessage('保存成功')
+}
+function saveBgConfig() {
+  config.value.bg = tmpConfig.value.bg;
   useZKStore().showMessage('保存成功')
 }
 function saveColorsConfig () {
@@ -25,19 +32,31 @@ function saveColorsConfig () {
 <template>
 <div class="SettingsContainer">
   <simplebar class="simplebar">
-    <div class="SettingsPane css1">
+    <div class="SettingsPane">
       <div class="title">API</div>
       <div class="content">
-        <div class="apiInput">
+        <div class="Input">
           <div class="label">网易云</div>
           <input class="input" v-model="apiConfig.neteaseUrl" type="text" />
         </div>
-        <div class="apiInput">
+        <div class="Input">
           <div class="label">QQ</div>
           <input class="input" v-model="apiConfig.qqUrl" type="text" />
         </div>
         <div class="controlBtns">
           <div @click="saveApiConfig" class="controlBtn">保存</div>
+        </div>
+      </div>
+    </div>
+    <div class="SettingsPane">
+      <div class="title">外观</div>
+      <div class="content">
+        <div class="Input">
+          <div class="label">背景</div>
+          <input class="input" v-model="tmpConfig.bg" type="text" />
+        </div>
+        <div class="controlBtns">
+          <div @click="saveBgConfig" class="controlBtn">保存</div>
         </div>
       </div>
     </div>
@@ -82,18 +101,18 @@ function saveColorsConfig () {
   padding-left: 20px;
   color: var(--ymk-color);
 }
-.apiInput {
+.Input {
   margin: 10px 0;
   display: flex;
 }
-.apiInput .label {
+.Input .label {
   width: 70px;
   margin-right: 10px;
 }
 .colorInput .label {
   width: auto;
 }
-.apiInput .label, .apiInput .input {
+.Input .label, .Input .input {
   display: inline-block;
   height: 35px;
   line-height: 35px;
@@ -111,7 +130,7 @@ function saveColorsConfig () {
 input {
   background-color: rgba(0,0,0,.3);
 }
-.apiInput .input {
+.Input .input {
   flex: 1;
   border: 1px solid #18191C;
   padding:0 10px;
@@ -129,6 +148,6 @@ input {
 .colorsSetter {
   display: grid;
   grid-gap: 10px;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
 </style>

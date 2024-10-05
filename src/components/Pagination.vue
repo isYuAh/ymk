@@ -96,7 +96,7 @@ let emit = defineEmits(['changePage'])
     transition: all .15s;
 }
 .pages .pageBlock:hover, .pageControllerEl:hover {
-    background-color: #000;
+    background-color: rgba(0,0,0,.3);
     color: #fff;
 }
 .pageControllerEl {
@@ -112,7 +112,7 @@ svg {
     height: 24px;
 }
 .pages .pageBlock.active {
-    background-color: #000;
+  background-color: rgba(0,0,0,.4);
     color: #fff;
 }
 </style>

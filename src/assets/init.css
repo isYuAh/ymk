@@ -33,7 +33,17 @@
     box-sizing: border-box;
     outline: none;
 }
+a {
+    text-decoration: none;
+}
 .forbidSelect {
     -webkit-user-select: none;
     user-select: none;
+}
+
+.singleLineTextEl {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    word-break: break-all;
+    white-space: nowrap;
 }
