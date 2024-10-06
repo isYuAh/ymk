@@ -53,30 +53,36 @@
                         </div>
                     </Transition>
                 </div>
-                <div
-                v-show="nextLang in zks.play.song.lrc"
-                @click="toggleTranslation" class="translate">
+                <VDropdown placement="right" popperClass="langPopperContainer">
+                  <div
+                      v-show="Object.keys(zks.play.song.lrc).length !== 0"
+                      class="translate">
                     <svg t="1711805276586" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5600"><path d="M661.333333 725.333333c-17.066667 0-32-8.533333-38.4-25.6L586.666667 618.666667h-149.333334l-36.266666 81.066666c-8.533333 21.333333-34.133333 32-55.466667 21.333334-21.333333-8.533333-32-34.133333-21.333333-55.466667l46.933333-106.666667v-2.133333l102.4-234.666667c6.4-14.933333 21.333333-25.6 38.4-25.6s32 10.666667 38.4 25.6l102.4 234.666667v2.133333l46.933333 106.666667c8.533333 21.333333 0 46.933333-21.333333 55.466667-6.4 2.133333-10.666667 4.266667-17.066667 4.266666z m-187.733333-192h74.666667L512 448l-38.4 85.333333z" fill="currentColor" p-id="5601"></path><path d="M921.6 469.333333c-19.2 0-38.4-14.933333-42.666667-34.133333C842.666667 258.133333 684.8 128 503.466667 128 347.733333 128 211.2 221.866667 151.466667 360.533333l49.066666-17.066666c21.333333-6.4 46.933333 4.266667 53.333334 27.733333 6.4 21.333333-4.266667 46.933333-27.733334 53.333333l-128 42.666667c-14.933333 4.266667-29.866667 2.133333-42.666666-8.533333-10.666667-10.666667-14.933333-25.6-12.8-40.533334C87.466667 200.533333 281.6 42.666667 503.466667 42.666667s416 157.866667 460.8 375.466666c4.266667 23.466667-10.666667 44.8-34.133334 51.2h-8.533333zM503.466667 981.333333C281.6 981.333333 87.466667 823.466667 42.666667 605.866667c-4.266667-23.466667 10.666667-44.8 34.133333-51.2 23.466667-4.266667 44.8 10.666667 51.2 34.133333C164.266667 765.866667 322.133333 896 503.466667 896c153.6 0 290.133333-91.733333 349.866666-226.133333l-27.733333 10.666666c-21.333333 8.533333-46.933333-2.133333-55.466667-23.466666-8.533333-21.333333 2.133333-46.933333 23.466667-55.466667l110.933333-42.666667c14.933333-6.4 32-2.133333 42.666667 6.4 12.8 10.666667 17.066667 25.6 14.933333 40.533334C919.466667 823.466667 725.333333 981.333333 503.466667 981.333333z" fill="currentColor" p-id="5602"></path></svg>
-                </div>
+                  </div>
+                  <template #popper>
+                    <div class="chooseLangPanel">
+                      <VueDraggable v-model="config.langPreferences">
+                          <div :class="{disabled: !(item in zks.play.song.lrc)}" class="langItem" @click="toggleLyricLang(item, !(item in zks.play.song.lrc))" v-for="(item, i) in config.langPreferences">{{ langStringMapper[item] }}</div>
+                      </VueDraggable>
+                    </div>
+                  </template>
+                </VDropdown>
             </div>
         </AroundTragetBorder>
     </div>
     <div class="right">
         <Transition name="uianim">
-            <div v-if="Object.keys(zks.play.song.lrc)" ref="lrcContentEl" class="lrcContent" @wheel="lyricWheelEvent">
+            <div v-if="Object.keys(zks.play.song.lrc).length" ref="lrcContentEl" class="lrcContent" @wheel="lyricWheelEvent">
                 <div ref="lrcContainerEl" class="lrcContainer">
-                    <div @click="turnSongToSpecificLyric(l)" v-for="(l, i) in LRC" :class="{lrcItem: true, active: i === zks.play.highlightLrcIndex}">{{ l.text }}</div>
+                    <div @click="turnSongToSpecificLyric(l)" v-for="(l, i) in LRC" :class="{lrcItem: true, active: i === zks.play.highlightLrcIndex}">
+                      <div v-for="t in l.text">{{ t }}</div>
+                    </div>
                 </div>
             </div>
             <div v-else class="lrcStatus">
                 <div class="status">「 No lrc 」</div>
             </div>
         </Transition>
-    </div>
-    <div class="fullPlayBtn">
-        <div @click="zks.showFullPlay = false" class="fullPlayBtn">
-            <svg t="1711336037990" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1699"><path d="M251.069046 983.355077l471.355077-471.355077L251.069046 40.644923A23.809313 23.809313 0 0 1 284.740267 6.973703l488.190687 488.190687a23.809313 23.809313 0 0 1 0 33.67122L284.740267 1017.026297A23.809313 23.809313 0 0 1 251.069046 983.355077z" fill="currentColor" p-id="1700"></path></svg>
-        </div>
     </div>
 </div>
 </template>
@@ -89,8 +95,10 @@ import {storeToRefs} from "pinia";
 import { computed, nextTick, ref, watch } from 'vue';
 import { minmax } from '@/utils/u';
 import type {song_lrc_item, songInPlay} from '@/types';
+import {VueDraggable} from "vue-draggable-plus";
+import {langStringMapper} from "../utils/stringMapper";
 const {isMinimized, onRestore, openUrl} = (window as any).ymkAPI;
-const {zks} = storeToRefs(useZKStore());
+const {zks, config} = storeToRefs(useZKStore());
 let playProgress = ref<HTMLDivElement>();
 let volumeProgress = ref<HTMLDivElement>();
 let lrcContentEl = ref<HTMLDivElement>();
@@ -112,8 +120,8 @@ function parseOriginLink(song: songInPlay) {
         return ''
     }
 }
-
 function turnSongToSpecificLyric(lrcItem: song_lrc_item) {
+  console.log(zks.value.play.song.lrc);
   emitter.emit('changeCurTimeTo', lrcItem.time)
 }
 
@@ -151,15 +159,9 @@ function updateHighlightedIndex() {
     zks.value.play.highlightLrcIndex = LRC.value.length - 1;
     return;
 }
-const nextLang = computed(() => {
-  if (zks.value.play.lang === 'origin') {
-    return 'translation'
-  }else {
-    return 'origin'
-  }
-})
-function toggleTranslation() {
-    zks.value.play.lang = nextLang.value;
+function toggleLyricLang(lang: string, sourceDisabled: boolean = false) {
+  if (sourceDisabled) return;
+  zks.value.play.lang = lang;
 }
 emitter.on('updateActiveLrcIndex', updateHighlightedIndex)
 async function freshLrcElement() {
@@ -193,11 +195,14 @@ function lyricWheelEvent(e: WheelEvent) {
   lrcContainerEl.value.style.transform = `translateY(${minmax(transformVal - e.deltaY, minV, maxV)}px)`
 }
 freshLrcElement();
-watch([() => zks.value.play.highlightLrcIndex, () => zks.value.play.song.lrc, () => zks.value.showFullPlay, () => zks.value.play.lang], () => {
+watch([() => zks.value.play.highlightLrcIndex, () => zks.value.play.song.lrc, () => zks.value.showFullPlay], () => {
     freshLrcElement();
 }, {deep: true})
+watch(() => zks.value.play.lang, () => {
+  updateHighlightedIndex();
+  freshLrcElement();
+})
 onRestore(updateHighlightedIndex);
-
 </script>
 
 <style scoped>
@@ -222,7 +227,7 @@ onRestore(updateHighlightedIndex);
     z-index: 10;
     display: grid;
     grid-template-columns: 360px 1fr;
-    overflow: hidden
+    overflow: visible;
 }
 .partContainer .left {
     display: flex;
@@ -328,13 +333,20 @@ onRestore(updateHighlightedIndex);
     overflow: hidden;
     position: relative;
 }
+.right {
+  overflow-y: hidden;
+}
+.lrcContent {
+  margin: 0 20px 0 10px;
+  overflow: visible;
+}
 .lrcContainer {
     position: absolute;
     top: 0;
     transform: translateY(0);
     transition: all .2s;
-    left: 10px;
-    right: 20px;
+    left: 0;
+    right: 0;
 }
 .lrcContainer .lrcItem {
     padding: 10px 0;
@@ -348,7 +360,9 @@ onRestore(updateHighlightedIndex);
 }
 .lrcContainer .lrcItem.active, .lrcContainer .lrcItem:hover {
   cursor: pointer;
-  background-color: rgba(0,0,0,.4);
+  background-color: rgba(0,0,0,.35);
+  backdrop-filter: blur(2px);
+  box-shadow: 0 0 8px rgba(0,0,0,.4);
   color: #fff;
 }
 .partContainer .playmodeController {
@@ -373,5 +387,24 @@ onRestore(updateHighlightedIndex);
     font-size: 44px;
     color: var(--ymk-text-color);
     text-shadow: 0 0 12px var(--ymk-text-shadow-color);
+}
+
+.chooseLangPanel {
+  padding: 10px;
+}
+.chooseLangPanel .langItem {
+  text-align: center;
+  cursor: pointer;
+  line-height: 40px;
+  height: 40px;
+  margin: 0 5px;
+  padding: 0 5px;
+}
+.chooseLangPanel .langItem.disabled {
+  cursor: not-allowed;
+  color: #aaa;
+}
+.chooseLangPanel .langItem:not(.disabled):hover {
+  background-color: #eee;
 }
 </style>

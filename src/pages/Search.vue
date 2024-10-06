@@ -41,8 +41,8 @@
                 </simplebar>
               </div>
             </Transition>
-            <Transition>
-              <Pagination v-show="!songLoading" @change-page="changePage" :total="total" v-model:group="nowGroup" v-model="nowPage" class="pagination forbidSelect"></Pagination>
+            <Transition name="cube">
+              <Pagination v-show="!paginationLoading" @change-page="changePage" :total="total" v-model:group="nowGroup" v-model="nowPage" class="pagination forbidSelect"></Pagination>
             </Transition>
           </div>
         <Transition name="cube">
@@ -122,6 +122,7 @@ let resultSingerList = ref<song[]>([]);
 let resultPlaylistList = ref<song[]>([]);
 let total = ref(0);
 let url = `${config.value.neteaseApi.url}cloudsearch`;
+let paginationLoading = ref(false);
 let songLoading = ref(false);
 let albumLoading = ref(false);
 let singerLoading = ref(false);
@@ -157,6 +158,7 @@ function search() {
 function getSearchResults(query: string, offset = 0) {
   const types = [10, 100, 1000];
   let tasks = [];
+  paginationLoading.value = true;
   tasks.push(getSearchSongResult(query))
   for (let type of types) {
     if (type === 10) {
@@ -234,6 +236,7 @@ function getSearchSongResult(query: string, offset = 0) {
       reject(e)
     }).finally(() => {
       songLoading.value = false;
+      paginationLoading.value = false;
     })
   })
 }
@@ -425,6 +428,10 @@ onMounted(() => {
   text-align: center;
   color: #eee;
   font-weight: bold;
+}
+
+searchResultPart {
+  height: 100%;
 }
 
 .searchResultPart.albums {

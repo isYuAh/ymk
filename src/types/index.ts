@@ -55,7 +55,7 @@ export type song_lrcConfig_content = {
 } & song_lrcConfig_basic
 export type song_lrc_item = {
     time: number,
-    text: string
+    text: string[],
 }
 export type song_lrcConfig = song_lrcConfig_web | song_lrcConfig_local | song_lrcConfig_content;
 export type song_lrc = song_lrc_item[];

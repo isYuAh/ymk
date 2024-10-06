@@ -42,7 +42,7 @@ export function proceedLrcText(lrcText: string) {
             const text = match[3].trim();
             result.push({
                 time: timeInSeconds,
-                text: text,
+                text: [text],
             })
         }
     })

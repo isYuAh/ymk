@@ -4,7 +4,7 @@ import {useZKStore} from "@/stores/useZKstore";
 
 const {zks} = storeToRefs(useZKStore())
 function confirmF() {
-  if (!zks.value.dialog.data.si) {
+  if (typeof zks.value.dialog.data.si !== 'number') {
     return;
   }
   let np = zks.value.playlists[zks.value.playlist.listIndex];

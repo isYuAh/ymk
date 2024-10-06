@@ -21,8 +21,9 @@
     </Transition>
     <div class="container">
       <div style="-webkit-app-region: drag" class="header forbidSelect">
-        <div style="-webkit-app-region: drag" class="title">Yumuzk</div>
-        <Transition appear name="playcontroller">
+        <div v-if="zks.showFullPlay" @click="zks.showFullPlay = false" style="-webkit-app-region: no-drag" class="title">Return</div>
+        <div v-else class="title">Yumuzk</div>
+        <Transition appear name="fade">
           <div style="-webkit-app-region: no-drag" v-show="!zks.showFullPlay" class="tabs">
             <RouterLink to="/playlist" :class="{tab: true, active: zks.nowTab === 'playlist'}">首页</RouterLink>
             <RouterLink to="/recommendedPlaylists" :class="{tab: true, active: zks.nowTab === 'PlaylistRecommend_netease'}">推荐</RouterLink>
@@ -44,7 +45,7 @@
       <div class="content">
         <router-view v-slot="{ Component }">
           <transition v-show="!zks.showFullPlay" appear name="uianim">
-            <keep-alive>
+            <keep-alive :exclude="['UserCenter']">
               <component :is="Component" />
             </keep-alive>
           </transition>
@@ -155,12 +156,14 @@ body {
   /* border-bottom: 1px solid #e2e3e5; */
 }
 .header .title {
+  cursor: pointer;
   font-family: NovecentoWide;
   font-size: 22px;
   margin-left: 24px;
   line-height: 32px;
   color: var(--ymk-color);
   opacity: 0.9;
+  width: 150px;
 }
 .header .controlbtn {
   position: absolute;
@@ -189,7 +192,6 @@ body {
   position: relative;
 }
 .header .tabs {
-    margin-left: 50px;
     display: flex;
 }
 .header .tab {

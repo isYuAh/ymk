@@ -5,7 +5,7 @@ import axios, {type AxiosResponse} from "axios";
 import {storeToRefs} from "pinia";
 import emitter from "@/emitter";
 
-const {zks, neteaseUser, config} = storeToRefs(useZKStore());
+const {neteaseUser, config} = storeToRefs(useZKStore());
 let qrimgEl = ref<HTMLImageElement>();
 let qrstatus = ref('')
 let mode = ref('');
@@ -20,7 +20,7 @@ function checkStatus(refresh: boolean = false, force = false) {
     cookie: neteaseUser.value.cookie
   }).then((res: AxiosResponse) => {
     console.log(res.data)
-    if (res.data.data.account.status == 0) {
+    if (res.data.data.account && res.data.data.account.status == 0 && res.data.data.profile) {
       neteaseUser.value.nickname = res.data.data.profile.nickname;
       neteaseUser.value.avatarUrl = res.data.data.profile.avatarUrl;
       neteaseUser.value.uid = res.data.data.profile.userId;

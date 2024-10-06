@@ -14,6 +14,7 @@ import emitter from "@/emitter";
 import {minmax} from "@/utils/u";
 import axios, {type AxiosResponse} from "axios";
 import router from "@/router";
+import type {config, neteaseUser} from "@/types/config";
 
 const {getBilibiliFav, writePlaylistFile, getLocalPlaylists, onShowMessage, onRefreshPlaylists} = (window as any).ymkAPI;
 
@@ -97,9 +98,9 @@ export const useZKStore = defineStore('ZK', () => {
     if (to.path !== '/') zks.value.nowTab = to.path.substring(1)
     return true
   })
-  const config = ref<any>({});
-  const colors = ref<any>({});
-  const neteaseUser = ref<any>({});
+  const config = ref<config>({} as any);
+  const colors = ref<Record<string, string>>({});
+  const neteaseUser = ref<neteaseUser>({} as any);
   const isLogin = computed(() => neteaseUser.value.cookie && neteaseUser.value.cookie != '')
   function saveConfig() {
     writeConfig(JSON.stringify({config: config.value, neteaseUser: neteaseUser.value}))
@@ -116,7 +117,7 @@ export const useZKStore = defineStore('ZK', () => {
         zks.value.play.mode = config.value.mode;
       }
     }
-    watch([() => zks.value.play.mode, neteaseUser, config], () => {config.value.mode = zks.value.play.mode; saveConfig()}, {deep: true});
+    watch([() => zks.value.play.mode, neteaseUser, config], () => {config.value.mode = zks.value.play.mode as any; saveConfig()}, {deep: true});
   })
   getSpecificConfig('colors').then((res: any) => {
     if (res) {
@@ -350,7 +351,7 @@ export const useZKStore = defineStore('ZK', () => {
       }
     }else {
       if (JSON.stringify(zks.value.playlist.raw) === JSON.stringify(raw)) {
-        zks.value.nowTab = 'PlaylistDetail';
+        router.push('/playlistDetail')
       }else {
         zks.value.playlist.listIndex = -2;
         zks.value.playlist.songs = [];

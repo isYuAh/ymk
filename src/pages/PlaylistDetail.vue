@@ -75,6 +75,11 @@ let filter = ref('');
 let FuseVal = ref(new Fuse(zks.value.playlist.songs, {
   keys: ['title', 'singer']
 }))
+watch(() => zks.value.playlist, (nv) => {
+  FuseVal.value = new Fuse(nv.songs, {
+    keys: ['title', 'singer']
+  })
+}, {deep: true})
 let showingSonglist = computed(() => {
   if (!filter.value) {
     return zks.value.playlist.songs.map((element, index) => ({item: element, refIndex: index}))

@@ -82,3 +82,29 @@
     transform: scale(1);
     opacity: 1;
 }
+
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
+.fullplay-enter-active,
+.fullplay-leave-active {
+    transition: all 2s ease-in-out;
+    position: absolute;
+}
+
+.fullplay-leave-from,
+.fullplay-enter-to {
+    top: 64px;
+}
+
+.fullplay-leave-to,
+.fullplay-enter-from {
+    top: 100px;
+}

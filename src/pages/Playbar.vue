@@ -101,7 +101,7 @@
 <script setup lang='ts'>
 import {onMounted, onUnmounted, ref, watch, watchEffect} from 'vue';
 import axios, { AxiosError, type AxiosResponse } from 'axios';
-import {type playSongParams, type songInPlay} from '@/types';
+import {type playSongParams, type song_lrc, type songInPlay} from '@/types';
 import {minmax, proceedLrcText, secondsToMmss} from '@/utils/u';
 import { useZKStore } from '@/stores/useZKstore'
 import emitter from '@/emitter'
@@ -154,18 +154,21 @@ function changeVolumeInfo() {
 function playEnded() {
     if (zks.value.play.mode === 'pause') {
         
+    }else if (!zks.value.play.playlist.length) {
+      songSource.value!.currentTime = 0;
+      songSource.value!.play();
     }else if (zks.value.play.mode === 'list') {
-        let si = zks.value.play.indexInPlaylist;
-        if (si === zks.value.play.playlist.length - 1) {
-            playSong({song: zks.value.play.playlist[0]})
-        }else {
-            playSong({song: zks.value.play.playlist[si + 1]});
-        }
+      let si = zks.value.play.indexInPlaylist;
+      if (si === zks.value.play.playlist.length - 1) {
+        playSong({song: zks.value.play.playlist[0]})
+      }else {
+        playSong({song: zks.value.play.playlist[si + 1]});
+      }
     }else if (zks.value.play.mode === 'rand') {
-        playSong({song: zks.value.play.playlist[Math.floor(Math.random() * (zks.value.play.playlist.length))]})
+      playSong({song: zks.value.play.playlist[Math.floor(Math.random() * (zks.value.play.playlist.length))]})
     }else if (zks.value.play.mode === 'loop') {
-        songSource.value!.currentTime = 0;
-        songSource.value!.play();
+      songSource.value!.currentTime = 0;
+      songSource.value!.play();
     }
 }
 function updateTime() {
@@ -292,15 +295,61 @@ async function playSong({song, justtry = false}: playSongParams) {
     }))
     tasks.push(new Promise((resolve, reject) => {
       axios.get(config.value.neteaseApi.url + 'lyric', {params: {id: song.id}}).then((res: AxiosResponse) => {
+        let sign1 = false, sign2 = false;
         if ('lrc' in res.data && res.data.lrc.lyric) {
           tmpSong.lrc['origin'] = proceedLrcText(res.data.lrc.lyric);
+          sign1 = true;
         }
         if ('tlyric' in res.data && res.data.tlyric.lyric) {
           tmpSong.lrc['translation'] = proceedLrcText(res.data.tlyric.lyric)
+          sign2 = true;
         }
+        if (sign1 && sign2) {
+          let oFirst = tmpSong.lrc['origin'][0], tFirst = tmpSong.lrc['translation'][0];
+          function mixLrc(short: song_lrc, long: song_lrc, time: number) {
+            let indexOffset = 0;
+            let index = long.findIndex((el) => el.time === time);
+            if (index !== -1) {
+              tmpSong.lrc['mixed'] = long.map((el, i) => {
+                if (el.text[0] === '') return el;
+                if (i >= index) {
+                  if (i - index - indexOffset >= short.length) {
+                    return el
+                  }
+                  if (el.time === short[i - index - indexOffset].time) {
+                    return {
+                      time: el.time,
+                      text: [el.text[0], short[i - index - indexOffset].text[0]],
+                    }
+                  }else if (el.time > short[i - index - indexOffset].time) {
+                    let tmpOffset = short.findIndex((el) => el.time === time);
+                    if (tmpOffset === -1) {
+                      return el
+                    }else {
+                      indexOffset = tmpOffset - index;
+                      return {
+                        time: el.time,
+                        text: [el.text[0], short[i - index - indexOffset].text[0]],
+                      }
+                    }
+                  }else {
+                    indexOffset++;
+                    return el
+                  }
+
+                }else {
+                  return el;
+                }
+              })
+            }
+          }
+          if (oFirst.time <= tFirst.time) mixLrc(tmpSong.lrc['translation'], tmpSong.lrc['origin'], tFirst.time);
+          else mixLrc(tmpSong.lrc['origin'], tmpSong.lrc['translation'], oFirst.time);
+        }
+
         resolve();
       }).catch((e) => {
-        console.log(e);
+        console.log(e, tmpSong.lrc);
         reject(new Error('歌词获取失败'))
       })
     }))
@@ -341,7 +390,12 @@ async function playSong({song, justtry = false}: playSongParams) {
     Object.assign(zks.value.play.song, {
       ...tmpSong
     })
-    zks.value.play.lang = 'origin';
+    for (let langOption of config.value.langPreferences) {
+      if (langOption in zks.value.play.song.lrc) {
+        zks.value.play.lang = langOption;
+        break;
+      }
+    }
     if (!justtry) {
       let findIndex = -1;
       for (let i = 0; i < zks.value.play.playlist.length; i++) {
@@ -374,7 +428,7 @@ async function playSong({song, justtry = false}: playSongParams) {
       })
     }
   }).catch((err) => {
-    console.log(err.message);
+    console.log(err);
     useZKStore().showMessage(err.message)
   })
 }
