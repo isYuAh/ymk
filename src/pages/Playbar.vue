@@ -305,48 +305,34 @@ async function playSong({song, justtry = false}: playSongParams) {
           sign2 = true;
         }
         if (sign1 && sign2) {
-          let oFirst = tmpSong.lrc['origin'][0], tFirst = tmpSong.lrc['translation'][0];
-          function mixLrc(short: song_lrc, long: song_lrc, time: number) {
-            let indexOffset = 0;
-            let index = long.findIndex((el) => el.time === time);
-            if (index !== -1) {
-              tmpSong.lrc['mixed'] = long.map((el, i) => {
-                if (el.text[0] === '') return el;
-                if (i >= index) {
-                  if (i - index - indexOffset >= short.length) {
-                    return el
-                  }
-                  if (el.time === short[i - index - indexOffset].time) {
-                    return {
-                      time: el.time,
-                      text: [el.text[0], short[i - index - indexOffset].text[0]],
-                    }
-                  }else if (el.time > short[i - index - indexOffset].time) {
-                    let tmpOffset = short.findIndex((el) => el.time === time);
-                    if (tmpOffset === -1) {
-                      return el
-                    }else {
-                      indexOffset = tmpOffset - index;
-                      return {
-                        time: el.time,
-                        text: [el.text[0], short[i - index - indexOffset].text[0]],
-                      }
-                    }
-                  }else {
-                    indexOffset++;
-                    return el
-                  }
-
-                }else {
-                  return el;
-                }
-              })
+          // console.log(tmpSong.lrc['origin'], tmpSong.lrc['translation'])
+          let pointerA = 0, pointerB = 0;
+          let origin = tmpSong.lrc['origin'],
+              translation = tmpSong.lrc['translation'];
+          let result = [];
+          while (pointerA < origin.length) {
+            if (pointerB >= translation.length) {
+              result.push(origin[pointerA]);
+              pointerA++;
+            } else {
+              // console.log(pointerA, origin[pointerA], pointerB, translation[pointerB])
+              if (origin[pointerA].time > translation[pointerB].time) {
+                pointerB++;
+              }else if (origin[pointerA].time < translation[pointerB].time) {
+                result.push(origin[pointerA]) //添加数据到数组尾
+                pointerA++;
+              }else {
+                result.push({
+                  time: origin[pointerA].time,
+                  text: [origin[pointerA].text[0], translation[pointerB].text[0]],
+                })
+                pointerA++;
+                pointerB++;
+              }
             }
           }
-          if (oFirst.time <= tFirst.time) mixLrc(tmpSong.lrc['translation'], tmpSong.lrc['origin'], tFirst.time);
-          else mixLrc(tmpSong.lrc['origin'], tmpSong.lrc['translation'], oFirst.time);
+          tmpSong.lrc['mixed'] = result;
         }
-
         resolve();
       }).catch((e) => {
         console.log(e, tmpSong.lrc);
@@ -354,9 +340,10 @@ async function playSong({song, justtry = false}: playSongParams) {
       })
     }))
     tasks.push(new Promise((resolve, reject) => {
-      axios.get(config.value.neteaseApi.url + 'song/url', {
+      axios.get(config.value.neteaseApi.url + 'song/url/v1', {
         params: {
           id: song.id,
+          level: 'standard',
           cookie: neteaseUser.value.cookie
         }
       }).then(res => {

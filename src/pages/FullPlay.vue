@@ -61,7 +61,7 @@
                   </div>
                   <template #popper>
                     <div class="chooseLangPanel">
-                      <VueDraggable v-model="config.langPreferences">
+                      <VueDraggable :animation="150" v-model="config.langPreferences">
                           <div :class="{disabled: !(item in zks.play.song.lrc)}" class="langItem" @click="toggleLyricLang(item, !(item in zks.play.song.lrc))" v-for="(item, i) in config.langPreferences">{{ langStringMapper[item] }}</div>
                       </VueDraggable>
                     </div>
