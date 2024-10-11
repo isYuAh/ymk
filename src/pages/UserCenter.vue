@@ -95,8 +95,8 @@ function logout() {
     neteaseUser.value.nickname = '';
     neteaseUser.value.avatarUrl = '';
     neteaseUser.value.cookie = '';
-    neteaseUser.value.uid = '';
-    neteaseUser.value.vipType = '0';
+    neteaseUser.value.uid = 0;
+    neteaseUser.value.vipType = 0;
     checkStatus(true);
   })
 }

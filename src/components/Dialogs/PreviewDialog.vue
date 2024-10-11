@@ -14,7 +14,7 @@
         <input style="width: 400px" v-model="previewLink" type="text" />
       </div>
       <div>
-        <input type="checkbox" id="asData" v-model="asData" /><label class="asDataLabel" for="asData">作为data类型</label>
+<!--        <input type="checkbox" id="asData" v-model="asData" /><label class="asDataLabel" for="asData">作为data类型</label>-->
       </div>
     </div>
     <div class="footer">
@@ -30,6 +30,7 @@ import {ref} from 'vue';
 import {storeToRefs} from "pinia";
 import {type playlistComponent, type song} from "@/types";
 import axios, {type AxiosResponse} from "axios";
+import {neteaseAxios} from "@/utils/axiosInstances";
 const {zks, config} = storeToRefs(useZKStore());
 const {checkDetail} = useZKStore().playlistToolkit;
 let previewLink = ref('');
@@ -44,27 +45,12 @@ function preview() {
       ) {
         let match = previewLink.value.match(/\/playlist\?id=(\d+)/);
         if (match) {
-          axios.get(`${config.value.neteaseApi.url}playlist/detail?id=${match[1]}`).then((res: AxiosResponse) => {
+          neteaseAxios.get(`/playlist/detail?id=${match[1]}`).then((res: AxiosResponse) => {
             let playlist: playlistComponent[];
-            if (!asData.value) {
-              playlist = <playlistComponent[]>[{
-                type: "trace_netease_playlist",
-                id: res.data.playlist.id,
-              }]
-            } else {
-              playlist = <playlistComponent[]>[{
-                type: "data",
-                songs: res.data.playlist.tracks.map((track: any) => {
-                  return <song>{
-                    pic: track.al.picUrl,
-                    title: track.name,
-                    type: 'netease',
-                    singer: track.ar.map((ar: any) => (ar.name)).join(' & '),
-                    id: track.id,
-                  }
-                })
-              }]
-            }
+            playlist = <playlistComponent[]>[{
+              type: "trace_netease_playlist",
+              id: res.data.playlist.id,
+            }]
             checkDetail(-2, {
               title: res.data.playlist.name,
               pic: res.data.playlist.coverImgUrl,
@@ -135,27 +121,12 @@ function preview() {
         })
       })
     }else if (selectComponent.value.value === 'netease') {
-      axios.get(`${config.value.neteaseApi.url}playlist/detail?id=${previewLink.value}`).then((res: AxiosResponse) => {
-        let playlist = <playlistComponent[]>[];
-        if (!asData.value) {
-          playlist = <playlistComponent[]>[{
-            type: "trace_netease_playlist",
-            id: res.data.playlist.id,
-          }]
-        }else {
-          playlist = <playlistComponent[]>[{
-            type: "data",
-            songs: res.data.playlist.tracks.map((track: any) => {
-              return <song>{
-                pic: track.al.picUrl,
-                title: track.name,
-                type: 'netease',
-                singer: track.ar.map((ar: any) => (ar.name)).join(' & '),
-                id: track.id,
-              }
-            })
-          }]
-        }
+      neteaseAxios.get(`/playlist/detail?id=${previewLink.value}`).then((res: AxiosResponse) => {
+        let playlist: playlistComponent[];
+        playlist = <playlistComponent[]>[{
+          type: "trace_netease_playlist",
+          id: res.data.playlist.id,
+        }]
         checkDetail(-2, {
           title: res.data.playlist.name,
           pic: res.data.playlist.coverImgUrl,

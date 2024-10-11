@@ -121,7 +121,8 @@ export type songInPlay = {
 
 export type playSongParams = {
     song: song,
-    justtry?: boolean
+    justtry?: boolean,
+    noEffectWhenNotPlayable?:boolean
 }
 export type refreshPlaylistsParams = {
     notReset: boolean

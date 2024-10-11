@@ -19,24 +19,39 @@
         <div class="playlistSonglistTitle">播放列表</div>
         <div class="songs">
           <div class="container">
-            <simplebar data-auto-hide class="simplebar">
-              <div class="songTable forbidSelect">
-                <div
-                    @dblclick="playSong({song, justtry: false})"
-                    :class="{song: true, active: zks.play.indexInPlaylist === index}"
-                    :data-song="song"
-                    @contextmenu.prevent="useZKStore().showMouseMenu([
-                       {
-                         title: '删除',
-                         action: deleteSongInPlaylistSonglist
-                       }
-                    ], index)"
-                    v-for="(song, index) in zks.play.playlist">
-                  <div class="songInfo title">{{ song.title }}<sub>{{ song.type }}</sub></div>
-                  <div class="songInfo author">{{ song.singer }}</div>
-                </div>
+<!--            <simplebar data-auto-hide class="simplebar">-->
+<!--              <div class="songTable forbidSelect">-->
+<!--                <div-->
+<!--                    @dblclick="playSong({song, justtry: false})"-->
+<!--                    :class="{song: true, active: zks.play.indexInPlaylist === index}"-->
+<!--                    :data-song="song"-->
+<!--                    @contextmenu.prevent="useZKStore().showMouseMenu([-->
+<!--                       {-->
+<!--                         title: '删除',-->
+<!--                         action: deleteSongInPlaylistSonglist-->
+<!--                       }-->
+<!--                    ], index)"-->
+<!--                    v-for="(song, index) in zks.play.playlist">-->
+<!--                  <div class="songInfo title">{{ song.title }}<sub>{{ song.type }}</sub></div>-->
+<!--                  <div class="songInfo author">{{ song.singer }}</div>-->
+<!--                </div>-->
+<!--              </div>-->
+<!--            </simplebar>-->
+            <VirtualList :item-height="38" :items="zks.play.playlist" :size="10" v-slot="{item: song, index}" class-name="songTable">
+              <div
+                  @dblclick="playSong({song, justtry: false})"
+                  :class="{song: true, active: zks.play.indexInPlaylist === index}"
+                  :data-song="song"
+                  @contextmenu.prevent="useZKStore().showMouseMenu([
+                     {
+                       title: '删除',
+                       action: deleteSongInPlaylistSonglist
+                     }
+                  ], index)">
+                <div class="songInfo title">{{ song.title }}<sub>{{ song.type }}</sub></div>
+                <div class="songInfo author">{{ song.singer }}</div>
               </div>
-            </simplebar>
+            </VirtualList>
           </div>
         </div>
       </div>
@@ -114,6 +129,8 @@ let progressChooseFill = ref<HTMLDivElement>();
 let progress_tooltip = ref<HTMLDivElement>();
 let volumeProgressFill = ref<HTMLDivElement>();
 import {storeToRefs} from "pinia";
+import {neteaseAxios} from "@/utils/axiosInstances";
+import VirtualList from "@/components/VirtualList.vue";
 const {getBilibiliVideoView, getBilibiliVideoPlayurl, axiosRequestGet} = (window as any).ymkAPI;
 const {checkMusicPlayable} = useZKStore().songToolkit
 const {zks, neteaseUser, config} = storeToRefs(useZKStore());
@@ -152,6 +169,7 @@ function changeVolumeInfo() {
     }
 }
 function playEnded() {
+  const noEffectWhenNotPlayable = false;
     if (zks.value.play.mode === 'pause') {
         
     }else if (!zks.value.play.playlist.length) {
@@ -160,12 +178,21 @@ function playEnded() {
     }else if (zks.value.play.mode === 'list') {
       let si = zks.value.play.indexInPlaylist;
       if (si === zks.value.play.playlist.length - 1) {
-        playSong({song: zks.value.play.playlist[0]})
+        playSong({
+          song: zks.value.play.playlist[0],
+          noEffectWhenNotPlayable
+        })
       }else {
-        playSong({song: zks.value.play.playlist[si + 1]});
+        playSong({
+          song: zks.value.play.playlist[si + 1],
+          noEffectWhenNotPlayable
+        });
       }
     }else if (zks.value.play.mode === 'rand') {
-      playSong({song: zks.value.play.playlist[Math.floor(Math.random() * (zks.value.play.playlist.length))]})
+      playSong({
+        song: zks.value.play.playlist[Math.floor(Math.random() * (zks.value.play.playlist.length))],
+        noEffectWhenNotPlayable
+      })
     }else if (zks.value.play.mode === 'loop') {
       songSource.value!.currentTime = 0;
       songSource.value!.play();
@@ -218,7 +245,7 @@ watchEffect(() => {
   }
 })
 
-async function playSong({song, justtry = false}: playSongParams) {
+async function playSong({song, justtry = false, noEffectWhenNotPlayable = true}: playSongParams) {
   let tmpSong: songInPlay = {
     title: song.title,
     type: song.type,
@@ -230,7 +257,8 @@ async function playSong({song, justtry = false}: playSongParams) {
   }
   let {result, msg} = await checkMusicPlayable(song);
   if (!result) {
-    useZKStore().showMessage('歌曲无法播放')
+    useZKStore().showMessage(`歌曲无法播放, ${msg}`)
+    if (noEffectWhenNotPlayable) return;
     if (zks.value.play.mode !== 'loop') playNextSong();
     return;
   }
@@ -284,7 +312,7 @@ async function playSong({song, justtry = false}: playSongParams) {
   }
   else if (song.type === 'netease') {
     tasks.push(new Promise((resolve, reject) => {
-      axios.get(config.value.neteaseApi.url + 'song/detail', {params: {ids: song.id}}).then((res: AxiosResponse) => {
+      neteaseAxios.get('/song/detail', {params: {ids: song.id}}).then((res: AxiosResponse) => {
         if (res.data.songs[0].al.picUrl) {
           tmpSong.pic = res.data.songs[0].al.picUrl;
         }
@@ -294,7 +322,7 @@ async function playSong({song, justtry = false}: playSongParams) {
       })
     }))
     tasks.push(new Promise((resolve, reject) => {
-      axios.get(config.value.neteaseApi.url + 'lyric', {params: {id: song.id}}).then((res: AxiosResponse) => {
+      neteaseAxios.get('/lyric', {params: {id: song.id}}).then((res: AxiosResponse) => {
         let sign1 = false, sign2 = false;
         if ('lrc' in res.data && res.data.lrc.lyric) {
           tmpSong.lrc['origin'] = proceedLrcText(res.data.lrc.lyric);
@@ -340,11 +368,10 @@ async function playSong({song, justtry = false}: playSongParams) {
       })
     }))
     tasks.push(new Promise((resolve, reject) => {
-      axios.get(config.value.neteaseApi.url + 'song/url/v1', {
+      neteaseAxios.get('/song/url/v1', {
         params: {
           id: song.id,
-          level: 'standard',
-          cookie: neteaseUser.value.cookie
+          level: 'standard'
         }
       }).then(res => {
         if (res.data.data[0]) {
@@ -415,7 +442,7 @@ async function playSong({song, justtry = false}: playSongParams) {
       })
     }
   }).catch((err) => {
-    console.log(err);
+    console.log(err, song);
     useZKStore().showMessage(err.message)
   })
 }
@@ -439,15 +466,25 @@ function deleteSongInPlaylistSonglist(index: number) {
   }
 }
 function playPrevSong() {
+  const noEffectWhenNotPlayable = false;
     if (zks.value.play.mode === 'list' || zks.value.play.mode === '') {
       let si = zks.value.play.indexInPlaylist;
       if (si <= 0 || si > zks.value.play.playlist.length - 1) {
-        playSong({song: zks.value.play.playlist[zks.value.play.playlist.length - 1]})
+        playSong({
+          song: zks.value.play.playlist[zks.value.play.playlist.length - 1],
+          noEffectWhenNotPlayable
+        })
       }else {
-        playSong({song: zks.value.play.playlist[si - 1]});
+        playSong({
+          song: zks.value.play.playlist[si - 1],
+          noEffectWhenNotPlayable
+        });
       }
     }else if(zks.value.play.mode === 'rand') {
-      playSong({song: zks.value.play.playlist[Math.floor(Math.random() * (zks.value.play.playlist.length))]})
+      playSong({
+        song: zks.value.play.playlist[Math.floor(Math.random() * (zks.value.play.playlist.length))],
+        noEffectWhenNotPlayable
+      })
     }
 }
 function playNextSong() {

@@ -21,7 +21,7 @@
     </div>
     <Transition name="cube">
       <div class="searchResult" v-show="tmpSearchVal !== ''">
-          <div class="songs searchResultPart" style="grid-column: span 17">
+          <div class="songs searchResultPart OverScrollBehavior-Contain" style="grid-column: span 17">
             <Transition name="cube">
               <div v-show="!songLoading" class="container">
                 <simplebar data-auto-hide class="simplebar">
@@ -52,7 +52,7 @@
             </div>
             <Transition name="cube">
               <div v-show="!albumLoading" class="main">
-                <div class="albumItem" v-for="album in resultAlbumList">
+                <div class="albumItem" @click="checkAlbum(album.id)" v-for="album in resultAlbumList">
                   <div class="pic">
                     <img :src="album.blurPicUrl" alt="">
                   </div>
@@ -106,22 +106,23 @@ import '@/assets/songlist.css'
 import simplebar from "simplebar-vue";
 import 'simplebar-vue/dist/simplebar.min.css'
 import {type song, type song_netease} from "@/types";
-import axios, { type AxiosResponse } from "axios";
+import { type AxiosResponse } from "axios";
 import {storeToRefs} from "pinia";
 import Pagination from '@/components/Pagination.vue'
 import emitter from "@/emitter";
 import { useZKStore } from "@/stores/useZKstore";
 import CollectDialog from "@/components/Dialogs/CollectDialog.vue";
-const {config, neteaseUser} = storeToRefs(useZKStore());
+import {neteaseAxios} from "@/utils/axiosInstances";
+const {config} = storeToRefs(useZKStore());
 const {checkDetail} = useZKStore().playlistToolkit
 const {mapCheckSongPlayable} = useZKStore().songToolkit
 let searchInput = ref<HTMLInputElement>();
 let resultSongList = ref<song[]>([]);
-let resultAlbumList = ref<song[]>([]);
-let resultSingerList = ref<song[]>([]);
-let resultPlaylistList = ref<song[]>([]);
+let resultAlbumList = ref<any[]>([]);
+let resultSingerList = ref<any[]>([]);
+let resultPlaylistList = ref<any[]>([]);
 let total = ref(0);
-let url = `${config.value.neteaseApi.url}cloudsearch`;
+let url = `/cloudsearch`;
 let paginationLoading = ref(false);
 let songLoading = ref(false);
 let albumLoading = ref(false);
@@ -171,10 +172,9 @@ function getSearchResults(query: string, offset = 0) {
       playlistLoading.value = true;
     }
     tasks.push(new Promise<void>((resolve, reject) => {
-      axios.get(url, {
+      neteaseAxios.get(url, {
         params: {
           keywords: query,
-          cookie: neteaseUser.value.cookie,
           type,
           limit: 10,
         }
@@ -209,11 +209,10 @@ function getSearchResults(query: string, offset = 0) {
 function getSearchSongResult(query: string, offset = 0) {
   return new Promise<void>((resolve, reject) => {
     songLoading.value = true;
-    axios.get(url, {
+    neteaseAxios.get(url, {
       params: {
         keywords: query,
         offset: offset,
-        cookie: neteaseUser.value.cookie
       },
     }).then((res: AxiosResponse) => {
       if (res.data.result.songs) {
@@ -256,8 +255,8 @@ function nextSuggest() {
 function refreshSuggests () {
     if (searchInput.value && searchInput.value.value) {
         let query = searchInput.value.value
-        let url = `${config.value.neteaseApi.url}search/suggest`
-        axios.get(url, {
+        let url = `/search/suggest`
+        neteaseAxios.get(url, {
             params: {
                 keywords: query,
                 type: 'mobile'
@@ -298,7 +297,7 @@ function checkSearchPlaylist(p: any) {
 }
 onMounted(() => {
   const l = (e: Event) => {
-    if (e.target!.tagName !== 'INPUT' && !e.target!.classList.contains('suggest')) {
+    if ((e.target as HTMLElement).tagName !== 'INPUT' && !(e.target as HTMLElement).classList.contains('suggest')) {
       showSuggestBar.value=false
     }
   };
@@ -307,6 +306,12 @@ onMounted(() => {
     document.body.removeEventListener('click', l)
   })
 })
+
+async function checkAlbum(id: string) {
+  console.log(await neteaseAxios.get(`/album?id=${id}`))
+}
+
+
 </script>
 
 <style scoped>
@@ -430,7 +435,7 @@ onMounted(() => {
   font-weight: bold;
 }
 
-searchResultPart {
+.searchResultPart {
   height: 100%;
 }
 
@@ -449,6 +454,7 @@ searchResultPart {
   min-height: 0;
   overflow-y: scroll;
   overflow-x: hidden;
+  overscroll-behavior-y: contain;
 }
 .searchResultPart.albums .main {
   flex: 1;

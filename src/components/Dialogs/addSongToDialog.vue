@@ -5,6 +5,7 @@ import emitter from "@/emitter";
 import {inject, ref} from "vue";
 import {type song} from "@/types";
 import {storeToRefs} from "pinia";
+import {neteaseAxios} from "@/utils/axiosInstances";
 const {readClipboard, getBilibiliVideoView} = (window as any).ymkAPI
 const {zks, config} = storeToRefs(useZKStore());
 let title = ref("");
@@ -24,7 +25,7 @@ async function autoDetectFromClipboard() {
       id.value = match[1];
       selectComponent.value!.value = 'netease';
       let rawDetail = {} as any;
-      axios.get(`${config.value.neteaseApi.url}song/detail?ids=${id.value}`).then((res: AxiosResponse) => {
+      neteaseAxios.get(`/song/detail?ids=${id.value}`).then((res: AxiosResponse) => {
         rawDetail = res.data['songs'][0];
         title.value = rawDetail.name;
         singer.value = rawDetail.ar.map((artist: any) => artist.name).join(' & ');

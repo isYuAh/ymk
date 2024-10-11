@@ -10,11 +10,10 @@ import type {
   playlistComponent, list_trace_bilibili_fav
 } from '@/types'
 import {type Component, computed, ref, shallowRef, toRaw, watch} from 'vue';
-import emitter from "@/emitter";
-import {minmax} from "@/utils/u";
 import axios, {type AxiosResponse} from "axios";
 import router from "@/router";
 import type {config, neteaseUser} from "@/types/config";
+import {neteaseAxios} from "@/utils/axiosInstances";
 
 const {getBilibiliFav, writePlaylistFile, getLocalPlaylists, onShowMessage, onRefreshPlaylists} = (window as any).ymkAPI;
 
@@ -204,9 +203,7 @@ export const useZKStore = defineStore('ZK', () => {
     const ps = await getLocalPlaylists();
     pushPlaylistPart('本地', ps)
     if (neteaseUser.value.cookie) {
-      let res = await axios.post(`${config.value.neteaseApi.url}user/playlist?uid=${neteaseUser.value.uid}`, {
-        cookie: neteaseUser.value.cookie,
-      })
+      let res = await neteaseAxios.post(`/user/playlist?uid=${neteaseUser.value.uid}`, {})
       pushPlaylistPart('网易云', res.data.playlist.map((playlist: any) => ({
         title: playlist.name,
         pic: playlist.coverImgUrl,
@@ -287,13 +284,12 @@ export const useZKStore = defineStore('ZK', () => {
       })
     } else if (component.type === 'trace_netease_playlist') {
       zks.value.loading.text = `加载 网易云歌单#${component.id}`;
-      axios.get(config.value.neteaseApi.url + 'playlist/detail', {
+      neteaseAxios.get('/playlist/detail', {
         params: {
           timestamp: new Date().getTime(),
-          id: component.id,
-          cookie: neteaseUser.value.cookie
+          id: component.id
         }
-      }).then(res => {
+      }).then(async (res) => {
         if (components.length === 1) {
           zks.value.playlist.extraInfo.type = 'pureNeteasePlaylist';
           if (res.data.playlist.subscribed) {
@@ -304,17 +300,58 @@ export const useZKStore = defineStore('ZK', () => {
             zks.value.playlist.extraInfo.infos.subscribe = 2; //未收藏
           }
         }
-        zks.value.playlist.songs.push(...res.data.playlist.tracks.map((track: any) => {
-          return <song>{
-            pic: track.al.picUrl,
-            title: track.name,
-            type: 'netease',
-            singer: track.ar.map((ar: any) => (ar.name)).join(' & '),
-            id: track.id,
+        let totalSongCount = res.data.playlist.trackCount;
+        if (totalSongCount <= 1000 && neteaseUser.value.cookie !== '') {
+          zks.value.playlist.songs.push(...res.data.playlist.tracks.map((track: any) => {
+            return <song>{
+              pic: track.al.picUrl,
+              title: track.name,
+              type: 'netease',
+              singer: track.ar.map((ar: any) => (ar.name)).join(' & '),
+              id: track.id,
+            }
+          }))
+          comIndex++;
+          parseComponent(comIndex, components);
+        }else {
+          const spliceCount = Math.ceil(totalSongCount / 1000);
+          let completeCount = 0, tasks = <Promise<song[]>[]>[];
+          zks.value.loading.text = `加载 网易云歌单#${component.id} | 分片 ${completeCount} / ${spliceCount}`;
+          for (let c = 0, i = 0; i < totalSongCount; i+=1000, c++) {
+            tasks.push(new Promise((resolve, reject) => {
+              neteaseAxios.get('/playlist/track/all', {
+                params: {
+                  id: component.id,
+                  limit: 1000,
+                  offset: i
+                }
+              }).then((res) => {
+                if (res.data.code === 200) {
+                  completeCount++;
+                  zks.value.loading.text = `加载 网易云歌单#${component.id} | 分片 ${completeCount} / ${spliceCount}`;
+                  resolve(res.data.songs.map((s: any) => {
+                    return {
+                      pic: s.al.picUrl,
+                      title: s.name,
+                      type: 'netease',
+                      singer: s.ar.map((ar: any) => (ar.name)).join(' & '),
+                      id: s.id,
+                    }
+                  }));
+                }else {
+                  completeCount++;
+                  zks.value.loading.text = `加载 网易云歌单#${component.id} | 分片 ${completeCount} / ${spliceCount}`;
+                  reject()
+                }
+              }).catch((e) => {reject(e)})
+            }))
           }
-        }))
-        comIndex++;
-        parseComponent(comIndex, components);
+          Promise.all(tasks).then((results) => {
+            zks.value.playlist.songs.push(...(<song[]>[]).concat(...results));
+            comIndex++;
+            parseComponent(comIndex, components);
+          })
+        }
       })
     }else if (component.type === 'trace_qq_playlist') {
       if (!config.value.qqApi.enable) {
@@ -393,10 +430,9 @@ export const useZKStore = defineStore('ZK', () => {
   }
   async function checkMusicPlayable(song: song) {
     if (song.type === 'netease') {
-      let res = await axios.get(`${config.value.neteaseApi.url}check/music`, {
+      let res = await neteaseAxios.get(`/check/music`, {
         params: {
-          id: song.id,
-          cookie: neteaseUser.value.cookie
+          id: song.id
         }
       })
       return {result: res.data.success, msg: res.data.message}

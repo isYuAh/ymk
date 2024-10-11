@@ -7,6 +7,7 @@
         <button @click="emitter.emit('refreshPlaylists', {notReset: false})" class="controllerButton import">刷新</button>
         <button @click="showPreviewDialog" class="controllerButton import">预览</button>
         <button @click="testFunc" class="controllerButton test">测试</button>
+
       </div>
     </Transition>
     <Playlists :from-zks="true" :parts="zks.playlistsParts" :playlists="zks.playlists" :menu-event="(list: list, index: number, part: playlistPart) => {
@@ -25,17 +26,16 @@
 <script setup lang='ts'>
 import {useZKStore} from '@/stores/useZKstore';
 import {storeToRefs} from "pinia";
-//@ts-ignore
 import emitter from '@/emitter';
 import simplebar from "simplebar-vue";
 import 'simplebar-vue/dist/simplebar.min.css'
 import PreviewDialog from "@/components/Dialogs/PreviewDialog.vue";
 import AddSongToDialog from '@/components/Dialogs/addSongToDialog.vue';
 import Playlists from "@/components/Playlists.vue";
-import type {list, playlistPart} from "@/types";
+const {zks} = storeToRefs(useZKStore());
+import {neteaseAxios} from "@/utils/axiosInstances";
 
 const {deletePlaylistFile, showImportPlaylistDialog} = (window as any).ymkAPI;
-const {zks} = storeToRefs(useZKStore());
 function menu_deletePlaylist() {
   if (zks.value.mouseMenu.args.pi < zks.value.playlistsParts[0].count) {
     let p = zks.value.playlists[zks.value.mouseMenu.args.pi];
@@ -52,7 +52,8 @@ function menu_deletePlaylist() {
 function importPlaylist() {
     showImportPlaylistDialog();
 }
-function testFunc() {
+async function testFunc() {
+  neteaseAxios.get('/recommend/resource', {params: {}}).then(res => console.log(res))
 }
 function showAddSongToDialog() {
   useZKStore().showDialog(AddSongToDialog)

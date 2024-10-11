@@ -74,7 +74,7 @@
         <Transition name="uianim">
             <div v-if="Object.keys(zks.play.song.lrc).length" ref="lrcContentEl" class="lrcContent" @wheel="lyricWheelEvent">
                 <div ref="lrcContainerEl" class="lrcContainer">
-                    <div @click="turnSongToSpecificLyric(l)" v-for="(l, i) in LRC" :class="{lrcItem: true, active: i === zks.play.highlightLrcIndex}">
+                    <div @click="turnSongToSpecificLyric(l)" v-for="(l, i) in LRC" class="lrcItem" :class="{blank: l.text.every(t => t === ''), active: i === zks.play.highlightLrcIndex}">
                       <div v-for="t in l.text">{{ t }}</div>
                     </div>
                 </div>
@@ -360,6 +360,8 @@ onRestore(updateHighlightedIndex);
 }
 .lrcContainer .lrcItem.active, .lrcContainer .lrcItem:hover {
   cursor: pointer;
+}
+.lrcContainer .lrcItem.active:not(.blank), .lrcContainer .lrcItem:not(.blank):hover {
   background-color: rgba(0,0,0,.35);
   backdrop-filter: blur(2px);
   box-shadow: 0 0 8px rgba(0,0,0,.4);

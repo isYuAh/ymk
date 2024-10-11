@@ -22,6 +22,7 @@ import Playlists from "@/components/Playlists.vue";
 import type {list, playlistPart} from "@/types";
 import axios from "axios";
 import {ref} from "vue";
+import {neteaseAxios} from "@/utils/axiosInstances";
 
 const {deletePlaylistFile, showImportPlaylistDialog} = (window as any).ymkAPI;
 const {config} = storeToRefs(useZKStore());
@@ -30,7 +31,7 @@ const parts = ref<playlistPart[]>([]);
 const playlists = ref<list[]>([]);
 
 function refresh() {
-  axios.get(`${config.value.neteaseApi.url}personalized`).then(res => {
+  neteaseAxios.get(`/personalized`).then(res => {
     playlists.value = res.data.result.map((playlist: any) => ({
       title: playlist.name,
       pic: playlist.picUrl,

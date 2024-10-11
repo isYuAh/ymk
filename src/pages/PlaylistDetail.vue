@@ -35,19 +35,29 @@
           </div>
           <div class="songs">
             <div class="container">
-              <simplebar data-auto-hide class="simplebar">
-                <div class="songTable forbidSelect">
-                  <div
-                      @dblclick="playSong_withCheck(ITEM.item)"
-                      class="song"
-                      :class="{disabled: ITEM.item.type==='netease' && 'playable' in ITEM.item ? !ITEM.item.playable : false}"
-                      @contextmenu.prevent="tryShowMenu({song: ITEM.item,si: ITEM.refIndex})"
-                      v-for="ITEM in showingSonglist">
-                    <div class="songInfo title">{{ ITEM.item.title }}<sub>{{ ITEM.item.type }}</sub></div>
-                    <div class="songInfo author">{{ ITEM.item.singer }}</div>
-                  </div>
+<!--              <simplebar data-auto-hide class="simplebar">-->
+<!--                <div class="songTable forbidSelect">-->
+<!--                  <div-->
+<!--                      @dblclick="playSong_withCheck(ITEM.item)"-->
+<!--                      class="song"-->
+<!--                      :class="{disabled: ITEM.item.type==='netease' && 'playable' in ITEM.item ? !ITEM.item.playable : false}"-->
+<!--                      @contextmenu.prevent="tryShowMenu({song: ITEM.item,si: ITEM.refIndex})"-->
+<!--                      v-for="ITEM in showingSonglist">-->
+<!--                    <div class="songInfo title">{{ ITEM.item.title }}<sub>{{ ITEM.item.type }}</sub></div>-->
+<!--                    <div class="songInfo author">{{ ITEM.item.singer }}</div>-->
+<!--                  </div>-->
+<!--                </div>-->
+<!--              </simplebar>-->
+              <VirtualList :item-height="38" :items="showingSonglist" :size="8" v-slot="{item: ITEM}" class-name="songTable">
+                <div
+                    @dblclick="playSong_withCheck(ITEM.item)"
+                    class="song"
+                    :class="{disabled: ITEM.item.type==='netease' && 'playable' in ITEM.item ? !ITEM.item.playable : false}"
+                    @contextmenu.prevent="tryShowMenu({song: ITEM.item,si: ITEM.refIndex})">
+                  <div class="songInfo title">{{ ITEM.item.title }}<sub>{{ ITEM.item.type }}</sub></div>
+                  <div class="songInfo author">{{ ITEM.item.singer }}</div>
                 </div>
-              </simplebar>
+              </VirtualList>
             </div>
           </div>
         </div>
@@ -57,20 +67,23 @@
 
 <script setup lang='ts'>
 import {type list_data, type list_trace_netease_playlist, type song} from '@/types'
+import {computed, ref, toRaw, watch} from 'vue';
 import simplebar from 'simplebar-vue';
 import 'simplebar-vue/dist/simplebar.min.css'
-import {computed, onMounted, onUnmounted, ref, toRaw, watch} from 'vue';
+//@ts-ignore
+import { RecycleScroller } from 'vue-virtual-scroller'
 import { useZKStore } from '@/stores/useZKstore';
 import {storeToRefs} from "pinia";
 import emitter from '@/emitter';
 import '@/assets/songlist.css'
 import Fuse from "fuse.js";
-import axios from "axios";
 import EditSongDialog from "@/components/Dialogs/EditSongDialog.vue";
 import {useRouter} from "vue-router";
+import {neteaseAxios} from "@/utils/axiosInstances";
+import VirtualList from "@/components/VirtualList.vue";
 const router = useRouter();
 const {writePlaylistFile} = (window as any).ymkAPI;
-const {zks, config, neteaseUser} = storeToRefs(useZKStore());
+const {zks} = storeToRefs(useZKStore());
 let filter = ref('');
 let FuseVal = ref(new Fuse(zks.value.playlist.songs, {
   keys: ['title', 'singer']
@@ -99,12 +112,11 @@ function tryShowMenu(a: any) {
 }
 function subscribeToggle() {
   let t = zks.value.playlist.extraInfo.infos.subscribe === 1 ? 2 : 1
-  axios.get(`${config.value.neteaseApi.url}playlist/subscribe`, {
+  neteaseAxios.get(`/playlist/subscribe`, {
     params: {
       timestamp: new Date().getTime(),
       t,
       id: (zks.value.playlist.raw.playlist[0] as list_trace_netease_playlist).id,
-      cookie: neteaseUser.value.cookie
     }
   }).then(res => {
     if (res.data.code == 200) {
@@ -302,7 +314,8 @@ function collectPlaylist() {
   box-shadow: 0 0 4px var(--ymk-container-bg-color);
   /*backdrop-filter: blur(2px);*/
   background-color: var(--ymk-container-bg-color);
-  min-height: 100%;
+  flex: 1;
+  min-height: 0;
 }
 .divider {
     display: flex;
@@ -352,4 +365,9 @@ function collectPlaylist() {
   color: var(--ymk-text-color);
   border: 1px solid #18191C;
 }
+
+.container.scrollable {
+  overflow-y: auto
+}
+
 </style>
