@@ -2,7 +2,7 @@ import {app, BrowserWindow, ipcMain, dialog, clipboard, screen, shell} from 'ele
 import path from 'path';
 import { fileURLToPath } from 'url';
 import * as fs from "node:fs";
-import {checkFolders, startNcmServer} from "./utils.js";
+import {checkFolders, checkResources, startNcmServer} from "./utils.js";
 import express from "express";
 import {WBI} from "./WBI.js";
 import axios from "axios";
@@ -63,6 +63,7 @@ if (!gotTheLock) {
     }).catch(err => {console.log(err);})
 
     checkFolders(['./res', './res/lists'])
+    checkResources()
 
     function getLocalPlaylists() {
         const lists = fs.readdirSync(path.resolve('./res/lists')).filter(file => file.endsWith('.json'))

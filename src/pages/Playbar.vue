@@ -133,7 +133,7 @@ import {neteaseAxios} from "@/utils/axiosInstances";
 import VirtualList from "@/components/VirtualList.vue";
 const {getBilibiliVideoView, getBilibiliVideoPlayurl, axiosRequestGet} = (window as any).ymkAPI;
 const {checkMusicPlayable} = useZKStore().songToolkit
-const {zks, neteaseUser, config} = storeToRefs(useZKStore());
+const {zks, config} = storeToRefs(useZKStore());
 let songfaceImg = ref<HTMLImageElement>();
 let songInformation = ref<HTMLDivElement>();
 let keepCurrentTimeCausedByError = ref(-1);
@@ -244,14 +244,13 @@ watchEffect(() => {
     }]
   }
 })
-
 async function playSong({song, justtry = false, noEffectWhenNotPlayable = true}: playSongParams) {
   let tmpSong: songInPlay = {
     title: song.title,
     type: song.type,
     singer: song.singer,
     pic: song.pic || '',
-    lrc: {},
+    lrcs: {},
     url: '',
     origin: song,
   }
@@ -294,7 +293,11 @@ async function playSong({song, justtry = false, noEffectWhenNotPlayable = true}:
         if (res.data.data.lyricUrl) {
           subTasks.push(new Promise((resolve, reject) => {
             axiosRequestGet(res.data.data.lyricUrl).then((res: any) => {
-              tmpSong.lrc['origin'] = proceedLrcText(res)
+              const {result, enableAutoScroll} = proceedLrcText(res)
+              tmpSong.lrcs['origin'] = {
+                items: result,
+                enableAutoScroll
+              }
             })
             resolve();
           }))
@@ -324,19 +327,27 @@ async function playSong({song, justtry = false, noEffectWhenNotPlayable = true}:
     tasks.push(new Promise((resolve, reject) => {
       neteaseAxios.get('/lyric', {params: {id: song.id}}).then((res: AxiosResponse) => {
         let sign1 = false, sign2 = false;
+        console.log('$lyricResponse', res)
         if ('lrc' in res.data && res.data.lrc.lyric) {
-          tmpSong.lrc['origin'] = proceedLrcText(res.data.lrc.lyric);
-          sign1 = true;
+          const {result, enableAutoScroll} = proceedLrcText(res.data.lrc.lyric)
+          tmpSong.lrcs['origin'] = {
+            items: result,
+            enableAutoScroll
+          }
+          enableAutoScroll && (sign1 = true);
         }
         if ('tlyric' in res.data && res.data.tlyric.lyric) {
-          tmpSong.lrc['translation'] = proceedLrcText(res.data.tlyric.lyric)
-          sign2 = true;
+          const {result, enableAutoScroll} = proceedLrcText(res.data.tlyric.lyric)
+          tmpSong.lrcs['translation'] = {
+            items: result,
+            enableAutoScroll
+          }
+          enableAutoScroll && (sign2 = true);
         }
         if (sign1 && sign2) {
-          // console.log(tmpSong.lrc['origin'], tmpSong.lrc['translation'])
           let pointerA = 0, pointerB = 0;
-          let origin = tmpSong.lrc['origin'],
-              translation = tmpSong.lrc['translation'];
+          let origin = tmpSong.lrcs['origin'].items,
+              translation = tmpSong.lrcs['translation'].items;
           let result = [];
           while (pointerA < origin.length) {
             if (pointerB >= translation.length) {
@@ -359,11 +370,14 @@ async function playSong({song, justtry = false, noEffectWhenNotPlayable = true}:
               }
             }
           }
-          tmpSong.lrc['mixed'] = result;
+          tmpSong.lrcs['mixed'] = {
+            items: result,
+            enableAutoScroll: true
+          }
         }
         resolve();
       }).catch((e) => {
-        console.log(e, tmpSong.lrc);
+        console.log(e, tmpSong.lrcs);
         reject(new Error('歌词获取失败'))
       })
     }))
@@ -405,7 +419,7 @@ async function playSong({song, justtry = false, noEffectWhenNotPlayable = true}:
       ...tmpSong
     })
     for (let langOption of config.value.langPreferences) {
-      if (langOption in zks.value.play.song.lrc) {
+      if (langOption in zks.value.play.song.lrcs) {
         zks.value.play.lang = langOption;
         break;
       }

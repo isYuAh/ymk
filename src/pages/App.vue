@@ -8,8 +8,8 @@
     '--ymk-text-shadow-color': colors.textShadowColor,
     '--ymk-container-bg-color': colors.containerBgColor,
   }" @drop.prevent="dropEvent" @dragover.prevent>
-    <div v-if="config.bg !== ''" class="backgroundFrame">
-      <video autoplay muted loop :src="bgSrc"></video>
+    <div v-if="backgroundType" class="backgroundFrame">
+      <Component :is="backgroundType" autoplay muted loop class="object-cover wh100" :src="bgSrc"></Component>
     </div>
     <Transition name="uianim">
       <Dialog>
@@ -28,6 +28,7 @@
             <RouterLink to="/playlist" :class="{tab: true, active: zks.nowTab === 'playlist'}">首页</RouterLink>
             <RouterLink to="/recommendedPlaylists" :class="{tab: true, active: zks.nowTab === 'PlaylistRecommend_netease'}">推荐</RouterLink>
             <RouterLink to="/playlistDetail" v-if="zks.playlist.listIndex !== -1" :class="{tab: true, active: zks.nowTab === 'playlistDetail'}">歌单</RouterLink>
+            <RouterLink to="/albumPreview" v-if="zks.albumPreview.info.title !== ''" :class="{tab: true, active: zks.nowTab === 'albumPreview'}">专辑</RouterLink>
             <RouterLink to="/search" :class="{tab: true, active: zks.nowTab === 'search'}">搜索</RouterLink>
 <!--            <RouterLink  to="/blank" @click="zks.nowTab = 'blankPage'" :class="{tab: true, active: zks.nowTab === 'blankPage'}">空白</RouterLink>-->
             <RouterLink to="/userCenter" :class="{tab: true, active: zks.nowTab === 'userCenter'}">
@@ -45,7 +46,7 @@
       <div class="content">
         <router-view v-slot="{ Component }">
           <transition v-show="!zks.showFullPlay" appear name="uianim">
-            <keep-alive :exclude="['UserCenter']">
+            <keep-alive :exclude="['UserCenter', 'PlaylistDetail']">
               <component :is="Component" />
             </keep-alive>
           </transition>
@@ -74,6 +75,12 @@ import Dialog from '@/components/Dialog.vue'
 import emitter from '@/emitter';
 
 const {exit, minimize} = (window as any).ymkAPI
+
+const backgroundType = computed(() => {
+  if (config.value.bg.endsWith(".mp4")) return "video"
+  else if (config.value.bg.endsWith(".png") || config.value.bg.endsWith(".jpg")) return "img"
+  else return ""
+})
 
 if ("mediaSession" in navigator) {
   navigator.mediaSession.metadata = new MediaMetadata({

@@ -37,7 +37,8 @@
       "!vite.config.ts",
       "!.vscode/*",
       "!index.html",
-      "!res/*"
+      "!res/*",
+      "!ignoreFolder/*"
     ],
     "win": {
       "icon": "./logo.ico",

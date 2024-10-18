@@ -48,6 +48,14 @@ export const useZKStore = defineStore('ZK', () => {
         infos: <Record<string, any>>{},
       }
     },
+    albumPreview: {
+      songs: <song[]>[],
+      info: {
+        title: "",
+        creator: "",
+        pic: "",
+      }
+    },
     play: {
       playlist: <song[]>([]),
       indexInPlaylist: -1,
@@ -57,7 +65,7 @@ export const useZKStore = defineStore('ZK', () => {
         singer: '',
         type: '',
         url: '',
-        lrc: {},
+        lrcs: {},
         origin: null as any
       },
       curTime: '',
@@ -94,6 +102,7 @@ export const useZKStore = defineStore('ZK', () => {
   });
   router.beforeEach((to, from) => {
     if (to.path === '/playlistDetail' && zks.value.playlist.listIndex === -1) return {path: '/playlist'};
+    if (to.path === '/albumPreview' && zks.value.albumPreview.info.title === "") return {path: '/search'};
     if (to.path !== '/') zks.value.nowTab = to.path.substring(1)
     return true
   })
@@ -101,6 +110,17 @@ export const useZKStore = defineStore('ZK', () => {
   const colors = ref<Record<string, string>>({});
   const neteaseUser = ref<neteaseUser>({} as any);
   const isLogin = computed(() => neteaseUser.value.cookie && neteaseUser.value.cookie != '')
+  const neteaseLikeList = ref([])
+
+  watch(() => neteaseUser.value.cookie, (nv) => {
+    if (nv) {
+      neteaseAxios.get(`/likelist?uid=${neteaseUser.value.uid}`).then((res) => {
+        neteaseLikeList.value = res.data.code === 200 ? res.data.ids : []
+      })
+    }
+  })
+
+
   function saveConfig() {
     writeConfig(JSON.stringify({config: config.value, neteaseUser: neteaseUser.value}))
   }
@@ -257,7 +277,6 @@ export const useZKStore = defineStore('ZK', () => {
             title: m.title,
             pic: m.cover,
             singer: m.upper.name})))
-          console.log(res.data.data.has_more, pn);
           if (res.data.data.has_more) {
             getNextPage()
           }else {
@@ -402,7 +421,7 @@ export const useZKStore = defineStore('ZK', () => {
   }
   function addSongTo({song, playlistIndex, save = true} : {song: song, playlistIndex: number, save?: boolean}) {
     let pi;
-    if (playlistIndex != undefined && playlistIndex > 0) {
+    if (playlistIndex != undefined && playlistIndex >= 0) {
       pi = playlistIndex;
     }else return;
     let pl = zks.value.playlists[pi];
@@ -449,12 +468,25 @@ export const useZKStore = defineStore('ZK', () => {
       showMessage(`写入文件${playlist.originFilename}失败`);
     })
   }
+  function neteaseSongToSongType(s: any) {
+    return <song>{
+      id: s.id,
+      pic: s.al.picUrl,
+      singer: s.ar.map((a: any) => a.name).join(" & "),
+      type: 'netease',
+      title: s.name,
+    }
+  }
+  function neteaseSongsToSongType(ss: any) {
+    return <song[]>ss.map((s: any) => neteaseSongToSongType(s))
+  }
 
   return {
     zks,
     config,
     colors,
     neteaseUser,
+    neteaseLikeList,
     saveConfig,
     saveColors,
     showMouseMenu,
@@ -470,6 +502,8 @@ export const useZKStore = defineStore('ZK', () => {
     songToolkit: {
       checkMusicPlayable,
       mapCheckSongPlayable,
-    }
+      neteaseSongToSongType,
+      neteaseSongsToSongType,
+    },
   };
 });

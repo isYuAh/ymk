@@ -113,9 +113,11 @@ import emitter from "@/emitter";
 import { useZKStore } from "@/stores/useZKstore";
 import CollectDialog from "@/components/Dialogs/CollectDialog.vue";
 import {neteaseAxios} from "@/utils/axiosInstances";
-const {config} = storeToRefs(useZKStore());
+import {useRouter} from "vue-router";
+const router = useRouter()
+const {config, zks} = storeToRefs(useZKStore());
 const {checkDetail} = useZKStore().playlistToolkit
-const {mapCheckSongPlayable} = useZKStore().songToolkit
+const {mapCheckSongPlayable, neteaseSongsToSongType} = useZKStore().songToolkit
 let searchInput = ref<HTMLInputElement>();
 let resultSongList = ref<song[]>([]);
 let resultAlbumList = ref<any[]>([]);
@@ -179,16 +181,17 @@ function getSearchResults(query: string, offset = 0) {
           limit: 10,
         }
       }).then(res => {
+        // console.log(`#${type} OriginResponse`, res)
         if (type === 10) {
-          resultAlbumList.value = res.data.result.albums;
+          resultAlbumList.value = res.data.result.albums || [];
           albumLoading.value = false;
         }
         if (type === 100) {
-          resultSingerList.value = res.data.result.artists;
+          resultSingerList.value = res.data.result.artists || [];
           singerLoading.value = false;
         }
         if (type === 1000) {
-          resultPlaylistList.value = res.data.result.playlists;
+          resultPlaylistList.value = res.data.result.playlists || [];
           playlistLoading.value = false;
         }
         resolve();
@@ -308,7 +311,17 @@ onMounted(() => {
 })
 
 async function checkAlbum(id: string) {
-  console.log(await neteaseAxios.get(`/album?id=${id}`))
+  router.push('/loading')
+  neteaseAxios.get(`/album?id=${id}`).then((res) => {
+    if (res.data.code !== 200) return
+    zks.value.albumPreview.info = {
+      title: res.data.album.name,
+      pic: res.data.album.picUrl,
+      creator: res.data.album.artist.name
+    }
+    zks.value.albumPreview.songs = neteaseSongsToSongType(res.data.songs)
+    router.push('/albumPreview')
+  })
 }
 
 

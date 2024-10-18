@@ -32,6 +32,9 @@ const routes: Array<RouteRecordRaw> = [
     },{
       path: 'loading',
       component: () => import('@/pages/Loading.vue')
+    },{
+      path: 'albumPreview',
+      component: () => import('@/pages/AlbumPreview.vue')
     }]
   }
 ];

@@ -3,7 +3,6 @@ import path from "path";
 import * as os from "node:os";
 const tmpPath = os.tmpdir()
 
-
 export function checkFolders(dnArray) {
     for (let i of dnArray) {
         if (!fs.existsSync(i)) fs.mkdirSync(i);
@@ -22,4 +21,7 @@ export async function startNcmServer() {
         checkVersion: true,
         port: 35651
     })
+}
+export function checkResources() {
+
 }

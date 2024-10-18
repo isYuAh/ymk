@@ -31,20 +31,31 @@ export function getFormattedDateWithPadding() {
 }
 
 export function proceedLrcText(lrcText: string) {
-    let lines = lrcText.split(/\r?\n/);
     let result: song_lrc_item[] = [];
-    lines.forEach((line: string) => {
-        const match = /\[(\d{2}):(\d{2}\.\d{2,4})](.*)/.exec(line);
-        if (match) {
+    const checkRegex = /\[(\d{2}):(\d{2})\.(\d{1,4})]/g
+    const checkResult = lrcText.match(checkRegex);
+    if ((!checkResult || checkResult.length === 0) && lrcText.length !== 0) {
+        for (let line of lrcText.split('\n')) {
+            result.push({
+                time: 0,
+                text: [line],
+            })
+        }
+        return {result, enableAutoScroll: false};
+    }else {
+        lrcText = lrcText.replaceAll('\n', '')
+        const regex = /\[(\d{2}):(\d{2})\.(\d{1,4})](.*?)(?=\[(\d{2}):(\d{2})\.(\d{1,4})]|$)/g;
+        const matches = [...lrcText.matchAll(regex)];
+        for (let match of matches) {
             const minutes = parseInt(match[1], 10);
             const seconds = parseFloat(match[2]);
             const timeInSeconds = minutes * 60 + seconds;
-            const text = match[3].trim();
+            const text = match[4].trim();
             result.push({
                 time: timeInSeconds,
                 text: [text],
             })
         }
-    })
-    return result;
+        return {result, enableAutoScroll: true};
+    }
 }

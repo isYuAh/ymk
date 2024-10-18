@@ -39,6 +39,7 @@ export type list = {
 export type song_lrcConfig_basic = {
     status: string,
     lrc: song_lrc,
+    enableAutoScroll: boolean,
     offset?: number
 }
 export type song_lrcConfig_web = {
@@ -58,7 +59,10 @@ export type song_lrc_item = {
     text: string[],
 }
 export type song_lrcConfig = song_lrcConfig_web | song_lrcConfig_local | song_lrcConfig_content;
-export type song_lrc = song_lrc_item[];
+export type song_lrc = {
+    enableAutoScroll: boolean,
+    items: song_lrc_item[],
+};
 export type song_basic = {
     title: string,
     singer: string,
@@ -115,7 +119,7 @@ export type songInPlay = {
     singer: string,
     type: string,
     url: string,
-    lrc: Record<string, song_lrc>,
+    lrcs: Record<string, song_lrc>,
     origin: song,
 }
 

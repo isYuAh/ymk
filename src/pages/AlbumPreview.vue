@@ -1,22 +1,20 @@
 <template>
 <div class="transitionContainer">
-    <div @click="router.push('/playlist')" class="returnBtn">
+    <div @click="router.push('/search')" class="returnBtn">
         <svg t="1711457272465" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4244" width="48" height="48"><path d="M963.2 0L1024 67.2 512 614.4 0 67.2 60.8 0 512 480 963.2 0z" fill="currentColor" p-id="4245"></path></svg>
     </div>
     <div class="partContainer">
         <div class="listInfo">
             <div class="faceImg forbidSelect">
-                <img :src="zks.playlist.raw.pic" alt="">
+                <img :src="zks.albumPreview.info.pic" alt="">
             </div>
             <div class="info forbidSelect">
                 <div class="top">
-                  <div class="title">{{ zks.playlist.raw.title }}</div>
-                  <button @click="subscribeToggle" class="subscribeBtn" v-if="zks.playlist.extraInfo.type === 'pureNeteasePlaylist' && zks.playlist.extraInfo.infos.subscribe > 0">{{zks.playlist.extraInfo.infos.subscribe === 1 ? '取消收藏' : '收藏'}}</button>
-<!--                  <button @click="console.log(zks.playlist)">{{zks.playlist.extraInfo}}</button>-->
+                  <div class="title">{{ zks.albumPreview.info.title }}</div>
                 </div>
                 <div class="bottom">
-                    <div class="total">TOTAL {{ zks.playlist.songs.length }}</div>
-                    <div class="total">{{ zks.playlist.raw.intro || 'AN ALBUM CREATED'}}</div>
+                    <div class="total">TOTAL {{ zks.albumPreview.songs.length }}</div>
+                    <div class="total">{{ 'AN ALBUM'}}</div>
                     <button @click="playAll" class="PlayAll">
                         <div class="svgIcon">
                             <svg t="1711448701001" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3437"><path d="M73.142857 0 910.957714 512 73.142857 1024Z" fill="currentColor" p-id="3438"></path></svg>
@@ -35,24 +33,10 @@
           </div>
           <div class="songs">
             <div class="container">
-<!--              <simplebar data-auto-hide class="simplebar">-->
-<!--                <div class="songTable forbidSelect">-->
-<!--                  <div-->
-<!--                      @dblclick="playSong_withCheck(ITEM.item)"-->
-<!--                      class="song"-->
-<!--                      :class="{disabled: ITEM.item.type==='netease' && 'playable' in ITEM.item ? !ITEM.item.playable : false}"-->
-<!--                      @contextmenu.prevent="tryShowMenu({song: ITEM.item,si: ITEM.refIndex})"-->
-<!--                      v-for="ITEM in showingSonglist">-->
-<!--                    <div class="songInfo title">{{ ITEM.item.title }}<sub>{{ ITEM.item.type }}</sub></div>-->
-<!--                    <div class="songInfo author">{{ ITEM.item.singer }}</div>-->
-<!--                  </div>-->
-<!--                </div>-->
-<!--              </simplebar>-->
               <VirtualList :item-height="38" :items="showingSonglist" :size="8" v-slot="{item: ITEM}" class-name="songTable">
                 <div
                     @dblclick="playSong_withCheck(ITEM.item)"
                     class="song"
-                    :class="{disabled: ITEM.item.type==='netease' && 'playable' in ITEM.item ? !ITEM.item.playable : false}"
                     @contextmenu.prevent="tryShowMenu({song: ITEM.item,si: ITEM.refIndex})">
                   <div class="songInfo title">{{ ITEM.item.title }}<sub>{{ ITEM.item.type }}</sub></div>
                   <div class="songInfo author">{{ ITEM.item.singer }}</div>
@@ -66,105 +50,43 @@
 </template>
 
 <script setup lang='ts'>
-import {type list_data, type list_trace_netease_playlist, type song} from '@/types'
-import {computed, nextTick, ref, toRaw, watch} from 'vue';
-import simplebar from 'simplebar-vue';
-import 'simplebar-vue/dist/simplebar.min.css'
+import {type song} from '@/types'
+import {computed, ref, toRaw, watch} from 'vue';
 import { useZKStore } from '@/stores/useZKstore';
 import {storeToRefs} from "pinia";
 import emitter from '@/emitter';
 import '@/assets/songlist.css'
 import Fuse from "fuse.js";
-import EditSongDialog from "@/components/Dialogs/EditSongDialog.vue";
 import {useRouter} from "vue-router";
-import {neteaseAxios} from "@/utils/axiosInstances";
 import VirtualList from "@/components/VirtualList.vue";
 const router = useRouter();
-const {writePlaylistFile} = (window as any).ymkAPI;
 const {zks} = storeToRefs(useZKStore());
 let filter = ref('');
-let FuseVal = ref(new Fuse(zks.value.playlist.songs, {
+let FuseVal = ref(new Fuse(zks.value.albumPreview.songs, {
   keys: ['title', 'singer']
 }))
-watch(() => zks.value.playlist, (nv) => {
+watch(() => zks.value.albumPreview, (nv) => {
   FuseVal.value = new Fuse(nv.songs, {
     keys: ['title', 'singer']
   })
 }, {deep: true})
 let showingSonglist = computed(() => {
-  nextTick(() => emitter.emit('virtualList-refresh'))
   if (!filter.value) {
-    return zks.value.playlist.songs.map((element, index) => ({item: element, refIndex: index}))
+    return zks.value.albumPreview.songs.map((element, index) => ({item: element, refIndex: index}))
   }else {
     return FuseVal.value.search(filter.value)
   }
 })
 function tryShowMenu(a: any) {
-  if (zks.value.playlist.raw.playlist.length !== 1 || zks.value.playlist.raw.playlist[0].type !== 'data') return
   useZKStore().showMouseMenu([{
-    title: '编辑',
-    action: menu_edit,
-  },{
-    title: '删除',
-    action: menu_deleteSong,
+    title: '收藏',
+    action: () => {},
   }], a)
 }
-function subscribeToggle() {
-  let t = zks.value.playlist.extraInfo.infos.subscribe === 1 ? 2 : 1
-  neteaseAxios.get(`/playlist/subscribe`, {
-    params: {
-      timestamp: new Date().getTime(),
-      t,
-      id: (zks.value.playlist.raw.playlist[0] as list_trace_netease_playlist).id,
-    }
-  }).then(res => {
-    if (res.data.code == 200) {
-      zks.value.playlist.extraInfo.infos.subscribe = t;
-      useZKStore().showMessage(`${t === 1 ? '' : '取消'}收藏成功`)
-    }
-  })
-}
 function playAll() {
-    // zks.value.play.mode = 'list';
-    zks.value.play.playlist = structuredClone(toRaw(zks.value.playlist.songs))
+    zks.value.play.playlist = structuredClone(toRaw(zks.value.albumPreview.songs))
     if (zks.value.play.playlist[0]) {
         emitter.emit('playSong',{song: zks.value.play.playlist[0]})
-    }
-}
-
-function menu_edit(arg: any) {
-  useZKStore().showDialog(EditSongDialog, {
-    song: structuredClone(toRaw(arg.song)),
-    si: arg.si
-  })
-}
-function menu_deleteSong(arg: any) {
-    if (arg.song && arg.si >= 0) {
-        let ser = arg.si + 1;
-        let componentIndex = -1;
-        let np = zks.value.playlists[zks.value.playlist.listIndex];
-        for (let cI = 0; cI < np.playlist.length; cI++) {
-            let  c = np.playlist[cI];
-            if (c.type === 'data') {
-                if (c.songs.length >= ser) {
-                    componentIndex = cI
-                    break;
-                }else {
-                    ser -= c.songs.length;
-                }
-            }
-        }
-        if (componentIndex >= 0) {
-            let originFn = np.originFilename;
-            (np.playlist[componentIndex] as list_data).songs.splice(ser - 1, 1);
-            zks.value.playlist.songs.splice(arg.si, 1);
-            writePlaylistFile(originFn, JSON.stringify(toRaw(np))).then(() => {
-                useZKStore().showMessage('删除成功');
-            }).catch(() => {
-                useZKStore().showMessage(`写入文件${originFn}失败`);
-            })
-            
-        }
     }
 }
 function playSong_withCheck(song: song) {
@@ -174,23 +96,6 @@ function playSong_withCheck(song: song) {
         zks.value.play.playlist = structuredClone(toRaw(zks.value.playlist.songs))
         emitter.emit('playSong',{song})
     }
-}
-function collectPlaylist() {
-  let id = zks.value.playlist.raw.title;
-  // if (zks.value.playlist.raw.playlist[0].type === 'trace_netease_playlist') {
-  //
-  // }
-  writePlaylistFile(`${id}.json`, JSON.stringify({
-    title: zks.value.playlist.raw.title,
-    pic: zks.value.playlist.raw.pic,
-    intro: zks.value.playlist.raw.intro,
-    playlist: zks.value.playlist.raw.playlist,
-  })).then(() => {
-    useZKStore().showMessage('收藏成功');
-    emitter.emit('refreshPlaylists', {notReset: true});
-  }).catch(() => {
-    useZKStore().showMessage(`写入文件${id}.json失败`);
-  });
 }
 
 </script>

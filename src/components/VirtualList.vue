@@ -1,19 +1,20 @@
 <script setup lang="ts">
-import {computed, ref, useTemplateRef} from "vue";
-
+import {computed, watch, ref, useTemplateRef, onUnmounted, nextTick} from "vue";
 const {
   items,
   itemHeight,
   className = "",
   size = 10,
+  eventName = "virtualList-refresh"
 } = defineProps<{
   items: Array<any>,
   itemHeight: number,
   className?: string,
-  size?: number
+  size?: number,
+  eventName ?: string,
 }>()
-
 const scrollTop = ref(0);
+
 const displayingItems = computed(() => {
   return items.slice(startIndex.value, endIndex.value)
 })
@@ -27,13 +28,17 @@ const transform = computed(() => {
   return scrollTop.value % itemHeight
 })
 const containerEl = useTemplateRef<HTMLDivElement>('container')
-console.log(displayingItems.value)
+// console.log(displayingItems.value)
 function handleScroll() {
   if (!containerEl.value) return;
-  // console.dir(containerEl.value)
-  scrollTop.value = containerEl.value.scrollTop;
-  console.log(scrollTop.value)
+  scrollTop.value = 0;
+  nextTick(() => scrollTop.value = containerEl.value!.scrollTop)
+  // console.log(scrollTop.value)
 }
+function refresh() {
+  handleScroll()
+}
+watch(() => items, refresh)
 </script>
 
 <template>
