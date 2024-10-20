@@ -76,7 +76,6 @@ export const useZKStore = defineStore('ZK', () => {
       status: 'pause',
       mode: 'list',
       activeLrc: -1,
-      lrcConfig: <song_lrc_item[]>[],
       show_songface: false,
       volume: 1,
       progress: 0,

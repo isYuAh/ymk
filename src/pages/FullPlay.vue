@@ -70,9 +70,9 @@
             </div>
         </AroundTragetBorder>
     </div>
-    <div class="right">
+    <div class="right" @wheel="lyricWheelEvent">
         <Transition name="uianim">
-            <div v-if="Object.keys(zks.play.song.lrcs).length" ref="lrcContentEl" class="lrcContent" @wheel="lyricWheelEvent">
+            <div v-if="Object.keys(zks.play.song.lrcs).length" ref="lrcContentEl" class="lrcContent">
                 <div ref="lrcContainerEl" class="lrcContainer">
                     <div @click="turnSongToSpecificLyric(l)" v-for="(l, i) in LRC.items" class="lrcItem" :class="{blank: l.text.every(t => t === ''), active: i === zks.play.highlightLrcIndex}">
                       <div v-for="t in l.text">{{ t }}</div>
@@ -121,8 +121,7 @@ function parseOriginLink(song: songInPlay) {
     }
 }
 function turnSongToSpecificLyric(lrcItem: song_lrc_item) {
-  console.log(zks.value.play.song.lrcs);
-  emitter.emit('changeCurTimeTo', lrcItem.time)
+  emitter.emit('changeCurTimeTo', lrcItem.time + zks.value.play.song.lyricConfig.offset)
 }
 
 function resetLyricAutoScrollTimer(lock = true, time = 2500) {
@@ -145,66 +144,69 @@ function changeVolumeProgress(e: any) {
     }
 }
 
-function updateHighlightedIndex() {
-  zks.value.play.highlightLrcIndex = -1;
+function updateHighlightedIndex(ignoreLock = false) {
+  if (!LRC.value.enableAutoScroll) {
+    return
+  }
   if (!LRC.value) return;
-  if (!LRC.value.enableAutoScroll) return;
-    let offset = 0;
-    for (let i = 0; i < LRC.value.items.length; i++) {
-        // 如果当前时间小于当前歌词的时间，说明当前播放到了这句的上一句歌词
-        if (zks.value.play.curTimeNum + offset < LRC.value.items[i].time) {
-            // 返回当前歌词的索引
-            zks.value.play.highlightLrcIndex = i - 1 >= 0 ? i - 1 : 0;
-            return;
-        }
+  let offset = zks.value.play.song.lyricConfig.offset;
+  for (let i = 0; i < LRC.value.items.length; i++) {
+    // 如果当前时间小于当前歌词的时间，说明当前播放到了这句的上一句歌词
+    if (zks.value.play.curTimeNum + offset < LRC.value.items[i].time) {
+      // 返回当前歌词的索引
+      zks.value.play.highlightLrcIndex = i - 1 >= 0 ? i - 1 : 0;
+      freshLrcElement(ignoreLock)
+      return;
     }
-    zks.value.play.highlightLrcIndex = LRC.value.items.length - 1;
-    return;
+  }
+  zks.value.play.highlightLrcIndex = LRC.value.items.length - 1;
+  freshLrcElement(ignoreLock)
+  return;
 }
 function toggleLyricLang(lang: string, sourceDisabled: boolean = false) {
   if (sourceDisabled) return;
   zks.value.play.lang = lang;
 }
 emitter.on('updateActiveLrcIndex', updateHighlightedIndex)
-async function freshLrcElement() {
+async function freshLrcElement(force = false) {
   if (!LRC.value) return;
-  if (!LRC)
-  if (lyricAutoScrollLock) return;
-    if (!await isMinimized()) {
-        nextTick(() => {
-            if (lrcContainerEl.value && lrcContentEl.value) {
-                let activeLrcItem = <HTMLDivElement>lrcContainerEl.value.querySelector('.lrcItem.active')
-                if (activeLrcItem) {
-                    let targetOffset = activeLrcItem.offsetTop -
-                                        lrcContentEl.value.clientHeight / 2 +
-                                        activeLrcItem.clientHeight / 2;
-                    lrcContainerEl.value.style.transform = `translateY(${-targetOffset}px)`
-                }
-            }
-        })
-    }
+  if (!force && lyricAutoScrollLock) return;
+  if (!await isMinimized()) {
+    nextTick(() => {
+      if (lrcContainerEl.value && lrcContentEl.value) {
+        let activeLrcItem = <HTMLDivElement>lrcContainerEl.value.querySelector('.lrcItem.active')
+        if (activeLrcItem) {
+            let targetOffset = activeLrcItem.offsetTop -
+                                lrcContentEl.value.clientHeight / 2 +
+                                activeLrcItem.clientHeight / 2;
+            lrcContainerEl.value.style.transform = `translateY(${-targetOffset}px)`
+        }
+      }
+    })
+  }
 }
 function lyricWheelEvent(e: WheelEvent) {
   if (!lrcContainerEl.value || !lrcContainerEl.value || !lrcContentEl.value) return;
   let transformCSS = lrcContainerEl.value.style.transform.match(/translateY\(([-\d.]+)p?x?\)/);
-  if (!transformCSS || !transformCSS[1]) return;
-  let transformVal = Number(transformCSS[1]);
+  let transformVal
+  if (!transformCSS || !transformCSS[1]) {
+    transformVal = 0
+  }else {
+    transformVal = Number(transformCSS[1])
+  }
   let firstItem: HTMLDivElement = lrcContainerEl.value.querySelector('.lrcItem')!;
   let lastItem: HTMLDivElement = lrcContainerEl.value.querySelector('.lrcItem:last-child')!;
   if (!firstItem || !lastItem) return;
   let maxV = lrcContentEl.value.clientHeight / 2 - firstItem.clientHeight / 2 - firstItem.offsetTop;
   let minV = lrcContentEl.value.clientHeight / 2 - lastItem.clientHeight / 2 - lastItem.offsetTop;
-  LRC.value.enableAutoScroll && resetLyricAutoScrollTimer()
+  LRC.value.enableAutoScroll && resetLyricAutoScrollTimer();
   lrcContainerEl.value.style.transform = `translateY(${minmax(transformVal - e.deltaY, minV, maxV)}px)`
 }
 freshLrcElement();
-watch([() => zks.value.play.highlightLrcIndex, () => zks.value.play.song.lrcs, () => zks.value.showFullPlay], () => {
-    freshLrcElement();
+watch([() => zks.value.play.lang, () => zks.value.play.song.lrcs, () => zks.value.showFullPlay], () => {
+  zks.value.play.highlightLrcIndex = -1
+  updateHighlightedIndex(true);
 }, {deep: true})
-watch(() => zks.value.play.lang, () => {
-  updateHighlightedIndex();
-  freshLrcElement();
-})
 onRestore(updateHighlightedIndex);
 </script>
 

@@ -1,4 +1,5 @@
 import {type song_lrc_item} from "@/types";
+import {Base64} from "js-base64";
 
 export function secondsToMmss(seconds: number) {
     var minutes = Math.floor(seconds / 60);
@@ -43,13 +44,14 @@ export function proceedLrcText(lrcText: string) {
         }
         return {result, enableAutoScroll: false};
     }else {
-        lrcText = lrcText.replaceAll('\n', '')
+        lrcText = lrcText.replaceAll('\r\n', '').replaceAll('\n', '')
         const regex = /\[(\d{2}):(\d{2})\.(\d{1,4})](.*?)(?=\[(\d{2}):(\d{2})\.(\d{1,4})]|$)/g;
         const matches = [...lrcText.matchAll(regex)];
         for (let match of matches) {
             const minutes = parseInt(match[1], 10);
             const seconds = parseFloat(match[2]);
-            const timeInSeconds = minutes * 60 + seconds;
+            const milliseconds = parseInt(match[3], 10) / 1000;
+            const timeInSeconds = minutes * 60 + seconds + milliseconds;
             const text = match[4].trim();
             result.push({
                 time: timeInSeconds,
@@ -58,4 +60,47 @@ export function proceedLrcText(lrcText: string) {
         }
         return {result, enableAutoScroll: true};
     }
+}
+
+export function proceedKrcText(krcText: string) {
+
+    let originResult: song_lrc_item[] = [];
+    let translationResult: song_lrc_item[] = [];
+    const lines = krcText.split('\r\n');
+    const languageMatch = krcText.match(/\[language:(.*?)]/);
+    let languageSign = false
+    let translations = []
+    let mixedLrc = []
+    if (languageMatch) {
+        let translation = JSON.parse(Base64.decode(languageMatch[1]))
+        console.log(translation, translation.content.length)
+        if (translation.content.length) {
+            languageSign = true;
+            translations = translation.content[0].lyricContent
+        }
+    }
+    let index = 0;
+    for (let line of lines) {
+        const replacedLine = line.replace(/<\d+,\d+,\d+>/g, "")
+        const lineMatch = replacedLine.match(/\[(\d+),(\d+)](.*)/)
+        if (lineMatch) {
+            const time = parseFloat(lineMatch[1]) / 1000
+            originResult.push({
+                time,
+                text: [lineMatch[3]],
+            })
+            if (languageSign) {
+                translationResult.push({
+                    time,
+                    text: [translations[index][0]]
+                })
+                mixedLrc.push({
+                    time,
+                    text: [lineMatch[3], translations[index][0]]
+                })
+                index++;
+            }
+        }
+    }
+    return {originResult, translationResult, languageSign, mixedLrc}
 }

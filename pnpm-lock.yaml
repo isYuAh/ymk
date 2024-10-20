@@ -5,15 +5,15 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
-  NeteaseCloudMusicApi:
-    specifier: ^4.23.0
-    version: 4.23.0
   axios:
     specifier: ^1.7.7
     version: 1.7.7
   crypto-js:
     specifier: ^4.2.0
     version: 4.2.0
+  dotenv:
+    specifier: ^16.4.5
+    version: 16.4.5
   express:
     specifier: ^4.21.0
     version: 4.21.0
@@ -26,6 +26,9 @@ dependencies:
   fuse.js:
     specifier: ^7.0.0
     version: 7.0.0
+  js-base64:
+    specifier: ^3.7.7
+    version: 3.7.7
   md5:
     specifier: ^2.3.0
     version: 2.3.0
@@ -44,6 +47,9 @@ dependencies:
   pac-proxy-agent:
     specifier: ^7.0.2
     version: 7.0.2
+  pako:
+    specifier: ^2.1.0
+    version: 2.1.0
   pinia:
     specifier: ^2.2.4
     version: 2.2.4(typescript@5.6.2)(vue@3.5.11)
@@ -1743,29 +1749,6 @@ packages:
     requiresBuild: true
     dev: true
 
-  /NeteaseCloudMusicApi@4.23.0:
-    resolution: {integrity: sha512-nTvEnrfkTKNWEPCHF/qbNLAQVLb90PaPjdBuht/po6OpGTwX9sWm7RXsqMr7TGw10mkR94CIvx9Ecb+H8gV8yA==}
-    engines: {node: '>=12'}
-    hasBin: true
-    dependencies:
-      axios: 1.7.7
-      crypto-js: 4.2.0
-      express: 4.21.0
-      express-fileupload: 1.5.1
-      md5: 2.3.0
-      music-metadata: 7.14.0
-      node-forge: 1.3.1
-      pac-proxy-agent: 7.0.2
-      qrcode: 1.5.4
-      safe-decode-uri-component: 1.2.1
-      tunnel: 0.0.6
-      xml2js: 0.6.2
-      yargs: 17.7.2
-    transitivePeerDependencies:
-      - debug
-      - supports-color
-    dev: false
-
   /abbrev@1.1.1:
     resolution: {integrity: sha512-nne9/IiQ/hzIhY6pdDnbBtz7DjPTKrY00P/zvPSm5pOFkl6xuGrGnXn/VtTNNfNtAfZ9/1RtehkszU9qcTii0Q==}
 
@@ -2933,7 +2916,6 @@ packages:
   /dotenv@16.4.5:
     resolution: {integrity: sha512-ZmdL2rui+eB2YwhsWzjInR8LldtZHGDoQ1ugH85ppHKwpUHL7j7rN0Ti9NCnGiQbhaZ11FpR+7ao1dNsmduNUg==}
     engines: {node: '>=12'}
-    dev: true
 
   /eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
@@ -3667,15 +3649,6 @@ packages:
     dependencies:
       flat-cache: 4.0.1
     dev: true
-
-  /file-type@16.5.4:
-    resolution: {integrity: sha512-/yFHK0aGjFEgDJjEKP0pWCplsPFPhwyfwevf/pVxiN0tmE4L9LmwWxWukdJSHdoCli4VgQLehjJtwQBnqmsKcw==}
-    engines: {node: '>=10'}
-    dependencies:
-      readable-web-to-node-stream: 3.0.2
-      strtok3: 6.3.0
-      token-types: 4.2.1
-    dev: false
 
   /file-type@19.5.0:
     resolution: {integrity: sha512-dMuq6WWnP6BpQY0zYJNpTtQWgeCImSMG0BTIzUBXvxbwc1HWP/E7AE4UWU9XSCOPGJuOHda0HpDnwM2FW+d90A==}
@@ -4613,6 +4586,10 @@ packages:
       minimatch: 3.1.2
     dev: true
 
+  /js-base64@3.7.7:
+    resolution: {integrity: sha512-7rCnleh0z2CkXhH67J8K1Ytz0b2Y+yxTPL+/KOJoa20hfnVQ/3/T6W/KflYI4bRHRagNeXeU2bkNGI3v1oS/lw==}
+    dev: false
+
   /js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
     dev: true
@@ -5185,21 +5162,6 @@ packages:
       - supports-color
     dev: false
 
-  /music-metadata@7.14.0:
-    resolution: {integrity: sha512-xrm3w7SV0Wk+OythZcSbaI8mcr/KHd0knJieu8bVpaPfMv/Agz5EooCAPz3OR5hbYMiUG6dgAPKZKnMzV+3amA==}
-    engines: {node: '>=10'}
-    dependencies:
-      '@tokenizer/token': 0.3.0
-      content-type: 1.0.5
-      debug: 4.3.7(supports-color@8.1.1)
-      file-type: 16.5.4
-      media-typer: 1.1.0
-      strtok3: 6.3.0
-      token-types: 4.2.1
-    transitivePeerDependencies:
-      - supports-color
-    dev: false
-
   /nanoid@3.3.7:
     resolution: {integrity: sha512-eSRppjcPIatRIMC1U6UngP8XFcz8MQWGQdt1MTBQ7NaAmvXDfvNxbvWV3x2y6CdEUciCSsDHDQZbhYaB8QEo2g==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
@@ -5547,6 +5509,10 @@ packages:
   /package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
 
+  /pako@2.1.0:
+    resolution: {integrity: sha512-w+eufiZ1WuJYgPXbV/PO3NCMEc3xqylkKHzp8bxp1uW4qaSNQUkwmLLEc3kKsfz8lpV1F8Ht3U1Cm+9Srog2ug==}
+    dev: false
+
   /parent-module@1.0.1:
     resolution: {integrity: sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==}
     engines: {node: '>=6'}
@@ -5608,11 +5574,6 @@ packages:
     resolution: {integrity: sha512-eRWB5LBz7PpDu4PUlwT0PhnQfTQJlDDdPa35urV4Osrm0t0AqQFGn+UIkU3klZvwJ8KPO3VbBFsXquA6p6kqZw==}
     engines: {node: '>=12', npm: '>=6'}
     dev: true
-
-  /peek-readable@4.1.0:
-    resolution: {integrity: sha512-ZI3LnwUv5nOGbQzD9c2iDG6toheuXSZP5esSHBjopsXH4dg19soufvpUGA3uohi5anFtGb2lhAVdHzH6R/Evvg==}
-    engines: {node: '>=8'}
-    dev: false
 
   /peek-readable@5.2.0:
     resolution: {integrity: sha512-U94a+eXHzct7vAd19GH3UQ2dH4Satbng0MyYTMaQatL0pvYYL5CTPR25HBhKtecl+4bfu1/i3vC6k0hydO5Vcw==}
@@ -5989,13 +5950,6 @@ packages:
       string_decoder: 1.3.0
       util-deprecate: 1.0.2
 
-  /readable-web-to-node-stream@3.0.2:
-    resolution: {integrity: sha512-ePeK6cc1EcKLEhJFt/AebMCLL+GgSKhuygrZ/GLaKZYEecIgIECf4UaUuaByiGtzckwR4ain9VzUh95T1exYGw==}
-    engines: {node: '>=8'}
-    dependencies:
-      readable-stream: 3.6.2
-    dev: false
-
   /readdir-glob@1.1.3:
     resolution: {integrity: sha512-v05I2k7xN8zXvPD9N+z/uhXPaj0sUFCe2rcWZIpBsqxfP7xXFQ0tipAd/wjj1YxWyWtUS5IDJpOG82JKt2EAVA==}
     dependencies:
@@ -6161,10 +6115,6 @@ packages:
 
   /safe-buffer@5.2.1:
     resolution: {integrity: sha512-rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==}
-
-  /safe-decode-uri-component@1.2.1:
-    resolution: {integrity: sha512-j0PKk0v8qPOD0goqRAvoI7GKy+HwLHXEpXaQlA1IqJ65jjiILRK1InlfNdIKUUUYuLtERADaJumgYKNfyQBO+w==}
-    dev: false
 
   /safe-decode-uri-component@1.2.2-native:
     resolution: {integrity: sha512-tpFONTp4VRGHMeBJPfUa3/R7wN7yezI5Cb3Y3p1eg/p1CMpEg3Ak0wfVIkHQUTTiQZ4iHQlrXHf3AUHcEzWTOg==}
@@ -6610,14 +6560,6 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /strtok3@6.3.0:
-    resolution: {integrity: sha512-fZtbhtvI9I48xDSywd/somNqgUHl2L2cstmXCCif0itOf96jeW18MBSyrLuNicYQVkvpOxkZtkzujiTJ9LW5Jw==}
-    engines: {node: '>=10'}
-    dependencies:
-      '@tokenizer/token': 0.3.0
-      peek-readable: 4.1.0
-    dev: false
-
   /strtok3@8.1.0:
     resolution: {integrity: sha512-ExzDvHYPj6F6QkSNe/JxSlBxTh3OrI6wrAIz53ulxo1c4hBJ1bT9C/JrAthEKHWG9riVH3Xzg7B03Oxty6S2Lw==}
     engines: {node: '>=16'}
@@ -6744,14 +6686,6 @@ packages:
   /toidentifier@1.0.1:
     resolution: {integrity: sha512-o5sSPKEkg/DIQNmH43V0/uerLrpzVedkUh8tGNvaeXpfpuwjKenlSox/2O/BTlZUtEe+JG7s5YhEz608PlAHRA==}
     engines: {node: '>=0.6'}
-    dev: false
-
-  /token-types@4.2.1:
-    resolution: {integrity: sha512-6udB24Q737UD/SDsKAHI9FCRP7Bqc9D/MQUV02ORQg5iskjtLJlZJNdN4kKtcdtwCeWIwIHDGaUsTsCCAa8sFQ==}
-    engines: {node: '>=10'}
-    dependencies:
-      '@tokenizer/token': 0.3.0
-      ieee754: 1.2.1
     dev: false
 
   /token-types@6.0.0:

@@ -91,6 +91,9 @@ function addSong() {
     case 'bilibili':
       (song as any).BV = id.value;
       break;
+    case 'kugou':
+      (song as any).hash = id.value;
+      break;
     default:
       return;
   }
@@ -113,6 +116,7 @@ function addSong() {
           <option value="netease">网易云</option>
           <option value="qq">QQ音乐</option>
           <option value="siren">塞壬唱片</option>
+          <option value="kugou">酷狗音乐</option>
         </select>
       </div>
       <div>

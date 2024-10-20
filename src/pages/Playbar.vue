@@ -129,9 +129,9 @@ let progressChooseFill = ref<HTMLDivElement>();
 let progress_tooltip = ref<HTMLDivElement>();
 let volumeProgressFill = ref<HTMLDivElement>();
 import {storeToRefs} from "pinia";
-import {neteaseAxios} from "@/utils/axiosInstances";
 import VirtualList from "@/components/VirtualList.vue";
-const {getBilibiliVideoView, getBilibiliVideoPlayurl, axiosRequestGet} = (window as any).ymkAPI;
+import {MusicHandlers} from "@/utils/MusicHandlers";
+const {onUrlScheme} = (window as any).ymkAPI;
 const {checkMusicPlayable} = useZKStore().songToolkit
 const {zks, config} = storeToRefs(useZKStore());
 let songfaceImg = ref<HTMLImageElement>();
@@ -246,13 +246,16 @@ watchEffect(() => {
 })
 async function playSong({song, justtry = false, noEffectWhenNotPlayable = true}: playSongParams) {
   let tmpSong: songInPlay = {
-    title: song.title,
+    title: song.title || "",
     type: song.type,
-    singer: song.singer,
+    singer: song.singer || "",
     pic: song.pic || '',
     lrcs: {},
     url: '',
     origin: song,
+    lyricConfig: {
+      offset: 0,
+    }
   }
   let {result, msg} = await checkMusicPlayable(song);
   if (!result) {
@@ -263,22 +266,11 @@ async function playSong({song, justtry = false, noEffectWhenNotPlayable = true}:
   }
   const tasks: Promise<void>[] = []
   if (song.type === 'bilibili') {
-    tasks.push(new Promise((resolve, reject) => {
-      getBilibiliVideoView(song.BV).then((res: any) => {
-        if (res.data.pic) {
-          tmpSong.pic = res.data.pic;
-        }
-        let cid = res.data.cid;
-        getBilibiliVideoPlayurl({
-          bvid: song.BV,
-          cid,
-          platform: "html5"
-        }).then((res: AxiosResponse) => {
-          tmpSong.url = res.data.durl[0].url;
-          resolve();
-        }).catch(() => reject(new Error('获取视频播放地址失败')))
-      }).catch(() => reject(new Error('获取视频信息失败')));
-    }))
+    MusicHandlers.MusicHandlerBilibili({
+      tasks,
+      tmpSong,
+      song
+    })
   }
   else if (song.type === 'web') {
     tmpSong.url = song.url;
@@ -287,132 +279,31 @@ async function playSong({song, justtry = false, noEffectWhenNotPlayable = true}:
     tmpSong.url = `http://music.163.com/song/media/outer/url?id=${song.id}.mp3`;
   }
   else if (song.type === 'siren') {
-    tasks.push(new Promise((resolve, reject) => {
-      let subTasks = <Promise<void>[]>[]
-      axios.get(`https://monster-siren.hypergryph.com/api/song/${song.cid}`).then(res => {
-        if (res.data.data.lyricUrl) {
-          subTasks.push(new Promise((resolve, reject) => {
-            axiosRequestGet(res.data.data.lyricUrl).then((res: any) => {
-              const {result, enableAutoScroll} = proceedLrcText(res)
-              tmpSong.lrcs['origin'] = {
-                items: result,
-                enableAutoScroll
-              }
-            })
-            resolve();
-          }))
-        }
-        tmpSong.url = res.data.data.sourceUrl;
-        subTasks.push(new Promise((resolve, reject) => {
-          axios.get(`https://monster-siren.hypergryph.com/api/album/${res.data.data.albumCid}/detail`).then((res) => {
-            tmpSong.pic = res.data.data.coverUrl;
-            resolve();
-          }).catch(() => reject());
-        }))
-        Promise.all(subTasks).then((() => resolve())).catch(() => reject())
-      })
-    }))
+    MusicHandlers.MusicHandlerSiren({
+      tasks,
+      tmpSong,
+      song
+    })
   }
   else if (song.type === 'netease') {
-    tasks.push(new Promise((resolve, reject) => {
-      neteaseAxios.get('/song/detail', {params: {ids: song.id}}).then((res: AxiosResponse) => {
-        if (res.data.songs[0].al.picUrl) {
-          tmpSong.pic = res.data.songs[0].al.picUrl;
-        }
-        resolve();
-      }).catch((err) => {
-        reject(err.message);
-      })
-    }))
-    tasks.push(new Promise((resolve, reject) => {
-      neteaseAxios.get('/lyric', {params: {id: song.id}}).then((res: AxiosResponse) => {
-        let sign1 = false, sign2 = false;
-        console.log('$lyricResponse', res)
-        if ('lrc' in res.data && res.data.lrc.lyric) {
-          const {result, enableAutoScroll} = proceedLrcText(res.data.lrc.lyric)
-          tmpSong.lrcs['origin'] = {
-            items: result,
-            enableAutoScroll
-          }
-          enableAutoScroll && (sign1 = true);
-        }
-        if ('tlyric' in res.data && res.data.tlyric.lyric) {
-          const {result, enableAutoScroll} = proceedLrcText(res.data.tlyric.lyric)
-          tmpSong.lrcs['translation'] = {
-            items: result,
-            enableAutoScroll
-          }
-          enableAutoScroll && (sign2 = true);
-        }
-        if (sign1 && sign2) {
-          let pointerA = 0, pointerB = 0;
-          let origin = tmpSong.lrcs['origin'].items,
-              translation = tmpSong.lrcs['translation'].items;
-          let result = [];
-          while (pointerA < origin.length) {
-            if (pointerB >= translation.length) {
-              result.push(origin[pointerA]);
-              pointerA++;
-            } else {
-              // console.log(pointerA, origin[pointerA], pointerB, translation[pointerB])
-              if (origin[pointerA].time > translation[pointerB].time) {
-                pointerB++;
-              }else if (origin[pointerA].time < translation[pointerB].time) {
-                result.push(origin[pointerA]) //添加数据到数组尾
-                pointerA++;
-              }else {
-                result.push({
-                  time: origin[pointerA].time,
-                  text: [origin[pointerA].text[0], translation[pointerB].text[0]],
-                })
-                pointerA++;
-                pointerB++;
-              }
-            }
-          }
-          tmpSong.lrcs['mixed'] = {
-            items: result,
-            enableAutoScroll: true
-          }
-        }
-        resolve();
-      }).catch((e) => {
-        console.log(e, tmpSong.lrcs);
-        reject(new Error('歌词获取失败'))
-      })
-    }))
-    tasks.push(new Promise((resolve, reject) => {
-      neteaseAxios.get('/song/url/v1', {
-        params: {
-          id: song.id,
-          level: 'standard'
-        }
-      }).then(res => {
-        if (res.data.data[0]) {
-          tmpSong.url = res.data.data[0].url;
-          resolve();
-        }else {
-          reject('数据有误');
-        }
-      }).catch((err: AxiosError) => {
-        reject(err.message);
-      })
-    }))
+    MusicHandlers.MusicHandlerNetease({
+      tasks,
+      tmpSong,
+      song
+    })
   }
   else if (song.type === 'qq') {
-    tasks.push(new Promise((resolve, reject) => {
-      axios.post(config.value.qqApi.url + "api/y/get_song", {
-        type: "qq",
-        mid: song.mid,
-      }).then((res: AxiosResponse) => {
-        let result = res.data.data[0];
-        if (result.pic) {
-          tmpSong.pic = res.data.data.pic;
-        }
-        tmpSong.url = result.url;
-        resolve();
-      }).catch((err: AxiosError) => {reject(err.message)})
-    }))
+    MusicHandlers.MusicHandlerQQ({
+      tasks,
+      tmpSong,
+      song
+    }, config.value.qqApi.url)
+  }else if (song.type === 'kugou') {
+    MusicHandlers.MusicHandlerKugou({
+      tasks,
+      tmpSong,
+      song
+    })
   }
   Promise.all(tasks).then(() => {
     Object.assign(zks.value.play.song, {
@@ -460,6 +351,21 @@ async function playSong({song, justtry = false, noEffectWhenNotPlayable = true}:
     useZKStore().showMessage(err.message)
   })
 }
+
+
+onUrlScheme((event: any, uri: any) => {
+  console.log('@urlScheme', event, uri)
+  const song = JSON.parse(decodeURIComponent(uri))
+  if ('type' in song) {
+    playSong({
+      justtry: true,
+      song,
+    })
+  }
+})
+
+
+
 function changeVolumeTo(to: number) {
     if (songSource.value) {
         songSource.value.volume = to;

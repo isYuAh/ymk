@@ -27,7 +27,7 @@ coverage
 *.njsproj
 *.sln
 *.sw?
-
+ignoreFolder
 *.tsbuildinfo
 
 # 项目排除路径

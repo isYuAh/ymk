@@ -64,15 +64,16 @@ export type song_lrc = {
     items: song_lrc_item[],
 };
 export type song_basic = {
-    title: string,
-    singer: string,
+    title?: string,
+    singer?: string,
     pic?: string,
     lrc?: Record<string, song_lrcConfig>
 }
 
 export type song_bilibili = {
     type: 'bilibili',
-    BV: string
+    BV: string,
+    p?: number
 } & song_basic;
 export type song_local = {
     type: 'local',
@@ -104,6 +105,10 @@ export type song_qq = {
     type: 'qq',
     mid: string
 } & song_basic;
+export type song_kugou = {
+    type: 'kugou',
+    hash: string
+} & song_basic
 
 export type song = song_bilibili |
                     song_local |
@@ -112,7 +117,8 @@ export type song = song_bilibili |
                     song_netease_outer |
                     song_netease_other |
                     song_siren |
-                    song_qq
+                    song_qq |
+                    song_kugou
 export type songInPlay = {
     pic: string,
     title: string,
@@ -121,6 +127,9 @@ export type songInPlay = {
     url: string,
     lrcs: Record<string, song_lrc>,
     origin: song,
+    lyricConfig: {
+        offset: number,
+    }
 }
 
 export type playSongParams = {

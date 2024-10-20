@@ -2,7 +2,7 @@ import {app, BrowserWindow, ipcMain, dialog, clipboard, screen, shell} from 'ele
 import path from 'path';
 import { fileURLToPath } from 'url';
 import * as fs from "node:fs";
-import {checkFolders, checkResources, startNcmServer} from "./utils.js";
+import {checkFolders, checkResources, startKugouServer, startNcmServer} from "./utils.js";
 import express from "express";
 import {WBI} from "./WBI.js";
 import axios from "axios";
@@ -21,7 +21,7 @@ if (!gotTheLock) {
             mainWindow.focus()
         }
         const surl = commandLine.pop()
-        dialog.showErrorBox('获取url内容', `${surl.replace("yumuzk://", "")}`)
+        mainWindow.webContents.send('urlScheme', surl.substring(9, surl.length - 1));
     })
 
     if (process.defaultApp) {
@@ -32,6 +32,7 @@ if (!gotTheLock) {
         }
     }
     startNcmServer()
+    startKugouServer()
     const appServer = express();
     appServer.get('/api/bg', (req, res) => {
         res.sendFile(path.resolve('./res', req.query.fn));

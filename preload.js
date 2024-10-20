@@ -42,7 +42,7 @@ function isMinimized() {
 function showImportPlaylistDialog() {
     return ipcRenderer.invoke('showImportPlaylistDialog')
 }
-function getBilibiliVideoView(bv) {
+function getBilibiliVideoView(bv, p) {
     return ipcRenderer.invoke('getBilibiliVideoView', bv)
 }
 function getBilibiliVideoPlayurl(params) {
@@ -79,6 +79,8 @@ contextBridge.exposeInMainWorld('ymkAPI', {
     offRestore: callback => ipcRenderer.off('restore', callback),
     offRefreshPlaylists: callback => ipcRenderer.off('refreshPlaylists', callback),
     offShowMessage: callback => ipcRenderer.off('showMessage', callback),
+    onUrlScheme: callback => ipcRenderer.on('urlScheme', callback),
+    offUrlScheme: callback => ipcRenderer.off('urlScheme', callback),
     showImportPlaylistDialog,
     getBilibiliVideoView,
     getBilibiliVideoPlayurl,
