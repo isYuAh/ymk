@@ -19,24 +19,6 @@
         <div class="playlistSonglistTitle">播放列表</div>
         <div class="songs">
           <div class="container">
-<!--            <simplebar data-auto-hide class="simplebar">-->
-<!--              <div class="songTable forbidSelect">-->
-<!--                <div-->
-<!--                    @dblclick="playSong({song, justtry: false})"-->
-<!--                    :class="{song: true, active: zks.play.indexInPlaylist === index}"-->
-<!--                    :data-song="song"-->
-<!--                    @contextmenu.prevent="useZKStore().showMouseMenu([-->
-<!--                       {-->
-<!--                         title: '删除',-->
-<!--                         action: deleteSongInPlaylistSonglist-->
-<!--                       }-->
-<!--                    ], index)"-->
-<!--                    v-for="(song, index) in zks.play.playlist">-->
-<!--                  <div class="songInfo title">{{ song.title }}<sub>{{ song.type }}</sub></div>-->
-<!--                  <div class="songInfo author">{{ song.singer }}</div>-->
-<!--                </div>-->
-<!--              </div>-->
-<!--            </simplebar>-->
             <VirtualList :item-height="38" :items="zks.play.playlist" :size="10" v-slot="{item: song, index}" class-name="songTable">
               <div
                   @dblclick="playSong({song, justtry: false})"
@@ -131,7 +113,7 @@ let volumeProgressFill = ref<HTMLDivElement>();
 import {storeToRefs} from "pinia";
 import VirtualList from "@/components/VirtualList.vue";
 import {MusicHandlers} from "@/utils/MusicHandlers";
-const {onUrlScheme} = (window as any).ymkAPI;
+const {onUrlScheme} = window.ymkAPI;
 const {checkMusicPlayable} = useZKStore().songToolkit
 const {zks, config} = storeToRefs(useZKStore());
 let songfaceImg = ref<HTMLImageElement>();

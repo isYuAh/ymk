@@ -6,7 +6,7 @@ import {inject, ref} from "vue";
 import {type song} from "@/types";
 import {storeToRefs} from "pinia";
 import {neteaseAxios} from "@/utils/axiosInstances";
-const {readClipboard, getBilibiliVideoView} = (window as any).ymkAPI
+const {readClipboard, getBilibiliVideoView} = window.ymkAPI
 const {zks, config} = storeToRefs(useZKStore());
 let title = ref("");
 let singer = ref("");

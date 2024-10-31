@@ -12,8 +12,8 @@ export type config = {
     langPreferences: string[]
 }
 
-export type neteaseUser = {
-    cookie: string,
+export type User = {
+    auth: string,
     nickname: string,
     avatarUrl: string,
     uid: number,

@@ -17,7 +17,7 @@
 import { useZKStore } from '@/stores/useZKstore';
 import { ref, toRaw } from 'vue';
 import {storeToRefs} from "pinia";
-const {writePlaylistFile} = (window as any).ymkAPI;
+const {writePlaylistFile} = window.ymkAPI;
 const {zks} = storeToRefs(useZKStore());
 let selectComponent = ref<HTMLSelectElement>();
 function collect() {

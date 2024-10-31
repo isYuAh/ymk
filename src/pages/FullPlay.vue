@@ -97,7 +97,7 @@ import { minmax } from '@/utils/u';
 import type {song_lrc_item, songInPlay} from '@/types';
 import {VueDraggable} from "vue-draggable-plus";
 import {langStringMapper} from "@/utils/stringMapper";
-const {isMinimized, onRestore, openUrl} = (window as any).ymkAPI;
+const {isMinimized, onRestore, openUrl} = window.ymkAPI;
 const {zks, config} = storeToRefs(useZKStore());
 let playProgress = ref<HTMLDivElement>();
 let volumeProgress = ref<HTMLDivElement>();
@@ -256,10 +256,11 @@ onRestore(updateHighlightedIndex);
     font-size: 30px;
 }
 .partContainer .left .pic img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    box-shadow: 0 0 15px rgba(0,0,0,.8);
+  border-radius: 4px;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  box-shadow: 0 0 15px rgba(0,0,0,.8);
 }
 .partContainer .left .title {
     margin-top: 15px;

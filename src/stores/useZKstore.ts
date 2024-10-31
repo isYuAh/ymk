@@ -12,13 +12,13 @@ import type {
 import {type Component, computed, ref, shallowRef, toRaw, watch} from 'vue';
 import axios, {type AxiosResponse} from "axios";
 import router from "@/router";
-import type {config, neteaseUser} from "@/types/config";
+import type {config, User} from "@/types/config";
 import {neteaseAxios} from "@/utils/axiosInstances";
 
-const {getBilibiliFav, writePlaylistFile, getLocalPlaylists, onShowMessage, onRefreshPlaylists} = (window as any).ymkAPI;
+const {getBilibiliFav, writePlaylistFile, getLocalPlaylists, onShowMessage, onRefreshPlaylists} = window.ymkAPI;
 
 export const useZKStore = defineStore('ZK', () => {
-  const {writeConfig, getConfig, writeSpecificConfig, getSpecificConfig} = (window as any).ymkAPI;
+  const {writeConfig, getConfig, writeSpecificConfig, getSpecificConfig} = window.ymkAPI;
   const zks = ref({
     playlists: <list[]>[],
     playlistsParts: <playlistPart[]>[],
@@ -107,11 +107,15 @@ export const useZKStore = defineStore('ZK', () => {
   })
   const config = ref<config>({} as any);
   const colors = ref<Record<string, string>>({});
-  const neteaseUser = ref<neteaseUser>({} as any);
-  const isLogin = computed(() => neteaseUser.value.cookie && neteaseUser.value.cookie != '')
+  const neteaseUser = ref<User>({} as any);
+  const kugouUser = ref<User>({} as any);
+  const isLogin = computed(() => ({
+    netease: neteaseUser.value.auth && neteaseUser.value.auth != '',
+    kugou: kugouUser
+  }))
   const neteaseLikeList = ref([])
 
-  watch(() => neteaseUser.value.cookie, (nv) => {
+  watch(() => neteaseUser.value.auth, (nv) => {
     if (nv) {
       neteaseAxios.get(`/likelist?uid=${neteaseUser.value.uid}`).then((res) => {
         neteaseLikeList.value = res.data.code === 200 ? res.data.ids : []
@@ -121,7 +125,7 @@ export const useZKStore = defineStore('ZK', () => {
 
 
   function saveConfig() {
-    writeConfig(JSON.stringify({config: config.value, neteaseUser: neteaseUser.value}))
+    writeConfig(JSON.stringify({config: config.value, neteaseUser: neteaseUser.value, kugouUser: kugouUser.value}))
   }
   function saveColors() {
     writeSpecificConfig('colors', JSON.stringify(colors.value))
@@ -130,12 +134,13 @@ export const useZKStore = defineStore('ZK', () => {
     if (res) {
       let jp = res;
       config.value = jp.config;
-      neteaseUser.value = jp.neteaseUser;
+      neteaseUser.value = jp.neteaseUser || {};
+      kugouUser.value = jp.kugouUser || {};
       if (config.value.mode) {
         zks.value.play.mode = config.value.mode;
       }
     }
-    watch([() => zks.value.play.mode, neteaseUser, config], () => {config.value.mode = zks.value.play.mode as any; saveConfig()}, {deep: true});
+    watch([() => zks.value.play.mode, neteaseUser, config, kugouUser], () => {config.value.mode = zks.value.play.mode as any; saveConfig()}, {deep: true});
   })
   getSpecificConfig('colors').then((res: any) => {
     if (res) {
@@ -148,7 +153,7 @@ export const useZKStore = defineStore('ZK', () => {
       zks.value.mouseMenu.menu = menu;
     }
     zks.value.mouseMenu.args = arg;
-    zks.value.mouseMenu.position = await (window as any).ymkAPI.getCursorPos()
+    zks.value.mouseMenu.position = await window.ymkAPI.getCursorPos()
     zks.value.mouseMenu.show = true;
   }
 
@@ -173,7 +178,7 @@ export const useZKStore = defineStore('ZK', () => {
     if (song.fee === 1 || privilege?.fee === 1) {
       status.vipOnly = true
       // 非VIP会员
-      if (!(isLogin.value && neteaseUser.value.vipType === 11)) {
+      if (!(isLogin.value.netease && neteaseUser.value.vipType === 11)) {
         status.playable = false
         status.reason = '仅限 VIP 会员'
       }
@@ -183,7 +188,7 @@ export const useZKStore = defineStore('ZK', () => {
     } else if (song.noCopyrightRcmd !== null && song.noCopyrightRcmd !== undefined) {
       status.playable = false
       status.reason = '无版权'
-    } else if ( privilege?.st < 0 && isLogin.value) {
+    } else if ( privilege?.st < 0 && isLogin.value.netease) {
       status.playable = false
       status.reason = '已下架'
     }
@@ -221,7 +226,7 @@ export const useZKStore = defineStore('ZK', () => {
     }
     const ps = await getLocalPlaylists();
     pushPlaylistPart('本地', ps)
-    if (neteaseUser.value.cookie) {
+    if (neteaseUser.value.auth) {
       let res = await neteaseAxios.post(`/user/playlist?uid=${neteaseUser.value.uid}`, {})
       pushPlaylistPart('网易云', res.data.playlist.map((playlist: any) => ({
         title: playlist.name,
@@ -319,7 +324,7 @@ export const useZKStore = defineStore('ZK', () => {
           }
         }
         let totalSongCount = res.data.playlist.trackCount;
-        if (totalSongCount <= 1000 && neteaseUser.value.cookie !== '') {
+        if (totalSongCount <= 1000 && neteaseUser.value.auth !== '') {
           zks.value.playlist.songs.push(...res.data.playlist.tracks.map((track: any) => {
             return <song>{
               pic: track.al.picUrl,
@@ -485,6 +490,7 @@ export const useZKStore = defineStore('ZK', () => {
     config,
     colors,
     neteaseUser,
+    kugouUser,
     neteaseLikeList,
     saveConfig,
     saveColors,

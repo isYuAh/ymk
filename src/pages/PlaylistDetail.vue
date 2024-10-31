@@ -80,7 +80,7 @@ import {useRouter} from "vue-router";
 import {neteaseAxios} from "@/utils/axiosInstances";
 import VirtualList from "@/components/VirtualList.vue";
 const router = useRouter();
-const {writePlaylistFile} = (window as any).ymkAPI;
+const {writePlaylistFile} = window.ymkAPI;
 const {zks} = storeToRefs(useZKStore());
 let filter = ref('');
 let FuseVal = ref(new Fuse(zks.value.playlist.songs, {
@@ -125,7 +125,7 @@ function subscribeToggle() {
   })
 }
 function playAll() {
-    // zks.value.play.mode = 'list';
+    // zks.value.play.phase = 'list';
     zks.value.play.playlist = structuredClone(toRaw(zks.value.playlist.songs))
     if (zks.value.play.playlist[0]) {
         emitter.emit('playSong',{song: zks.value.play.playlist[0]})
@@ -187,7 +187,7 @@ function collectPlaylist() {
     playlist: zks.value.playlist.raw.playlist,
   })).then(() => {
     useZKStore().showMessage('收藏成功');
-    emitter.emit('refreshPlaylists', {notReset: true});
+    useZKStore().playlistToolkit.refreshPlaylists({notReset: true});
   }).catch(() => {
     useZKStore().showMessage(`写入文件${id}.json失败`);
   });

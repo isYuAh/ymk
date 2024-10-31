@@ -24,7 +24,7 @@ import axios from "axios";
 import {ref} from "vue";
 import {neteaseAxios} from "@/utils/axiosInstances";
 
-const {deletePlaylistFile, showImportPlaylistDialog} = (window as any).ymkAPI;
+const {deletePlaylistFile, showImportPlaylistDialog} = window.ymkAPI;
 const {config} = storeToRefs(useZKStore());
 
 const parts = ref<playlistPart[]>([]);

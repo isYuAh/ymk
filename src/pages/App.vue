@@ -74,7 +74,7 @@ import Message from '@/components/Message.vue';
 import Dialog from '@/components/Dialog.vue'
 import emitter from '@/emitter';
 
-const {exit, minimize} = (window as any).ymkAPI
+const {exit, minimize} = window.ymkAPI
 
 const backgroundType = computed(() => {
   if (config.value.bg.endsWith(".mp4")) return "video"
@@ -99,27 +99,17 @@ const {zks, neteaseUser, config, colors} = storeToRefs(useZKStore());
 const bgSrc = computed(() => {
   return `http://localhost:35652/api/bg?fn=${config.value.bg}`
 })
-watch(() => neteaseUser.value.cookie, (nv) => {
+watch(() => neteaseUser.value.auth, (nv) => {
   document.cookie = nv;
 })
 
 import {storeToRefs} from "pinia";
 
-async function TMP() {
-  await useZKStore().playlistToolkit.refreshPlaylists({notReset: false});
-  emitter.on('refreshPlaylists', (conf) => {
-    useZKStore().playlistToolkit.refreshPlaylists(conf);
-  });
-}
-TMP();
+useZKStore().playlistToolkit.refreshPlaylists({notReset: false});
 
 function dropEvent(e: DragEvent) {
   console.log(e)
 }
-
-onUnmounted(() => {
-  emitter.off('refreshPlaylists')
-})
 </script>
 
 <style>

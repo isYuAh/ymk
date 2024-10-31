@@ -1,5 +1,3 @@
-import { type AxiosInstance } from "axios";
-import { type InjectionKey } from "vue";
 export type list_basic = {
     pic: string,
     title: string,
@@ -150,4 +148,39 @@ export type mouseMenuItem = {
     title: string,
     action: (...args: any[]) => void,
     show?: boolean
+}
+
+declare global {
+    interface Window {
+        ymkAPI: {
+            getLocalPlaylists: any,
+            showAskDialog: any,
+            showChoosePlaylistDialog: any,
+            deletePlaylistFile: any,
+            writePlaylistFile: any,
+            readClipboard: any,
+            writeConfig: any,
+            minimize: any,
+            exit: any,
+            getConfig: any,
+            isMinimized: any,
+            onRestore: any,
+            onRefreshPlaylists: any,
+            onShowMessage: any,
+            offRestore: any,
+            offRefreshPlaylists: any,
+            offShowMessage: any,
+            onUrlScheme: any,
+            offUrlScheme: any,
+            showImportPlaylistDialog: any,
+            getBilibiliVideoView: any,
+            getBilibiliVideoPlayurl: any,
+            getBilibiliFav: any,
+            axiosRequestGet: any,
+            getCursorPos: any,
+            getSpecificConfig: any,
+            writeSpecificConfig: any,
+            openUrl: any,
+        }
+    }
 }
