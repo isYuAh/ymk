@@ -125,11 +125,15 @@ function subscribeToggle() {
   })
 }
 function playAll() {
-    // zks.value.play.phase = 'list';
-    zks.value.play.playlist = structuredClone(toRaw(zks.value.playlist.songs))
-    if (zks.value.play.playlist[0]) {
-        emitter.emit('playSong',{song: zks.value.play.playlist[0]})
-    }
+  zks.value.play.playlist = structuredClone(toRaw(zks.value.playlist.songs))
+  if (!zks.value.play.playlist.length) {
+    return;
+  }
+  if (zks.value.play.mode === 'rand') {
+    emitter.emit('playSong', {song: zks.value.play.playlist[Math.floor(Math.random() * (zks.value.play.playlist.length))]})
+  }else {
+    emitter.emit('playSong',{song: zks.value.play.playlist[0]})
+  }
 }
 
 function menu_edit(arg: any) {
