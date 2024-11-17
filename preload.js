@@ -61,7 +61,20 @@ function openUrl(url) {
     return ipcRenderer.invoke('openUrl', url)
 }
 
-contextBridge.exposeInMainWorld('ymkAPI', {
+function playPauseStatusUpdate(playing) {
+    ipcRenderer.send('playPauseStatusUpdate', playing)
+}
+
+function onTrayControl_PlayPause(callback) {
+    ipcRenderer.on('tray_playPause', callback)
+}
+function onTrayControl_PlaySong(callback) {
+    ipcRenderer.on('tray_play', callback)
+}
+const apis = {
+    onTrayControl_PlayPause,
+    onTrayControl_PlaySong,
+    playPauseStatusUpdate,
     getLocalPlaylists,
     showAskDialog,
     showChoosePlaylistDialog,
@@ -90,4 +103,5 @@ contextBridge.exposeInMainWorld('ymkAPI', {
     getSpecificConfig,
     writeSpecificConfig,
     openUrl,
-})
+}
+contextBridge.exposeInMainWorld('ymkAPI', apis)

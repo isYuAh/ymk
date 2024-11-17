@@ -66,7 +66,16 @@ export function proceedKrcText(krcText: string) {
 
     let originResult: song_lrc_item[] = [];
     let translationResult: song_lrc_item[] = [];
-    const lines = krcText.split('\r\n');
+    let lines = []
+    if (krcText.indexOf('\r') !== -1) {
+        lines = krcText.split('\r\n');
+    }else {
+        lines = krcText.split('\n');
+    }
+    console.log({
+        k: krcText,
+        l: lines
+    })
     const languageMatch = krcText.match(/\[language:(.*?)]/);
     let languageSign = false
     let translations = []
@@ -103,4 +112,8 @@ export function proceedKrcText(krcText: string) {
         }
     }
     return {originResult, translationResult, languageSign, mixedLrc}
+}
+
+export function replacePicSizeParam(str: string, size: number = 240) {
+    return str.replaceAll("{size}", `${size}`);
 }

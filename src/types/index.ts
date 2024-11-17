@@ -11,6 +11,7 @@ export type list_data = {
 export type list_trace_bilibili_fav = {
     type: 'trace_bilibili_fav',
     favid: string,
+    expandAll?: boolean
 }
 export type list_trace_siren = {
     type: 'trace_siren',
@@ -23,13 +24,22 @@ export type list_trace_qq_playlist = {
     type: 'trace_qq_playlist',
     id: string
 }
+export type list_trace_kugou_playlist = {
+    type: 'trace_kugou_playlist',
+    id: string
+}
 export type playlistPart = {
     title: string,
     begin: number,
     count: number,
     other?: any
 }
-export type playlistComponent = list_data | list_trace_bilibili_fav | list_trace_siren | list_trace_netease_playlist | list_trace_qq_playlist;
+export type playlistComponent = list_data |
+    list_trace_bilibili_fav |
+    list_trace_siren |
+    list_trace_netease_playlist |
+    list_trace_qq_playlist |
+    list_trace_kugou_playlist;
 export type list = {
     playlist: playlistComponent[]
 } & list_basic;
@@ -87,14 +97,6 @@ export type song_netease = {
     playable: boolean,
     reason: string
 } & song_basic;
-export type song_netease_outer = {
-    type: 'netease_outer',
-    id: string
-} & song_basic;
-export type song_netease_other = {
-    type: 'netease_other',
-    id: string
-} & song_basic;
 export type song_siren = {
     type: 'siren',
     cid: string
@@ -112,8 +114,6 @@ export type song = song_bilibili |
                     song_local |
                     song_web |
                     song_netease |
-                    song_netease_outer |
-                    song_netease_other |
                     song_siren |
                     song_qq |
                     song_kugou
@@ -152,7 +152,11 @@ export type mouseMenuItem = {
 
 declare global {
     interface Window {
+        electronMessagePort: any,
         ymkAPI: {
+            onTrayControl_PlayPause: any,
+            onTrayControl_PlaySong: any,
+            playPauseStatusUpdate: any,
             getLocalPlaylists: any,
             showAskDialog: any,
             showChoosePlaylistDialog: any,

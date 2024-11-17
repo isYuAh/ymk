@@ -1,11 +1,12 @@
-import {app, BrowserWindow, ipcMain, dialog, clipboard, screen, shell} from 'electron'
+import {app, BrowserWindow, clipboard, dialog, ipcMain, screen, shell, MessageChannelMain} from 'electron'
 import path from 'path';
-import { fileURLToPath } from 'url';
+import {fileURLToPath} from 'url';
 import * as fs from "node:fs";
-import {checkFolders, checkResources, startKugouServer, startNcmServer} from "./utils.js";
+import {checkFolders, checkResources, startKugouServer, startNcmServer} from "./utils/utils.js";
 import express from "express";
-import {WBI} from "./WBI.js";
+import {WBI} from "./utils/WBI.js";
 import axios from "axios";
+import {initTray} from "./utils/tray.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -57,8 +58,7 @@ if (!gotTheLock) {
             )
         }
         bilibiliClient.interceptors.request.use((config) => {
-            let WB = WBI(wbi, config.params)
-            config.params = WB;
+            config.params = WBI(wbi, config.params);
             return config;
         })
     }).catch(err => {console.log(err);})
@@ -172,7 +172,6 @@ if (!gotTheLock) {
             },
             resizable: false,
         })
-
         ipcMain.handle('getLocalPlaylists', getLocalPlaylists)
         ipcMain.handle('showAskDialog', showAskDialog)
         ipcMain.handle('showChoosePlaylistDialog', showChoosePlaylistDialog)
@@ -194,6 +193,8 @@ if (!gotTheLock) {
         ipcMain.on('minimize', () => mainWindow.minimize())
         ipcMain.on('exit', () => mainWindow.close())
         mainWindow.on('restore', () => mainWindow.webContents.send('restore'))
+
+        initTray(mainWindow, app, __dirname)
 
         if (app.isPackaged) {
             mainWindow.loadFile(path.resolve(__dirname, './dist', 'index.html'))

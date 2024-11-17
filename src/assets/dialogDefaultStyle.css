@@ -1,6 +1,6 @@
 .dialogPreviewContainer.DEF-DIALOG-CONTENT {
     border: 1px;
-    background-color: #fff;
+    background-color: rgba(255, 255, 255, .85);
     padding: 10px;
     border-radius: 6px;
     box-shadow: 0 0 5px rgba(0, 0, 0, .4)

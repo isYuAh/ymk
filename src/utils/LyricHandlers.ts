@@ -18,41 +18,52 @@ function LyricHandlerKugou({tasks, tmpSong, unique, offset}: LyricHandlerParams<
                 hash: unique
             }
         }).then(res => {
-            const {id, accesskey} = res.data.candidates[0]
-            if (id && accesskey) {
-                kugouAxios.get('/lyric', {
-                    params: {
-                        accesskey,
-                        id,
-                        fmt: 'krc',
-                        decode: true,
-                    }
-                }).then(res => {
-                    const {
-                        languageSign,
-                        translationResult,
-                        originResult,
-                        mixedLrc
-                    } = proceedKrcText(res.data.decodeContent)
-                    tmpSong.lrcs['origin'] = {
-                        enableAutoScroll: true,
-                        items: originResult
-                    }
-                    if (languageSign) {
-                        tmpSong.lrcs['translation'] = {
-                            enableAutoScroll: true,
-                            items: translationResult
-                        }
-                        tmpSong.lrcs['mixed'] = {
-                            enableAutoScroll: true,
-                            items: mixedLrc
-                        }
-                    }
-                    tmpSong.lyricConfig.offset = offset;
-                    resolve()
-                }).catch(() => reject())
+            console.log('$lyricResponse', res)
+            if (res.data.status === 404) {
+                resolve();
             }else {
-                reject()
+                const {id, accesskey} = res.data.candidates[0]
+                if (id && accesskey) {
+                    kugouAxios.get('/lyric', {
+                        params: {
+                            accesskey,
+                            id,
+                            fmt: 'krc',
+                            decode: true,
+                        }
+                    }).then(res => {
+                        const {
+                            languageSign,
+                            translationResult,
+                            originResult,
+                            mixedLrc
+                        } = proceedKrcText(res.data.decodeContent)
+                        console.log('$krcResponse', {
+                            languageSign,
+                            translationResult,
+                            originResult,
+                            mixedLrc
+                        })
+                        tmpSong.lrcs['origin'] = {
+                            enableAutoScroll: true,
+                            items: originResult
+                        }
+                        if (languageSign) {
+                            tmpSong.lrcs['translation'] = {
+                                enableAutoScroll: true,
+                                items: translationResult
+                            }
+                            tmpSong.lrcs['mixed'] = {
+                                enableAutoScroll: true,
+                                items: mixedLrc
+                            }
+                        }
+                        tmpSong.lyricConfig.offset = offset;
+                        resolve()
+                    }).catch(() => reject())
+                }else {
+                    reject()
+                }
             }
         })
     }))

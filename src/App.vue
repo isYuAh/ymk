@@ -6,6 +6,7 @@
 <script setup lang='ts'>
 import { RouterView } from 'vue-router';
 import MouseMenu from "@/components/MouseMenu.vue";
+
 </script>
 
 <style scoped>

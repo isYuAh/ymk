@@ -70,7 +70,7 @@
             <div class="header">歌手</div>
             <Transition name="cube">
               <div v-show="!singerLoading" class="main">
-                <div class="singerItem" v-for="singer in resultSingerList">
+                <div @click="console.log(singer)" class="singerItem" v-for="singer in resultSingerList">
                   <div class="pic">
                     <img :src="singer.picUrl" alt="">
                   </div>
@@ -115,7 +115,7 @@ import CollectDialog from "@/components/Dialogs/CollectDialog.vue";
 import {neteaseAxios} from "@/utils/axiosInstances";
 import {useRouter} from "vue-router";
 const router = useRouter()
-const {config, zks} = storeToRefs(useZKStore());
+const {zks} = storeToRefs(useZKStore());
 const {checkDetail} = useZKStore().playlistToolkit
 const {mapCheckSongPlayable, neteaseSongsToSongType} = useZKStore().songToolkit
 let searchInput = ref<HTMLInputElement>();
@@ -149,7 +149,8 @@ function search() {
           let query = searchInput.value.value;
           if (query !== tmpSearchVal.value) {
             nowPage.value = 1;
-            getSearchResults(query);
+            getNeteaseSearchResults(query);
+            getKugouSearchResults(query);
           }
           tmpSearchVal.value = query;
         }else {
@@ -158,7 +159,10 @@ function search() {
         }
     }
 }
-function getSearchResults(query: string, offset = 0) {
+function getKugouSearchResults(query: string) {
+
+}
+function getNeteaseSearchResults(query: string, offset = 0) {
   const types = [10, 100, 1000];
   let tasks = [];
   paginationLoading.value = true;

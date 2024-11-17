@@ -26,11 +26,10 @@
         <Transition appear name="fade">
           <div style="-webkit-app-region: no-drag" v-show="!zks.showFullPlay" class="tabs">
             <RouterLink to="/playlist" :class="{tab: true, active: zks.nowTab === 'playlist'}">首页</RouterLink>
-            <RouterLink to="/recommendedPlaylists" :class="{tab: true, active: zks.nowTab === 'PlaylistRecommend_netease'}">推荐</RouterLink>
+            <RouterLink to="/recommendedPlaylists" :class="{tab: true, active: zks.nowTab === 'recommendedPlaylists'}">推荐</RouterLink>
             <RouterLink to="/playlistDetail" v-if="zks.playlist.listIndex !== -1" :class="{tab: true, active: zks.nowTab === 'playlistDetail'}">歌单</RouterLink>
             <RouterLink to="/albumPreview" v-if="zks.albumPreview.info.title !== ''" :class="{tab: true, active: zks.nowTab === 'albumPreview'}">专辑</RouterLink>
             <RouterLink to="/search" :class="{tab: true, active: zks.nowTab === 'search'}">搜索</RouterLink>
-<!--            <RouterLink  to="/blank" @click="zks.nowTab = 'blankPage'" :class="{tab: true, active: zks.nowTab === 'blankPage'}">空白</RouterLink>-->
             <RouterLink to="/userCenter" :class="{tab: true, active: zks.nowTab === 'userCenter'}">
               <div class="text">{{ neteaseUser.nickname || '用户' }}</div>
               <img v-if="neteaseUser.avatarUrl" style="border-radius: 50%;margin-left: 4px;margin-top:6px; height: 28px;" :src="neteaseUser.avatarUrl" alt="">
@@ -46,7 +45,7 @@
       <div class="content">
         <router-view v-slot="{ Component }">
           <transition v-show="!zks.showFullPlay" appear name="uianim">
-            <keep-alive :exclude="['UserCenter', 'PlaylistDetail']">
+            <keep-alive :exclude="['UserCenter', 'PlaylistDetail', 'Settings']">
               <component :is="Component" />
             </keep-alive>
           </transition>

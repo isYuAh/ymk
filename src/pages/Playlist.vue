@@ -18,15 +18,14 @@
 <script setup lang='ts'>
 import {useZKStore} from '@/stores/useZKstore';
 import {storeToRefs} from "pinia";
-import emitter from '@/emitter';
 import simplebar from "simplebar-vue";
 import 'simplebar-vue/dist/simplebar.min.css'
 import PreviewDialog from "@/components/Dialogs/PreviewDialog.vue";
 import AddSongToDialog from '@/components/Dialogs/addSongToDialog.vue';
 import Playlists from "@/components/Playlists.vue";
 const {zks} = storeToRefs(useZKStore());
-import {neteaseAxios} from "@/utils/axiosInstances";
 import type {playlistPart, list, mouseMenuItem} from "@/types";
+import {kugouAxios} from "@/utils/axiosInstances";
 
 const {deletePlaylistFile, showImportPlaylistDialog} = window.ymkAPI;
 function menu_deletePlaylist() {
@@ -59,7 +58,13 @@ function PlaylistMenu(list: list, index: number, part: playlistPart) {
   menu.length && useZKStore().showMouseMenu(menu, {playlist: list, pi: index + part.begin})
 }
 async function testFunc() {
-  neteaseAxios.get('/recommend/resource', {params: {}}).then(res => console.log(res))
+  kugouAxios.post('/user/playlist').then((res) => {
+    console.log(res)
+    if ('status' in res.data && res.data.status === 1) {
+      const data = res.data.data;
+      
+    }
+  })
 }
 function showAddSongToDialog() {
   useZKStore().showDialog(AddSongToDialog)

@@ -1,8 +1,9 @@
 import axios, {AxiosError, type AxiosResponse} from "axios";
 import type {song_bilibili, song_kugou, song_netease, song_qq, song_siren, songInPlay} from "@/types";
-import {proceedLrcText} from "@/utils/u";
+import {proceedLrcText, replacePicSizeParam} from "@/utils/u";
 import {kugouAxios, neteaseAxios} from "@/utils/axiosInstances";
 import {LyricHandlers} from "@/utils/LyricHandlers";
+import {useZKStore} from "@/stores/useZKstore";
 const {getBilibiliVideoView, getBilibiliVideoPlayurl, axiosRequestGet} = window.ymkAPI;
 
 interface MusicHandlerFunctionParams<T> {
@@ -122,8 +123,12 @@ function MusicHandlerNetease({tasks, tmpSong, song}: MusicHandlerFunctionParams<
 function MusicHandlerKugou({tasks, tmpSong, song}: MusicHandlerFunctionParams<song_kugou>) {
     tasks.push(new Promise((resolve, reject) => {
         kugouAxios.get('/song/url', {params: {hash: song.hash}}).then((res: AxiosResponse) => {
-            tmpSong.url = res.data.url[0]
-            resolve();
+            if (res.data.status === 1) {
+                tmpSong.url = res.data.url[0]
+                resolve();
+            }else if (res.data.status === 2) {
+                reject('无VIP');
+            }
         }).catch((err) => {
             reject(err.message);
         })
@@ -133,7 +138,7 @@ function MusicHandlerKugou({tasks, tmpSong, song}: MusicHandlerFunctionParams<so
         kugouAxios.get('/privilege/lite', {params: {hash: song.hash}}).then((res: AxiosResponse) => {
             if (res.data.error_code !== 0) reject(res)
             const d = res.data.data[0]
-            tmpSong.pic = d.trans_param.union_cover.replace("{size}", 240)
+            tmpSong.pic = replacePicSizeParam(d.trans_param.union_cover)
             tmpSong.title = tmpSong.title || d.name
             tmpSong.singer = tmpSong.singer || d.singername
             resolve();

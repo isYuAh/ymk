@@ -113,7 +113,7 @@ let volumeProgressFill = ref<HTMLDivElement>();
 import {storeToRefs} from "pinia";
 import VirtualList from "@/components/VirtualList.vue";
 import {MusicHandlers} from "@/utils/MusicHandlers";
-const {onUrlScheme} = window.ymkAPI;
+const {onUrlScheme, playPauseStatusUpdate, onTrayControl_PlayPause, onTrayControl_PlaySong} = window.ymkAPI;
 const {checkMusicPlayable} = useZKStore().songToolkit
 const {zks, config} = storeToRefs(useZKStore());
 let songfaceImg = ref<HTMLImageElement>();
@@ -134,11 +134,13 @@ function whenLoadData() {
   }
 }
 function whenPlay() {
+  playPauseStatusUpdate(true);
   if (zks.value.play.status !== 'play') {
     zks.value.play.status = 'play';
   }
 }
 function whenPause() {
+  playPauseStatusUpdate(false);
   if (zks.value.play.status !== 'pause') {
     zks.value.play.status = 'pause';
   }
@@ -330,7 +332,7 @@ async function playSong({song, justtry = false, noEffectWhenNotPlayable = true}:
     }
   }).catch((err) => {
     console.log(err, song);
-    useZKStore().showMessage(err.message)
+    useZKStore().showMessage(err.message || err || '')
   })
 }
 
@@ -396,6 +398,21 @@ onMounted(() => {
   if (config.value.volume != undefined) {
     emitter.emit('changeVolumeTo', minmax(config.value.volume, 0, 1));
   }
+  onTrayControl_PlayPause((_e: any, status: boolean) => {
+    if (!songSource.value) return;
+    if (status) {
+      songSource.value.play();
+    }else {
+      songSource.value.pause();
+    }
+  })
+  onTrayControl_PlaySong((_e: any, direction: string) => {
+    if (direction === 'last') {
+      playPrevSong();
+    }else if (direction === 'next') {
+      playNextSong();
+    }
+  })
 })
 watch(() => zks.value.play.status, (nv) => {
     if (!songSource.value) return;

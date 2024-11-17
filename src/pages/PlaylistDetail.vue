@@ -52,7 +52,7 @@
                 <div
                     @dblclick="playSong_withCheck(ITEM.item)"
                     class="song"
-                    :class="{disabled: ITEM.item.type==='netease' && 'playable' in ITEM.item ? !ITEM.item.playable : false}"
+                    :class="{disabled: (ITEM.item.type==='netease' && 'playable' in ITEM.item) ? !ITEM.item.playable : false}"
                     @contextmenu.prevent="tryShowMenu({song: ITEM.item,si: ITEM.refIndex})">
                   <div class="songInfo title">{{ ITEM.item.title }}<sub>{{ ITEM.item.type }}</sub></div>
                   <div class="songInfo author">{{ ITEM.item.singer }}</div>
