@@ -1,12 +1,14 @@
-type apiConfig = {
+export type apiConfig = {
     enable: boolean,
     url: string,
 }
 
 export type config = {
     volume: number,
-    neteaseApi: apiConfig,
-    qqApi: apiConfig,
+    api: {
+        neteaseApi: apiConfig,
+        qqApi: apiConfig
+    },
     mode: 'list' | 'pause' | 'loop' | 'rand',
     bg: string,
     langPreferences: string[]

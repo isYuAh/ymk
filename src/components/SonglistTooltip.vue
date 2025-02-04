@@ -18,7 +18,6 @@ defineProps(['text'])
   display: inline-block;
 }
 .tooltipText {
-  //width: auto;
   display: none;
   font-family: PingFang SC;
   position: absolute;

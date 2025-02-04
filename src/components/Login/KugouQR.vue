@@ -3,12 +3,14 @@ import {onUnmounted, ref, watch} from "vue";
 import {useZKStore} from "@/stores/useZKstore";
 import {storeToRefs} from "pinia";
 import {kugouAxios} from "@/utils/axiosInstances";
+import {showMessage} from "@/utils/message";
+import {useUserStore} from "@/stores/modules/user";
 
 const phase = defineModel('phase', {type: String})
 let qrimgEl = ref<HTMLImageElement>();
 let key = ''
 let qrstatus = ref('获取中')
-const {kugouUser, config} = storeToRefs(useZKStore());
+const user = useUserStore()
 let timer = (-1 as any);
 async function checkQRCodeStatus() {
   const status = await kugouAxios.get('/login/qr/check', {
@@ -24,14 +26,14 @@ async function checkQRCodeStatus() {
     }else if (qrStatusCode === 4) {
       qrstatus.value = '授权登录成功';
       clearInterval(timer);
-      Object.assign(kugouUser.value, {
+      Object.assign(user.kugouUser, {
         auth: status.data.data.token,
         uid: status.data.data.userid
       })
       checkStatus();
     }else if (qrStatusCode === 0) {
       clearInterval(timer);
-      useZKStore().showMessage(`二维码过期，已自动刷新`);
+      showMessage(`二维码过期，已自动刷新`);
       getQRCode();
     }
   }
@@ -55,12 +57,12 @@ function getQRCode() {
 }
 function checkStatus(refresh: boolean = false) {
   kugouAxios.post('/user/detail', {
-    token: kugouUser.value.auth,
-    userid: kugouUser.value.uid,
+    token: user.kugouUser.auth,
+    userid: user.kugouUser.uid,
   }).then(res => {
     console.log('$checkStatus-kugou', res.data)
     if (res.data.status === 1) {
-      Object.assign(kugouUser.value, {
+      Object.assign(user.kugouUser, {
         avatarUrl: res.data.data.pic,
         nickname: res.data.data.nickname,
         signature: res.data.data.descri,
@@ -68,7 +70,7 @@ function checkStatus(refresh: boolean = false) {
       })
       phase.value = 'logined';
     }else {
-      useZKStore().showMessage(`获取信息失败`);
+      showMessage(`获取信息失败`);
     }
   })
 }

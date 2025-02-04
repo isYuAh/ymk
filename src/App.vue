@@ -1,5 +1,5 @@
 <template>
-  <MouseMenu />
+<!--  <MouseMenu />-->
   <RouterView></RouterView>
 </template>
 

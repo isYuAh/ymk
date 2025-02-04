@@ -1,29 +1,29 @@
 <script setup lang="ts">
-import {storeToRefs} from "pinia";
-import {useZKStore} from "@/stores/useZKstore";
 import {ref} from "vue";
 import NeteaseQR from "@/components/Login/NeteaseQR.vue";
 import UserInfo from "@/components/Login/UserInfo.vue";
 import axios from "axios";
+import {useUserStore} from "@/stores/modules/user";
+import {useConfigStore} from "@/stores/modules/config";
 
-const {neteaseUser, config} = storeToRefs(useZKStore());
 const qrComponent = ref()
-const phase = ref(neteaseUser.value.auth && neteaseUser.value.auth !== '' ? 'logined' : 'unlogin');
-
+const user = useUserStore()
+const config = useConfigStore()
+const phase = ref(user.neteaseUser.auth && user.neteaseUser.auth !== '' ? 'logined' : 'unlogin');
 function refreshStatus() {
   if (!qrComponent.value) return;
   qrComponent.value.checkStatus(false);
 }
 function logout() {
-  axios.post(config.value.neteaseApi.url + 'logout', {
-    cookie: neteaseUser.value.auth
+  axios.post(config.api.neteaseApi.url + 'logout', {
+    cookie: user.neteaseUser.auth
   }).finally(() => {
     phase.value = 'unlogin'
-    neteaseUser.value.nickname = '';
-    neteaseUser.value.avatarUrl = '';
-    neteaseUser.value.auth = '';
-    neteaseUser.value.uid = 0;
-    neteaseUser.value.vipType = 0;
+    user.neteaseUser.nickname = '';
+    user.neteaseUser.avatarUrl = '';
+    user.neteaseUser.auth = '';
+    user.neteaseUser.uid = 0;
+    user.neteaseUser.vipType = 0;
   })
 }
 defineExpose({
@@ -42,7 +42,7 @@ defineExpose({
         v-show="phase === 'logining'"
         v-model:phase="phase"></NeteaseQR>
     <UserInfo
-        :user="neteaseUser"
+        :user="user.neteaseUser"
         @refreshStatus="refreshStatus"
         @logout="logout"
         v-if="phase === 'logined'"

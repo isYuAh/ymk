@@ -200,6 +200,7 @@ if (!gotTheLock) {
             mainWindow.loadFile(path.resolve(__dirname, './dist', 'index.html'))
         }else {
             mainWindow.loadURL('http://localhost:5173')
+            mainWindow.openDevTools()
         }
     }
 

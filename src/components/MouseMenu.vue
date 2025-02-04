@@ -1,7 +1,8 @@
 <template>
-<div ref="mmContainer" v-show="zks.mouseMenu.show" class="mouseMenuContainer forbidSelect">
+<div ref="mmContainer" class="mouseMenuContainer forbidSelect">
     <div class="menulist">
-        <div v-show="m.show !== undefined ? m.show : true" @click="m.action(zks.mouseMenu.args)" v-for="m in zks.mouseMenu.menu" class="menuItem">
+        <div v-show="m.show ?? true" @click="handleClick(m)"
+             v-for="m in menuItems" class="menuItem">
             {{ m.title }}
         </div>
     </div>
@@ -9,41 +10,63 @@
 </template>
 
 <script setup lang='ts'>
-import {nextTick, onMounted, onUnmounted} from 'vue';
-import { ref, watch } from 'vue';
-import {useZKStore} from "@/stores/useZKstore";
-import {storeToRefs} from "pinia";
-const {zks} = storeToRefs(useZKStore())
-let mmContainer = ref<HTMLDivElement>();
-onMounted(() => {
-  const l = () => {
-    zks.value.mouseMenu.show=false
-  };
-  document.body.addEventListener('click', l)
-  onUnmounted(() => {
-    document.body.removeEventListener('click', l)
-  })
-})
-watch([() => zks.value.mouseMenu.show, () => zks.value.mouseMenu.position], (v) => {
-    if (v) {
-        nextTick(() => {
-            if (mmContainer.value && zks.value.mouseMenu.show) {
-                if (zks.value.mouseMenu.position.left + mmContainer.value.clientWidth > document.body.clientWidth) {
-                    mmContainer.value.style.left = zks.value.mouseMenu.position.left - mmContainer.value.clientWidth + "px";
-                }else {
-                    mmContainer.value.style.left = zks.value.mouseMenu.position.left + "px"
-                }
-            }
-            if (mmContainer.value && zks.value.mouseMenu.show) {
-                if (zks.value.mouseMenu.position.top + mmContainer.value.clientHeight > document.body.clientHeight) {
-                    mmContainer.value.style.top = zks.value.mouseMenu.position.top - mmContainer.value.clientHeight + "px"
-                }else {
-                    mmContainer.value.style.top = zks.value.mouseMenu.position.top + "px"
-                }
-            }
-        })
+
+
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import type {mouseMenuItem} from "@/types";
+
+const props = defineProps<{
+  menuItems: mouseMenuItem[]
+  position: { left: number; top: number }
+  args?: any
+}>()
+
+const emit = defineEmits(['close'])
+const mmContainer = ref<HTMLDivElement>()
+const adjustPosition = () => {
+  if (!mmContainer.value) return
+
+  nextTick(() => {
+    const container = mmContainer.value!
+    const { innerWidth, innerHeight } = window
+    // 水平调整
+    if (props.position.left + container.offsetWidth > innerWidth) {
+      container.style.left = `${props.position.left - container.offsetWidth}px`
+    } else {
+      container.style.left = `${props.position.left}px`
     }
-}, {deep: true})
+
+    // 垂直调整
+    if (props.position.top + container.offsetHeight > innerHeight) {
+      container.style.top = `${props.position.top - container.offsetHeight}px`
+    } else {
+      container.style.top = `${props.position.top}px`
+    }
+  })
+}
+
+// 菜单点击处理
+const handleClick = (menuItem: mouseMenuItem) => {
+  menuItem.action?.(props.args)
+  emit('close')
+}
+
+// 点击外部关闭
+const clickHandler = (e: MouseEvent) => {
+  if (!mmContainer.value?.contains(e.target as Node)) {
+    emit('close')
+  }
+}
+
+onMounted(() => {
+  console.log(props)
+  adjustPosition()
+  document.addEventListener('click', clickHandler)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', clickHandler)
+})
 </script>
 
 <style scoped>
@@ -54,7 +77,6 @@ watch([() => zks.value.mouseMenu.show, () => zks.value.mouseMenu.position], (v) 
     background-color: #fff;
     border-radius: 6px;
     padding: 10px 0;
-    left: 50px;
     min-width: 100px;
 }
 .menuItem {

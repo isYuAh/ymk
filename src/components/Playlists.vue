@@ -13,7 +13,7 @@ const {
   fromZks: boolean,
   menuEvent?: (list: list, pi: number, part: playlistPart) => void
 }>()
-const {checkDetail} = useZKStore().playlistToolkit
+import {checkDetail} from "@/utils/Toolkit";
 
 function checkPlaylist(i: number) {
   if (fromZks) {

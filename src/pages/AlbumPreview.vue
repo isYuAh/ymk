@@ -59,8 +59,11 @@ import '@/assets/songlist.css'
 import Fuse from "fuse.js";
 import {useRouter} from "vue-router";
 import VirtualList from "@/components/VirtualList.vue";
+import {showContextMenu} from "@/utils/contextMenu";
+import {usePlayerStore} from "@/stores/modules/player";
 const router = useRouter();
 const {zks} = storeToRefs(useZKStore());
+const player = usePlayerStore()
 let filter = ref('');
 let FuseVal = ref(new Fuse(zks.value.albumPreview.songs, {
   keys: ['title', 'singer']
@@ -78,22 +81,25 @@ let showingSonglist = computed(() => {
   }
 })
 function tryShowMenu(a: any) {
-  useZKStore().showMouseMenu([{
-    title: '收藏',
-    action: () => {},
-  }], a)
+  showContextMenu({
+    menuItems: [{
+      title: '收藏',
+      action: () => {},
+    }],
+    args: a
+  })
 }
 function playAll() {
-    zks.value.play.playlist = structuredClone(toRaw(zks.value.albumPreview.songs))
-    if (zks.value.play.playlist[0]) {
-        emitter.emit('playSong',{song: zks.value.play.playlist[0]})
+    player.playlist = structuredClone(toRaw(zks.value.albumPreview.songs))
+    if (player.playlist[0]) {
+        emitter.emit('playSong',{song: player.playlist[0]})
     }
 }
 function playSong_withCheck(song: song) {
-    if (zks.value.play.playlist.length) {
+    if (player.playlist.length) {
         emitter.emit('playSong',{song})
     }else {
-        zks.value.play.playlist = structuredClone(toRaw(zks.value.playlist.songs))
+        player.playlist = structuredClone(toRaw(zks.value.playlist.songs))
         emitter.emit('playSong',{song})
     }
 }

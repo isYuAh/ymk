@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import {storeToRefs} from "pinia";
-import {useZKStore} from "@/stores/useZKstore";
 import {ref} from "vue";
 import UserInfo from "@/components/Login/UserInfo.vue";
 import KugouQR from "@/components/Login/KugouQR.vue";
+import {useUserStore} from "@/stores/modules/user";
 
-const {kugouUser} = storeToRefs(useZKStore());
+const user = useUserStore()
 const qrComponent = ref()
-const phase = ref(kugouUser.value.auth && kugouUser.value.auth !== '' ? 'logined' : 'unlogin');
+const phase = ref(user.kugouUser.auth && user.kugouUser.auth !== '' ? 'logined' : 'unlogin');
 
 function refreshStatus() {
   if (!qrComponent.value) return;
@@ -15,11 +14,11 @@ function refreshStatus() {
 }
 function logout() {
   phase.value = 'unlogin'
-  kugouUser.value.nickname = '';
-  kugouUser.value.avatarUrl = '';
-  kugouUser.value.auth = '';
-  kugouUser.value.uid = 0;
-  kugouUser.value.vipType = 0;
+  user.kugouUser.nickname = '';
+  user.kugouUser.avatarUrl = '';
+  user.kugouUser.auth = '';
+  user.kugouUser.uid = 0;
+  user.kugouUser.vipType = 0;
 }
 defineExpose({
   refreshStatus,
@@ -37,7 +36,7 @@ defineExpose({
         v-show="phase === 'logining'"
         v-model:phase="phase"></KugouQR>
     <UserInfo
-        :user="kugouUser"
+        :user="user.kugouUser"
         @refreshStatus="refreshStatus"
         @logout="logout"
         v-if="phase === 'logined'"

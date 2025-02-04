@@ -3,29 +3,30 @@ import simplebar from "simplebar-vue";
 import 'simplebar-vue/dist/simplebar.min.css'
 import {ref} from "vue";
 import {useZKStore} from "@/stores/useZKstore";
-import {storeToRefs} from "pinia";
 import PickColors from 'vue-pick-colors'
-const {config, colors} = storeToRefs(useZKStore());
-
+import {showMessage} from "@/utils/message";
+import {useConfigStore} from "@/stores/modules/config";
+const zks = useZKStore()
+const config = useConfigStore()
 let apiConfig = ref({
-  neteaseUrl: config.value.neteaseApi.url,
-  qqUrl: config.value.qqApi.url,
+  neteaseUrl: config.api.neteaseApi.url,
+  qqUrl: config.api.qqApi.url,
 })
 let tmpConfig = ref({
-  bg: config.value.bg
+  bg: config.bg
 })
 function saveApiConfig () {
-  config.value.neteaseApi.url = apiConfig.value.neteaseUrl;
-  config.value.qqApi.url = apiConfig.value.qqUrl;
-  useZKStore().showMessage('保存成功')
+  config.api.neteaseApi.url = apiConfig.value.neteaseUrl;
+  config.api.qqApi.url = apiConfig.value.qqUrl;
+  showMessage('保存成功')
 }
 function saveBgConfig() {
-  config.value.bg = tmpConfig.value.bg;
-  useZKStore().showMessage('保存成功')
+  config.bg = tmpConfig.value.bg;
+  showMessage('保存成功')
 }
 function saveColorsConfig () {
   useZKStore().saveColors();
-  useZKStore().showMessage('保存成功')
+  showMessage('保存成功')
 }
 </script>
 
@@ -64,9 +65,9 @@ function saveColorsConfig () {
       <div class="title">颜色</div>
       <div class="content">
         <div class="colorsSetter">
-          <div v-for="(_, k) in colors" class="colorInput">
+          <div v-for="(_, k) in zks.colors" class="colorInput">
             <div class="label">{{k}}</div>
-            <PickColors style="vertical-align: top" show-alpha format="rgb" :format-options="['rgb', 'hex']" v-model:value="colors[k]" />
+            <PickColors style="vertical-align: top" show-alpha format="rgb" :format-options="['rgb', 'hex']" v-model:value="zks.colors[k]" />
           </div>
         </div>
         <div class="controlBtns">

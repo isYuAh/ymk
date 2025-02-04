@@ -1,9 +1,8 @@
 import axios, {AxiosError, type AxiosResponse} from "axios";
-import type {song_bilibili, song_kugou, song_netease, song_qq, song_siren, songInPlay} from "@/types";
+import type {song_bilibili, song_kugou, song_netease, song_qq, song_siren, songInPlay, songTypeMap} from "@/types";
 import {proceedLrcText, replacePicSizeParam} from "@/utils/u";
-import {kugouAxios, neteaseAxios} from "@/utils/axiosInstances";
+import {kugouAxios, neteaseAxios, qqAxios} from "@/utils/axiosInstances";
 import {LyricHandlers} from "@/utils/LyricHandlers";
-import {useZKStore} from "@/stores/useZKstore";
 const {getBilibiliVideoView, getBilibiliVideoPlayurl, axiosRequestGet} = window.ymkAPI;
 
 interface MusicHandlerFunctionParams<T> {
@@ -71,9 +70,9 @@ function MusicHandlerSiren({tasks, tmpSong, song}: MusicHandlerFunctionParams<so
 }
 
 //TODO: 可空title singer支持
-function MusicHandlerQQ({tasks, tmpSong, song}: MusicHandlerFunctionParams<song_qq>, apiUrl: String) {
+function MusicHandlerQQ({tasks, tmpSong, song}: MusicHandlerFunctionParams<song_qq>) {
     tasks.push(new Promise((resolve, reject) => {
-        axios.post(apiUrl + "api/y/get_song", {
+        qqAxios.post("/api/y/get_song", {
             type: "qq",
             mid: song.mid,
         }).then((res: AxiosResponse) => {
@@ -147,11 +146,18 @@ function MusicHandlerKugou({tasks, tmpSong, song}: MusicHandlerFunctionParams<so
         })
     }))
 }
-
+type songTypes = 'bilibili' | 'local' | 'web' | 'netease' | 'siren' | 'qq' | 'kugou'
 export const MusicHandlers = {
     MusicHandlerBilibili,
     MusicHandlerSiren,
     MusicHandlerQQ,
     MusicHandlerNetease,
     MusicHandlerKugou,
+    record: <{[K in songTypes]: (params: MusicHandlerFunctionParams<songTypeMap[K]>) => void}>{
+        bilibili: MusicHandlerBilibili,
+        siren: MusicHandlerSiren,
+        qq: MusicHandlerQQ,
+        netease: MusicHandlerNetease,
+        kugou: MusicHandlerKugou,
+    }
 }

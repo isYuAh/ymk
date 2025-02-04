@@ -136,10 +136,10 @@ async function consturctServer(moduleDefs) {
   const { CORS_ALLOW_ORIGIN } = process.env
   app.set('trust proxy', true)
 
-  // /**
-  //  * Serving static files
-  //  */
-  // app.use(express.static(path.join(__dirname, 'public')))
+  /**
+   * Serving static files
+   */
+  app.use(express.static(path.join(__dirname, 'public')))
   /**
    * CORS & Preflight request
    */

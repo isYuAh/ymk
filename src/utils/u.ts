@@ -8,7 +8,8 @@ export function secondsToMmss(seconds: number) {
     var ss = remainingSeconds < 10 ? '0' + remainingSeconds : remainingSeconds;
     return mm + ':' + ss;
 }
-export function minmax(value: number, min: number, max: number) {
+export function minmax(value: number | undefined, min: number, max: number) {
+    if (typeof value !== 'number') return (min + max) / 2;
     return Math.min(max, Math.max(value, min))
 }
 

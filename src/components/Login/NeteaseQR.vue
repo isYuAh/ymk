@@ -5,12 +5,16 @@ const phase = defineModel('phase', {type: String})
 let key = ''
 import {useZKStore} from "@/stores/useZKstore";
 import {storeToRefs} from "pinia";
-const {neteaseUser, config} = storeToRefs(useZKStore());
+import {showMessage} from "@/utils/message";
+import {useConfigStore} from "@/stores/modules/config";
+import {useUserStore} from "@/stores/modules/user";
+const config = useConfigStore()
+const user = useUserStore()
 let qrimgEl = ref<HTMLImageElement>();
 let qrstatus = ref('等待获取')
 let timer = (-1 as any);
 async function checkQRCodeStatus() {
-  const status = await axios.get(config.value.neteaseApi.url + 'login/qr/check', {
+  const status = await axios.get(config.api.neteaseApi.url + 'login/qr/check', {
     params: {
       timestamp: Date.now(),
       key: key,
@@ -18,26 +22,26 @@ async function checkQRCodeStatus() {
   });
   if (status.data.code === 800) {
     clearInterval(timer);
-    useZKStore().showMessage(`二维码过期，已自动刷新`);
+    showMessage(`二维码过期，已自动刷新`);
     getQRCode();
   }
   qrstatus.value = status.data.message;
   if (status.data.code === 803) {
     clearInterval(timer);
-    useZKStore().showMessage(`${status.data.message}`);
-    neteaseUser.value.auth = status.data.cookie;
+    showMessage(`${status.data.message}`);
+    user.neteaseUser.auth = status.data.cookie;
     checkStatus(true);
   }
 }
 function getQRCode() {
-  axios.post(config.value.neteaseApi.url + 'login/qr/key', {
+  axios.post(config.api.neteaseApi.url + 'login/qr/key', {
     timestamp: Date.now(),
   }).then((res: AxiosResponse) => {
     if (res.data.data.code && res.data.data.code === 200) {
       key = res.data.data.unikey;
     }
   }).finally(() => {
-    axios.post(config.value.neteaseApi.url + 'login/qr/create', {
+    axios.post(config.api.neteaseApi.url + 'login/qr/create', {
       timestamp: Date.now(),
       key: key,
       qrimg: "true"
@@ -52,27 +56,27 @@ function getQRCode() {
   })
 }
 function checkStatus(refresh: boolean = false) {
-  axios.post(config.value.neteaseApi.url + `login/status?timestamp=${Date.now()}`, {
-    cookie: neteaseUser.value.auth
+  axios.post(config.api.neteaseApi.url + `login/status?timestamp=${Date.now()}`, {
+    cookie: user.neteaseUser.auth
   }).then((res: AxiosResponse) => {
     console.log('$login', res.data)
     if (res.data.data.account && res.data.data.account.status == 0 && res.data.data.profile) {
-      neteaseUser.value.nickname = res.data.data.profile.nickname;
-      neteaseUser.value.avatarUrl = res.data.data.profile.avatarUrl;
-      neteaseUser.value.uid = res.data.data.profile.userId;
-      neteaseUser.value.vipType = res.data.data.profile.vipType;
-      neteaseUser.value.signature = res.data.data.profile.signature || '暂无简介';
+      user.neteaseUser.nickname = res.data.data.profile.nickname;
+      user.neteaseUser.avatarUrl = res.data.data.profile.avatarUrl;
+      user.neteaseUser.uid = res.data.data.profile.userId;
+      user.neteaseUser.vipType = res.data.data.profile.vipType;
+      user.neteaseUser.signature = res.data.data.profile.signature || '暂无简介';
       if (refresh) {
         useZKStore().playlistToolkit.refreshPlaylists({notReset: true});
       }
       phase.value = 'logined';
     }else {
       phase.value = 'unlogin'
-      neteaseUser.value.nickname = '';
-      neteaseUser.value.avatarUrl = '';
-      neteaseUser.value.auth = '';
-      neteaseUser.value.uid = 0;
-      neteaseUser.value.vipType = 0;
+      user.neteaseUser.nickname = '';
+      user.neteaseUser.avatarUrl = '';
+      user.neteaseUser.auth = '';
+      user.neteaseUser.uid = 0;
+      user.neteaseUser.vipType = 0;
     }
   });
 }

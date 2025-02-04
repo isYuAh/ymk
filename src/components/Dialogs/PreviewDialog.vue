@@ -19,7 +19,7 @@
     </div>
     <div class="footer">
       <button @click="preview" class="dialogBtn confirm">预览</button>
-      <button @click="cancel" class="dialogBtn cancel">取消</button>
+      <button @click="closeDialog" class="dialogBtn cancel">取消</button>
     </div>
   </div>
 </template>
@@ -30,15 +30,20 @@ import {ref} from 'vue';
 import {storeToRefs} from "pinia";
 import {type playlistComponent, type song} from "@/types";
 import axios, {type AxiosResponse} from "axios";
-import {neteaseAxios} from "@/utils/axiosInstances";
+import {neteaseAxios, qqAxios} from "@/utils/axiosInstances";
 const {zks, config} = storeToRefs(useZKStore());
-const {checkDetail} = useZKStore().playlistToolkit;
+import {checkDetail} from "@/utils/Toolkit";
+import {showMessage} from "@/utils/message";
 let previewLink = ref('');
 let asData = ref(true);
 let selectComponent = ref<HTMLSelectElement>();
+const props = defineProps<{
+  closeDialog: () => void
+  data: any
+}>()
 function preview() {
   if (selectComponent.value) {
-    useZKStore().showMessage('加载中')
+    showMessage('加载中')
     if (selectComponent.value.value === 'auto') {
       if (previewLink.value.startsWith('https://music.163.com/#/playlist?id=') ||
         previewLink.value.startsWith('music.163.com/#/playlist?id=')
@@ -65,7 +70,7 @@ function preview() {
       ) {
         let match = previewLink.value.match(/id=(\d+)/);
         if (match) {
-          axios.post(config.value.qqApi.url + "api/y/get_playlistDetail", {
+          qqAxios.post("/api/y/get_playlistDetail", {
             type: "qq",
             id: match[1],
           }).then((res: AxiosResponse) => {
@@ -99,7 +104,7 @@ function preview() {
         originFilename: 'REMOTE'
       })
     }else if (selectComponent.value.value === 'qq') {
-      axios.post(config.value.qqApi.url + "api/y/get_playlistDetail", {
+      qqAxios.post("/api/y/get_playlistDetail", {
         type: "qq",
         id: previewLink.value,
       }).then((res: AxiosResponse) => {
@@ -136,11 +141,8 @@ function preview() {
         })
       })
     }
-    zks.value.dialog.show = false;
+    props.closeDialog()
   }
-}
-function cancel() {
-  zks.value.dialog.show = false;
 }
 </script>
 

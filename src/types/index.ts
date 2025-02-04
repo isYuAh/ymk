@@ -32,6 +32,7 @@ export type playlistPart = {
     title: string,
     begin: number,
     count: number,
+    type?: string,
     other?: any
 }
 export type playlistComponent = list_data |
@@ -117,6 +118,17 @@ export type song = song_bilibili |
                     song_siren |
                     song_qq |
                     song_kugou
+
+export type songTypeMap = {
+    bilibili: song_bilibili,
+    local: song_local,
+    web: song_web,
+    netease: song_netease,
+    siren: song_siren,
+    qq: song_qq,
+    kugou: song_kugou
+}
+
 export type songInPlay = {
     pic: string,
     title: string,
@@ -137,11 +149,6 @@ export type playSongParams = {
 }
 export type refreshPlaylistsParams = {
     notReset: boolean
-}
-export type messageController = {
-    show: boolean,
-    text: string,
-    timer: number,
 }
 
 export type mouseMenuItem = {

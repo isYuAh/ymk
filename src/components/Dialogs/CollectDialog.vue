@@ -8,7 +8,7 @@
     </div>
     <div class="footer">
         <button @click="collect" class="dialogBtn confirm">收藏</button>
-        <button @click="cancel" class="dialogBtn cancel">取消</button>
+        <button @click="closeDialog" class="dialogBtn cancel">取消</button>
     </div>
 </div>
 </template>
@@ -17,8 +17,13 @@
 import { useZKStore } from '@/stores/useZKstore';
 import { ref, toRaw } from 'vue';
 import {storeToRefs} from "pinia";
+import {showMessage} from "@/utils/message";
 const {writePlaylistFile} = window.ymkAPI;
 const {zks} = storeToRefs(useZKStore());
+const props = defineProps<{
+  closeDialog: () => void
+  data: any
+}>()
 let selectComponent = ref<HTMLSelectElement>();
 function collect() {
     if (selectComponent.value && selectComponent.value.selectedIndex > -1) {
@@ -26,26 +31,23 @@ function collect() {
         let first = components[0];
         let originFn = zks.value.playlists[selectComponent.value.selectedIndex].originFilename;
         if (first.type === 'data') {
-            first.songs.unshift(zks.value.dialog.data.waitCollect);
+            first.songs.unshift(props.data.waitCollect);
         }else {
             components.unshift({
                 type: "data",
-                songs: [zks.value.dialog.data.waitCollect],
+                songs: [props.data.waitCollect],
             })
         }
         if (selectComponent.value.selectedIndex === zks.value.playlist.listIndex) {
-            zks.value.playlist.songs.unshift(zks.value.dialog.data.waitCollect)
+            zks.value.playlist.songs.unshift(props.data.waitCollect)
         }
         writePlaylistFile(originFn, JSON.stringify(toRaw(zks.value.playlists[selectComponent.value.selectedIndex]))).then(() => {
-            useZKStore().showMessage('添加成功');
+            showMessage('添加成功');
         }).catch(() => {
-            useZKStore().showMessage(`写入文件${originFn}失败`);
+            showMessage(`写入文件${originFn}失败`);
         })
-        zks.value.dialog.show = false;
+        props.closeDialog()
     }
-}
-function cancel() {
-    zks.value.dialog.show = false;
 }
 </script>
 

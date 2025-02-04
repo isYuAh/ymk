@@ -11,6 +11,9 @@ import axios, {type AxiosResponse} from "axios";
 import {kugouAxios, neteaseAxios} from "@/utils/axiosInstances";
 import {storeToRefs} from "pinia";
 import {useZKStore} from "@/stores/useZKstore";
+import {useUserStore} from "@/stores/modules/user";
+import {useConfigStore} from "@/stores/modules/config";
+import {usePlayerStore} from "@/stores/modules/player";
 
 interface PlaylistHandlersParams<T> {
     component: T,
@@ -18,7 +21,10 @@ interface PlaylistHandlersParams<T> {
     comIndex: number,
     components: playlistComponent[]
 }
-const {zks, neteaseUser, config} = storeToRefs(useZKStore())
+const {zks} = storeToRefs(useZKStore())
+const user = useUserStore()
+const config = useConfigStore()
+const player = usePlayerStore()
 
 function PlaylistHandlerData({component, parseComponent, comIndex, components}: PlaylistHandlersParams<list_data>) {
     zks.value.loading.text = `加载 Data 数据 ${comIndex + 1} / ${components.length}`;
@@ -107,35 +113,36 @@ function PlaylistHandlerNetease({component, parseComponent, comIndex, components
             zks.value.playlist.extraInfo.type = 'pureNeteasePlaylist';
             if (res.data.playlist.subscribed) {
                 zks.value.playlist.extraInfo.infos.subscribe = 1; //已收藏
-            }else if (res.data.playlist.creator.userId == neteaseUser.value.uid) {
+            }else if (res.data.playlist.creator.userId == user.neteaseUser.uid) {
                 zks.value.playlist.extraInfo.infos.subscribe = 0; //自己的歌单
             }else {
                 zks.value.playlist.extraInfo.infos.subscribe = 2; //未收藏
             }
         }
         let totalSongCount = res.data.playlist.trackCount;
-        if (totalSongCount <= 1000 && neteaseUser.value.auth !== '') {
-            zks.value.playlist.songs.push(...res.data.playlist.tracks.map((track: any) => {
-                return <song>{
-                    pic: track.al.picUrl,
-                    title: track.name,
-                    type: 'netease',
-                    singer: track.ar.map((ar: any) => (ar.name)).join(' & '),
-                    id: track.id,
-                }
-            }))
-            comIndex++;
-            parseComponent(comIndex, components);
-        }else {
-            const spliceCount = Math.ceil(totalSongCount / 1000);
+        // if (totalSongCount <= 1000 && neteaseUser.value.auth !== '') {
+        //     zks.value.playlist.songs.push(...res.data.playlist.tracks.map((track: any) => {
+        //         return <song>{
+        //             pic: track.al.picUrl,
+        //             title: track.name,
+        //             type: 'netease',
+        //             singer: track.ar.map((ar: any) => (ar.name)).join(' & '),
+        //             id: track.id,
+        //         }
+        //     }))
+        //     comIndex++;
+        //     parseComponent(comIndex, components);
+        // }else {
+            const sliceSize = 500;
+            const spliceCount = Math.ceil(totalSongCount / sliceSize);
             let completeCount = 0, tasks = <Promise<song[]>[]>[];
             zks.value.loading.text = `加载 网易云歌单#${component.id} | 分片 ${completeCount} / ${spliceCount}`;
-            for (let c = 0, i = 0; i < totalSongCount; i+=1000, c++) {
+            for (let c = 0, i = 0; i < totalSongCount; i+=sliceSize, c++) {
                 tasks.push(new Promise((resolve, reject) => {
                     neteaseAxios.get('/playlist/track/all', {
                         params: {
                             id: component.id,
-                            limit: 1000,
+                            limit: sliceSize,
                             offset: i
                         }
                     }).then((res) => {
@@ -164,17 +171,17 @@ function PlaylistHandlerNetease({component, parseComponent, comIndex, components
                 comIndex++;
                 parseComponent(comIndex, components);
             })
-        }
+        // }
     })
 }
 
 function PlaylistHandlerQQ({component, parseComponent, comIndex, components}: PlaylistHandlersParams<list_trace_qq_playlist>) {
-    if (!config.value.qqApi.enable) {
+    if (!config.api.qqApi.enable) {
         comIndex++;
         parseComponent(comIndex, components);
         return;
     }
-    axios.post(config.value.qqApi.url + 'api/y/get_playlistDetail', {
+    axios.post(config.api.qqApi.url + 'api/y/get_playlistDetail', {
         type: "qq",
         id: component.id
     }).then((res: AxiosResponse) => {

@@ -1,20 +1,18 @@
 <script setup lang="ts">
-import {useZKStore} from "@/stores/useZKstore";
 import axios, {type AxiosResponse} from "axios";
-import emitter from "@/emitter";
-import {inject, ref} from "vue";
+import {ref} from "vue";
 import {type song} from "@/types";
-import {storeToRefs} from "pinia";
-import {neteaseAxios} from "@/utils/axiosInstances";
+import {neteaseAxios, qqAxios} from "@/utils/axiosInstances";
+import {addSongTo} from "@/utils/Toolkit";
+const props = defineProps<{
+  closeDialog: () => void
+  data: any
+}>()
 const {readClipboard, getBilibiliVideoView} = window.ymkAPI
-const {zks, config} = storeToRefs(useZKStore());
 let title = ref("");
 let singer = ref("");
 let id = ref("");
 let selectComponent = ref<HTMLSelectElement>();
-function cancel() {
-  zks.value.dialog.show = false;
-}
 async function autoDetectFromClipboard() {
   let clip = await readClipboard() || '';
   if (clip.startsWith('https://music.163.com/#/song?id=') ||
@@ -49,7 +47,7 @@ async function autoDetectFromClipboard() {
       id.value = match[1];
       selectComponent.value!.value = 'qq';
       let rawDetail = {} as any;
-      axios.post(`${config.value.qqApi.url}api/y/get_song`, {
+      qqAxios.post(`/api/y/get_song`, {
         type: "qq",
         mid: id.value,
       }).then((res: AxiosResponse) => {
@@ -97,11 +95,11 @@ function addSong() {
     default:
       return;
   }
-  useZKStore().playlistToolkit.addSongTo({
+  addSongTo({
     song,
-    playlistIndex: zks.value.mouseMenu.args.pi,
+    playlistIndex: props.data.pi,
   })
-  zks.value.dialog.show = false;
+  props.closeDialog()
 }
 </script>
 
@@ -135,7 +133,7 @@ function addSong() {
     <div class="footer">
       <button @click="autoDetectFromClipboard" class="dialogBtn confirm">从剪贴板</button>
       <button @click="addSong" class="dialogBtn confirm">添加</button>
-      <button @click="cancel" class="dialogBtn cancel">取消</button>
+      <button @click="closeDialog" class="dialogBtn cancel">取消</button>
     </div>
   </div>
 </template>

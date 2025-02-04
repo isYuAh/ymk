@@ -114,10 +114,12 @@ import { useZKStore } from "@/stores/useZKstore";
 import CollectDialog from "@/components/Dialogs/CollectDialog.vue";
 import {neteaseAxios} from "@/utils/axiosInstances";
 import {useRouter} from "vue-router";
+import {showContextMenu} from "@/utils/contextMenu";
 const router = useRouter()
 const {zks} = storeToRefs(useZKStore());
-const {checkDetail} = useZKStore().playlistToolkit
-const {mapCheckSongPlayable, neteaseSongsToSongType} = useZKStore().songToolkit
+import {checkDetail, mapCheckSongPlayable} from "@/utils/Toolkit";
+import {showDialog} from "@/utils/dialog";
+const {neteaseSongsToSongType} = useZKStore().songToolkit
 let searchInput = ref<HTMLInputElement>();
 let resultSongList = ref<song[]>([]);
 let resultAlbumList = ref<any[]>([]);
@@ -278,14 +280,16 @@ function refreshSuggests () {
     }
 }
 function tryShowSongMenu(song: song) {
-  useZKStore().showMouseMenu([{
-    title: '添加到...',
-    action: () => {
-      useZKStore().showDialog(CollectDialog, {
-        waitCollect: structuredClone(toRaw(song))
-      })
-    }
-  }])
+  showContextMenu({
+    menuItems: [{
+      title: '添加到...',
+      action: () => {
+        showDialog(CollectDialog, {
+          waitCollect: structuredClone(toRaw(song))
+        })
+      }
+    }]
+  })
 }
 function tryPlaySong(song: song_netease) {
   emitter.emit('playSong', {song, justtry: true})

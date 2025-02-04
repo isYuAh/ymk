@@ -8,14 +8,14 @@
     '--ymk-text-shadow-color': colors.textShadowColor,
     '--ymk-container-bg-color': colors.containerBgColor,
   }" @drop.prevent="dropEvent" @dragover.prevent>
-    <div v-if="backgroundType" class="backgroundFrame">
+    <div v-if="backgroundType" class="backgroundFrame forbidSelect">
       <Component :is="backgroundType" autoplay muted loop class="object-cover wh100" :src="bgSrc"></Component>
     </div>
-    <Transition name="uianim">
-      <Dialog>
-        <Component :is="zks.dialog.dialogEl" />
-      </Dialog>
-    </Transition>
+<!--    <Transition name="uianim">-->
+<!--      <Dialog>-->
+<!--        <Component :is="zks.dialog.dialogEl" />-->
+<!--      </Dialog>-->
+<!--    </Transition>-->
     <Transition name="uianim">
       <FullPlay v-show="zks.showFullPlay"></FullPlay>
     </Transition>
@@ -31,8 +31,8 @@
             <RouterLink to="/albumPreview" v-if="zks.albumPreview.info.title !== ''" :class="{tab: true, active: zks.nowTab === 'albumPreview'}">专辑</RouterLink>
             <RouterLink to="/search" :class="{tab: true, active: zks.nowTab === 'search'}">搜索</RouterLink>
             <RouterLink to="/userCenter" :class="{tab: true, active: zks.nowTab === 'userCenter'}">
-              <div class="text">{{ neteaseUser.nickname || '用户' }}</div>
-              <img v-if="neteaseUser.avatarUrl" style="border-radius: 50%;margin-left: 4px;margin-top:6px; height: 28px;" :src="neteaseUser.avatarUrl" alt="">
+              <div class="text">{{ user.neteaseUser.nickname || '用户' }}</div>
+              <img v-if="user.neteaseUser.avatarUrl" style="border-radius: 50%;margin-left: 4px;margin-top:6px; height: 28px;" :src="user.neteaseUser.avatarUrl" alt="">
             </RouterLink>
             <RouterLink to="/settings" :class="{tab: true, active: zks.nowTab === 'Settings'}">设置</RouterLink>
           </div>
@@ -53,7 +53,7 @@
       </div>
       <Playbar></Playbar>
     </div>
-    <Message />
+<!--    <Message />-->
   </div>
 </template>
 
@@ -74,8 +74,10 @@ import Dialog from '@/components/Dialog.vue'
 import emitter from '@/emitter';
 
 const {exit, minimize} = window.ymkAPI
-
+const user = useUserStore();
+const player = usePlayerStore();
 const backgroundType = computed(() => {
+  if (!config.value.bg) return 'img'
   if (config.value.bg.endsWith(".mp4")) return "video"
   else if (config.value.bg.endsWith(".png") || config.value.bg.endsWith(".jpg")) return "img"
   else return ""
@@ -86,23 +88,25 @@ if ("mediaSession" in navigator) {
     title: "",
     artist: ""
   });
-  navigator.mediaSession.setActionHandler("play", () => zks.value.play.status = 'play');
-  navigator.mediaSession.setActionHandler("pause", () => zks.value.play.status = 'pause');
+  navigator.mediaSession.setActionHandler("play", () => player.config.status = 'play');
+  navigator.mediaSession.setActionHandler("pause", () => player.config.status = 'pause');
   navigator.mediaSession.setActionHandler("seekbackward", (e) => console.log('$seekB', e));
   navigator.mediaSession.setActionHandler("seekforward", (e) => console.log('$seekF', e));
   navigator.mediaSession.setActionHandler("previoustrack", () => emitter.emit('playPrevSong'));
   navigator.mediaSession.setActionHandler("nexttrack", () => emitter.emit('playNextSong'))
 }
-const {zks, neteaseUser, config, colors} = storeToRefs(useZKStore());
+const {zks, config, colors} = storeToRefs(useZKStore());
 //监听cookie
 const bgSrc = computed(() => {
   return `http://localhost:35652/api/bg?fn=${config.value.bg}`
 })
-watch(() => neteaseUser.value.auth, (nv) => {
+watch(() => user.neteaseUser.auth, (nv) => {
   document.cookie = nv;
 })
 
 import {storeToRefs} from "pinia";
+import {useUserStore} from "@/stores/modules/user";
+import {usePlayerStore} from "@/stores/modules/player";
 
 useZKStore().playlistToolkit.refreshPlaylists({notReset: false});
 

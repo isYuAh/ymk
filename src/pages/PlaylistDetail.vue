@@ -68,8 +68,6 @@
 <script setup lang='ts'>
 import {type list_data, type list_trace_netease_playlist, type song} from '@/types'
 import {computed, nextTick, ref, toRaw, watch} from 'vue';
-import simplebar from 'simplebar-vue';
-import 'simplebar-vue/dist/simplebar.min.css'
 import { useZKStore } from '@/stores/useZKstore';
 import {storeToRefs} from "pinia";
 import emitter from '@/emitter';
@@ -79,9 +77,14 @@ import EditSongDialog from "@/components/Dialogs/EditSongDialog.vue";
 import {useRouter} from "vue-router";
 import {neteaseAxios} from "@/utils/axiosInstances";
 import VirtualList from "@/components/VirtualList.vue";
+import {showContextMenu} from "@/utils/contextMenu";
+import {usePlayerStore} from "@/stores/modules/player";
+import {showMessage} from "@/utils/message";
+import {showDialog} from "@/utils/dialog";
 const router = useRouter();
 const {writePlaylistFile} = window.ymkAPI;
 const {zks} = storeToRefs(useZKStore());
+const player = usePlayerStore()
 let filter = ref('');
 let FuseVal = ref(new Fuse(zks.value.playlist.songs, {
   keys: ['title', 'singer']
@@ -101,13 +104,16 @@ let showingSonglist = computed(() => {
 })
 function tryShowMenu(a: any) {
   if (zks.value.playlist.raw.playlist.length !== 1 || zks.value.playlist.raw.playlist[0].type !== 'data') return
-  useZKStore().showMouseMenu([{
-    title: '编辑',
-    action: menu_edit,
-  },{
-    title: '删除',
-    action: menu_deleteSong,
-  }], a)
+  showContextMenu({
+    menuItems: [{
+      title: '编辑',
+      action: menu_edit,
+    }, {
+      title: '删除',
+      action: menu_deleteSong,
+    }],
+    args: a
+  })
 }
 function subscribeToggle() {
   let t = zks.value.playlist.extraInfo.infos.subscribe === 1 ? 2 : 1
@@ -120,24 +126,24 @@ function subscribeToggle() {
   }).then(res => {
     if (res.data.code == 200) {
       zks.value.playlist.extraInfo.infos.subscribe = t;
-      useZKStore().showMessage(`${t === 1 ? '' : '取消'}收藏成功`)
+      showMessage(`${t === 1 ? '' : '取消'}收藏成功`)
     }
   })
 }
 function playAll() {
-  zks.value.play.playlist = structuredClone(toRaw(zks.value.playlist.songs))
-  if (!zks.value.play.playlist.length) {
+  player.playlist = structuredClone(toRaw(zks.value.playlist.songs))
+  if (!player.playlist.length) {
     return;
   }
-  if (zks.value.play.mode === 'rand') {
-    emitter.emit('playSong', {song: zks.value.play.playlist[Math.floor(Math.random() * (zks.value.play.playlist.length))]})
+  if (player.config.mode === 'rand') {
+    emitter.emit('playSong', {song: player.playlist[Math.floor(Math.random() * (player.playlist.length))]})
   }else {
-    emitter.emit('playSong',{song: zks.value.play.playlist[0]})
+    emitter.emit('playSong',{song: player.playlist[0]})
   }
 }
 
 function menu_edit(arg: any) {
-  useZKStore().showDialog(EditSongDialog, {
+  showDialog(EditSongDialog, {
     song: structuredClone(toRaw(arg.song)),
     si: arg.si
   })
@@ -163,19 +169,19 @@ function menu_deleteSong(arg: any) {
             (np.playlist[componentIndex] as list_data).songs.splice(ser - 1, 1);
             zks.value.playlist.songs.splice(arg.si, 1);
             writePlaylistFile(originFn, JSON.stringify(toRaw(np))).then(() => {
-                useZKStore().showMessage('删除成功');
+                showMessage('删除成功');
             }).catch(() => {
-                useZKStore().showMessage(`写入文件${originFn}失败`);
+                showMessage(`写入文件${originFn}失败`);
             })
             
         }
     }
 }
 function playSong_withCheck(song: song) {
-    if (zks.value.play.playlist.length) {
+    if (player.playlist.length) {
         emitter.emit('playSong',{song})
     }else {
-        zks.value.play.playlist = structuredClone(toRaw(zks.value.playlist.songs))
+        player.playlist = structuredClone(toRaw(zks.value.playlist.songs))
         emitter.emit('playSong',{song})
     }
 }
@@ -190,10 +196,10 @@ function collectPlaylist() {
     intro: zks.value.playlist.raw.intro,
     playlist: zks.value.playlist.raw.playlist,
   })).then(() => {
-    useZKStore().showMessage('收藏成功');
+    showMessage('收藏成功');
     useZKStore().playlistToolkit.refreshPlaylists({notReset: true});
   }).catch(() => {
-    useZKStore().showMessage(`写入文件${id}.json失败`);
+    showMessage(`写入文件${id}.json失败`);
   });
 }
 

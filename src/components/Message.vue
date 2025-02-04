@@ -1,18 +1,38 @@
 <template>
 <div class="messageContainer">
-    <Transition name="message">
-        <div v-show="zks.message.show && zks.message.text" class="message">
-            <div class="text">{{ zks.message.text }}</div>
+    <Transition name="message" @after-leave="handleAfterLeave">
+        <div v-show="show && message" class="message">
+            <div class="text">{{ message }}</div>
         </div>
     </Transition>
 </div>
 </template>
 
 <script setup lang='ts'>
-import { useZKStore } from '@/stores/useZKstore'
-import '@/assets/anim.css'
-import {storeToRefs} from "pinia";
-const {zks} = storeToRefs(useZKStore());
+
+import {onMounted, ref} from "vue";
+
+const props = defineProps({
+  message: String,
+  time: {
+    type: Number,
+    default: 4000
+  }
+});
+
+const emit = defineEmits(['destroy']);
+const show = ref(false);
+
+onMounted(() => {
+  show.value = true;
+  setTimeout(() => {
+    show.value = false;
+  }, props.time);
+});
+
+function handleAfterLeave() {
+  emit('destroy');
+}
 </script>
 
 <style scoped>
