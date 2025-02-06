@@ -107,19 +107,17 @@ import simplebar from "simplebar-vue";
 import 'simplebar-vue/dist/simplebar.min.css'
 import {type song, type song_netease} from "@/types";
 import { type AxiosResponse } from "axios";
-import {storeToRefs} from "pinia";
 import Pagination from '@/components/Pagination.vue'
 import emitter from "@/emitter";
-import { useZKStore } from "@/stores/useZKstore";
 import CollectDialog from "@/components/Dialogs/CollectDialog.vue";
 import {neteaseAxios} from "@/utils/axiosInstances";
 import {useRouter} from "vue-router";
 import {showContextMenu} from "@/utils/contextMenu";
 const router = useRouter()
-const {zks} = storeToRefs(useZKStore());
-import {checkDetail, mapCheckSongPlayable} from "@/utils/Toolkit";
+const runtimeData = useRuntimeDataStore()
+import {checkDetail, mapCheckSongPlayable, neteaseSongsToSongType} from "@/utils/Toolkit";
 import {showDialog} from "@/utils/dialog";
-const {neteaseSongsToSongType} = useZKStore().songToolkit
+import {useRuntimeDataStore} from "@/stores/modules/runtimeData";
 let searchInput = ref<HTMLInputElement>();
 let resultSongList = ref<song[]>([]);
 let resultAlbumList = ref<any[]>([]);
@@ -322,12 +320,12 @@ async function checkAlbum(id: string) {
   router.push('/loading')
   neteaseAxios.get(`/album?id=${id}`).then((res) => {
     if (res.data.code !== 200) return
-    zks.value.albumPreview.info = {
+    runtimeData.albumPreview.info = {
       title: res.data.album.name,
       pic: res.data.album.picUrl,
       creator: res.data.album.artist.name
     }
-    zks.value.albumPreview.songs = neteaseSongsToSongType(res.data.songs)
+    runtimeData.albumPreview.songs = neteaseSongsToSongType(res.data.songs)
     router.push('/albumPreview')
   })
 }

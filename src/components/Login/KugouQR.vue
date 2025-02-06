@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import {onUnmounted, ref, watch} from "vue";
-import {useZKStore} from "@/stores/useZKstore";
-import {storeToRefs} from "pinia";
 import {kugouAxios} from "@/utils/axiosInstances";
 import {showMessage} from "@/utils/message";
 import {useUserStore} from "@/stores/modules/user";

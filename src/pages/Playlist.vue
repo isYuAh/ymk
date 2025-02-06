@@ -4,7 +4,7 @@
     <Transition name="uianim">
       <div class="playlistControllers">
         <button @click="importPlaylist" class="controllerButton import">导入</button>
-        <button @click="useZKStore().playlistToolkit.refreshPlaylists({notReset: false})" class="controllerButton import">刷新</button>
+        <button @click="refreshPlaylists({notReset: false})" class="controllerButton import">刷新</button>
         <button @click="showPreviewDialog" class="controllerButton import">预览</button>
         <button @click="uploadPlaylists" class="controllerButton sync">同步</button>
         <button @click="testFunc" class="controllerButton test">测试</button>
@@ -12,35 +12,34 @@
 
       </div>
     </Transition>
-    <Playlists :from-zks="true" :parts="zks.playlistsParts" :playlists="zks.playlists" :menu-event="PlaylistMenu" />
+    <Playlists :from-zks="true" :parts="runtimeData.playlistsParts" :playlists="runtimeData.playlists" :menu-event="PlaylistMenu" />
   </simplebar>
 </div>
 </template>
 
 <script setup lang='ts'>
-import {useZKStore} from '@/stores/useZKstore';
-import {storeToRefs} from "pinia";
 import simplebar from "simplebar-vue";
 import 'simplebar-vue/dist/simplebar.min.css'
 import PreviewDialog from "@/components/Dialogs/PreviewDialog.vue";
-import AddSongToDialog from '@/components/Dialogs/addSongToDialog.vue';
 import Playlists from "@/components/Playlists.vue";
-const {zks} = storeToRefs(useZKStore());
+const runtimeData = useRuntimeDataStore()
 import type {playlistPart, list, mouseMenuItem} from "@/types";
 import {toRaw} from "vue";
 import axios from "axios";
 import {showContextMenu} from "@/utils/contextMenu";
 import {showMessage} from "@/utils/message";
 import {showDialog} from "@/utils/dialog";
+import {useRuntimeDataStore} from "@/stores/modules/runtimeData";
+import {refreshPlaylists} from "@/utils/Toolkit";
 
 const {deletePlaylistFile, showImportPlaylistDialog} = window.ymkAPI;
 function menu_deletePlaylist({pi, playlist}: {pi: number, playlist: list}) {
-  if (pi < zks.value.playlistsParts[0].count) {
-    let p = zks.value.playlists[pi];
+  if (pi < runtimeData.playlistsParts[0].count) {
+    let p = runtimeData.playlists[pi];
     if ('originFilename' in p && p.originFilename.endsWith('json')) {
       deletePlaylistFile(p.originFilename).then(() => {
         showMessage(`删除${p.title}成功`);
-        useZKStore().playlistToolkit.refreshPlaylists({notReset: false});
+        refreshPlaylists({notReset: false});
       }).catch(() => {
         showMessage(`删除${p.originFilename}文件失败`);
       })
@@ -77,7 +76,7 @@ async function uploadPlaylists() {
     password: "icfi666"
   }).then(res => {
     console.log(res)
-    let waitToUpload = structuredClone(toRaw(zks.value.playlists).slice(0, zks.value.playlistsParts[0].count));
+    let waitToUpload = structuredClone(toRaw(runtimeData.playlists).slice(0, runtimeData.playlistsParts[0].count));
     axios.post("http://suonan.xyz:2389/Playlist/Uploads", waitToUpload, {
       headers: {
         Token: res.headers.token

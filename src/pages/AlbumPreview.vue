@@ -6,14 +6,14 @@
     <div class="partContainer">
         <div class="listInfo">
             <div class="faceImg forbidSelect">
-                <img :src="zks.albumPreview.info.pic" alt="">
+                <img :src="runtimeData.albumPreview.info.pic" alt="">
             </div>
             <div class="info forbidSelect">
                 <div class="top">
-                  <div class="title">{{ zks.albumPreview.info.title }}</div>
+                  <div class="title">{{ runtimeData.albumPreview.info.title }}</div>
                 </div>
                 <div class="bottom">
-                    <div class="total">TOTAL {{ zks.albumPreview.songs.length }}</div>
+                    <div class="total">TOTAL {{ runtimeData.albumPreview.songs.length }}</div>
                     <div class="total">{{ 'AN ALBUM'}}</div>
                     <button @click="playAll" class="PlayAll">
                         <div class="svgIcon">
@@ -52,8 +52,6 @@
 <script setup lang='ts'>
 import {type song} from '@/types'
 import {computed, ref, toRaw, watch} from 'vue';
-import { useZKStore } from '@/stores/useZKstore';
-import {storeToRefs} from "pinia";
 import emitter from '@/emitter';
 import '@/assets/songlist.css'
 import Fuse from "fuse.js";
@@ -61,21 +59,22 @@ import {useRouter} from "vue-router";
 import VirtualList from "@/components/VirtualList.vue";
 import {showContextMenu} from "@/utils/contextMenu";
 import {usePlayerStore} from "@/stores/modules/player";
+import {useRuntimeDataStore} from "@/stores/modules/runtimeData";
 const router = useRouter();
-const {zks} = storeToRefs(useZKStore());
+const runtimeData = useRuntimeDataStore()
 const player = usePlayerStore()
 let filter = ref('');
-let FuseVal = ref(new Fuse(zks.value.albumPreview.songs, {
+let FuseVal = ref(new Fuse(runtimeData.albumPreview.songs, {
   keys: ['title', 'singer']
 }))
-watch(() => zks.value.albumPreview, (nv) => {
+watch(() => runtimeData.albumPreview, (nv) => {
   FuseVal.value = new Fuse(nv.songs, {
     keys: ['title', 'singer']
   })
 }, {deep: true})
 let showingSonglist = computed(() => {
   if (!filter.value) {
-    return zks.value.albumPreview.songs.map((element, index) => ({item: element, refIndex: index}))
+    return runtimeData.albumPreview.songs.map((element, index) => ({item: element, refIndex: index}))
   }else {
     return FuseVal.value.search(filter.value)
   }
@@ -90,7 +89,7 @@ function tryShowMenu(a: any) {
   })
 }
 function playAll() {
-    player.playlist = structuredClone(toRaw(zks.value.albumPreview.songs))
+    player.playlist = structuredClone(toRaw(runtimeData.albumPreview.songs))
     if (player.playlist[0]) {
         emitter.emit('playSong',{song: player.playlist[0]})
     }
@@ -99,7 +98,7 @@ function playSong_withCheck(song: song) {
     if (player.playlist.length) {
         emitter.emit('playSong',{song})
     }else {
-        player.playlist = structuredClone(toRaw(zks.value.playlist.songs))
+        player.playlist = structuredClone(toRaw(runtimeData.playlist.songs))
         emitter.emit('playSong',{song})
     }
 }

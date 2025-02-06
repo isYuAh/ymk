@@ -1,23 +1,23 @@
 <script setup lang="ts">
-import {storeToRefs} from "pinia";
-import {useZKStore} from "@/stores/useZKstore";
+import {useRuntimeDataStore} from "@/stores/modules/runtimeData";
+import {saveSpecificPlaylist} from "@/utils/Toolkit";
 const props = defineProps<{
   closeDialog: () => void
   data: any
 }>()
-const {zks} = storeToRefs(useZKStore())
+const runtimeData = useRuntimeDataStore()
 function confirmF() {
   if (typeof props.data.si !== 'number') {
     return;
   }
-  let np = zks.value.playlists[zks.value.playlist.listIndex];
+  let np = runtimeData.playlists[runtimeData.playlist.listIndex];
   if (np.playlist[0].type == "data") {
     Object.assign(np.playlist[0].songs[props.data.si], {
       title: props.data.song.title,
       singer: props.data.song.singer,
     })
   }
-  useZKStore().playlistToolkit.saveSpecificPlaylist(np);
+  saveSpecificPlaylist(np);
   props.closeDialog()
 }
 </script>

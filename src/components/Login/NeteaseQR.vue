@@ -3,11 +3,10 @@ import {onUnmounted, ref, watch} from "vue";
 import axios, {type AxiosResponse} from "axios";
 const phase = defineModel('phase', {type: String})
 let key = ''
-import {useZKStore} from "@/stores/useZKstore";
-import {storeToRefs} from "pinia";
 import {showMessage} from "@/utils/message";
 import {useConfigStore} from "@/stores/modules/config";
 import {useUserStore} from "@/stores/modules/user";
+import {refreshPlaylists} from "@/utils/Toolkit";
 const config = useConfigStore()
 const user = useUserStore()
 let qrimgEl = ref<HTMLImageElement>();
@@ -67,7 +66,7 @@ function checkStatus(refresh: boolean = false) {
       user.neteaseUser.vipType = res.data.data.profile.vipType;
       user.neteaseUser.signature = res.data.data.profile.signature || '暂无简介';
       if (refresh) {
-        useZKStore().playlistToolkit.refreshPlaylists({notReset: true});
+        refreshPlaylists({notReset: true});
       }
       phase.value = 'logined';
     }else {

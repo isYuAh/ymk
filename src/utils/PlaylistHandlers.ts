@@ -9,11 +9,10 @@ import type {
 const {getBilibiliFav} = window.ymkAPI;
 import axios, {type AxiosResponse} from "axios";
 import {kugouAxios, neteaseAxios} from "@/utils/axiosInstances";
-import {storeToRefs} from "pinia";
-import {useZKStore} from "@/stores/useZKstore";
 import {useUserStore} from "@/stores/modules/user";
 import {useConfigStore} from "@/stores/modules/config";
 import {usePlayerStore} from "@/stores/modules/player";
+import {useRuntimeDataStore} from "@/stores/modules/runtimeData";
 
 interface PlaylistHandlersParams<T> {
     component: T,
@@ -21,14 +20,14 @@ interface PlaylistHandlersParams<T> {
     comIndex: number,
     components: playlistComponent[]
 }
-const {zks} = storeToRefs(useZKStore())
+const runtimeData = useRuntimeDataStore()
 const user = useUserStore()
 const config = useConfigStore()
 const player = usePlayerStore()
 
 function PlaylistHandlerData({component, parseComponent, comIndex, components}: PlaylistHandlersParams<list_data>) {
-    zks.value.loading.text = `加载 Data 数据 ${comIndex + 1} / ${components.length}`;
-    zks.value.playlist.songs.push(...component.songs);
+    runtimeData.loading.text = `加载 Data 数据 ${comIndex + 1} / ${components.length}`;
+    runtimeData.playlist.songs.push(...component.songs);
     comIndex++;
     parseComponent(comIndex, components);
 }
@@ -36,7 +35,7 @@ function PlaylistHandlerData({component, parseComponent, comIndex, components}: 
 function PlaylistHandlerBilibili({component, parseComponent, components, comIndex}: PlaylistHandlersParams<list_trace_bilibili_fav>) {
     let pn = 0;
     let getNextPage = function() {
-        zks.value.loading.text = `Bilibili 已加载 ${Math.max(pn)} 页 ${comIndex + 1} / ${components.length}`;
+        runtimeData.loading.text = `Bilibili 已加载 ${Math.max(pn)} 页 ${comIndex + 1} / ${components.length}`;
         pn++;
         getBilibiliFav({
             media_id: (component as list_trace_bilibili_fav).favid,
@@ -47,7 +46,7 @@ function PlaylistHandlerBilibili({component, parseComponent, components, comInde
                 for (let m of res.data.medias) {
                     if (m.page > 1) {
                         for (let i = 1; i <= m.page;i++) {
-                            zks.value.playlist.songs.push({
+                            runtimeData.playlist.songs.push({
                                 type: 'bilibili',
                                 BV: m.bvid,
                                 title: `P${i} ${m.title}`,
@@ -57,7 +56,7 @@ function PlaylistHandlerBilibili({component, parseComponent, components, comInde
                             })
                         }
                     }else {
-                        zks.value.playlist.songs.push({
+                        runtimeData.playlist.songs.push({
                             type: 'bilibili',
                             BV: m.bvid,
                             title: m.title,
@@ -66,7 +65,7 @@ function PlaylistHandlerBilibili({component, parseComponent, components, comInde
                     }
                 }
             }else {
-                zks.value.playlist.songs.push(...res.data.medias.map((m: any) => ({
+                runtimeData.playlist.songs.push(...res.data.medias.map((m: any) => ({
                     type: 'bilibili',
                     BV: m.bvid,
                     title: m.title,
@@ -86,9 +85,9 @@ function PlaylistHandlerBilibili({component, parseComponent, components, comInde
 
 function PlaylistHandlerSiren({component, parseComponent, comIndex, components}: PlaylistHandlersParams<list_trace_siren>) {
     let songsApi = 'https://monster-siren.hypergryph.com/api/songs';
-    zks.value.loading.text = `加载 塞壬唱片 ${comIndex + 1} / ${components.length}`;
+    runtimeData.loading.text = `加载 塞壬唱片 ${comIndex + 1} / ${components.length}`;
     axios.get(songsApi).then(res => {
-        zks.value.playlist.songs.push(...res.data.data.list.map((s: any) => {
+        runtimeData.playlist.songs.push(...res.data.data.list.map((s: any) => {
             return <song>{
                 title: s.name,
                 singer: s.artists.join(' / '),
@@ -102,7 +101,7 @@ function PlaylistHandlerSiren({component, parseComponent, comIndex, components}:
 }
 
 function PlaylistHandlerNetease({component, parseComponent, comIndex, components}: PlaylistHandlersParams<list_trace_netease_playlist>) {
-    zks.value.loading.text = `加载 网易云歌单#${component.id}`;
+    runtimeData.loading.text = `加载 网易云歌单#${component.id}`;
     neteaseAxios.get('/playlist/detail', {
         params: {
             timestamp: new Date().getTime(),
@@ -110,18 +109,18 @@ function PlaylistHandlerNetease({component, parseComponent, comIndex, components
         }
     }).then(async (res) => {
         if (components.length === 1) {
-            zks.value.playlist.extraInfo.type = 'pureNeteasePlaylist';
+            runtimeData.playlist.extraInfo.type = 'pureNeteasePlaylist';
             if (res.data.playlist.subscribed) {
-                zks.value.playlist.extraInfo.infos.subscribe = 1; //已收藏
+                runtimeData.playlist.extraInfo.infos.subscribe = 1; //已收藏
             }else if (res.data.playlist.creator.userId == user.neteaseUser.uid) {
-                zks.value.playlist.extraInfo.infos.subscribe = 0; //自己的歌单
+                runtimeData.playlist.extraInfo.infos.subscribe = 0; //自己的歌单
             }else {
-                zks.value.playlist.extraInfo.infos.subscribe = 2; //未收藏
+                runtimeData.playlist.extraInfo.infos.subscribe = 2; //未收藏
             }
         }
         let totalSongCount = res.data.playlist.trackCount;
         // if (totalSongCount <= 1000 && neteaseUser.value.auth !== '') {
-        //     zks.value.playlist.songs.push(...res.data.playlist.tracks.map((track: any) => {
+        //     runtimeData.value.playlist.songs.push(...res.data.playlist.tracks.map((track: any) => {
         //         return <song>{
         //             pic: track.al.picUrl,
         //             title: track.name,
@@ -136,7 +135,7 @@ function PlaylistHandlerNetease({component, parseComponent, comIndex, components
             const sliceSize = 500;
             const spliceCount = Math.ceil(totalSongCount / sliceSize);
             let completeCount = 0, tasks = <Promise<song[]>[]>[];
-            zks.value.loading.text = `加载 网易云歌单#${component.id} | 分片 ${completeCount} / ${spliceCount}`;
+            runtimeData.loading.text = `加载 网易云歌单#${component.id} | 分片 ${completeCount} / ${spliceCount}`;
             for (let c = 0, i = 0; i < totalSongCount; i+=sliceSize, c++) {
                 tasks.push(new Promise((resolve, reject) => {
                     neteaseAxios.get('/playlist/track/all', {
@@ -148,7 +147,7 @@ function PlaylistHandlerNetease({component, parseComponent, comIndex, components
                     }).then((res) => {
                         if (res.data.code === 200) {
                             completeCount++;
-                            zks.value.loading.text = `加载 网易云歌单#${component.id} | 分片 ${completeCount} / ${spliceCount}`;
+                            runtimeData.loading.text = `加载 网易云歌单#${component.id} | 分片 ${completeCount} / ${spliceCount}`;
                             resolve(res.data.songs.map((s: any) => {
                                 return {
                                     pic: s.al.picUrl,
@@ -160,14 +159,14 @@ function PlaylistHandlerNetease({component, parseComponent, comIndex, components
                             }));
                         }else {
                             completeCount++;
-                            zks.value.loading.text = `加载 网易云歌单#${component.id} | 分片 ${completeCount} / ${spliceCount}`;
+                            runtimeData.loading.text = `加载 网易云歌单#${component.id} | 分片 ${completeCount} / ${spliceCount}`;
                             reject()
                         }
                     }).catch((e) => {reject(e)})
                 }))
             }
             Promise.all(tasks).then((results) => {
-                zks.value.playlist.songs.push(...(<song[]>[]).concat(...results));
+                runtimeData.playlist.songs.push(...(<song[]>[]).concat(...results));
                 comIndex++;
                 parseComponent(comIndex, components);
             })
@@ -186,7 +185,7 @@ function PlaylistHandlerQQ({component, parseComponent, comIndex, components}: Pl
         id: component.id
     }).then((res: AxiosResponse) => {
         let result = res.data.data[0];
-        zks.value.playlist.songs.push(...result.songlist.map((r: any) => ({...r, type: 'qq'})));
+        runtimeData.playlist.songs.push(...result.songlist.map((r: any) => ({...r, type: 'qq'})));
         comIndex++;
         parseComponent(comIndex, components);
     })
@@ -195,11 +194,11 @@ function PlaylistHandlerQQ({component, parseComponent, comIndex, components}: Pl
 function PlaylistHandlerKugou({component, parseComponent, comIndex, components}: PlaylistHandlersParams<list_trace_kugou_playlist>) {
     const ps= 100;
     const tasks = <Promise<void>[]>[];
-    zks.value.loading.text = `加载 酷狗歌单#${component.id}`;
+    runtimeData.loading.text = `加载 酷狗歌单#${component.id}`;
     let now = 0;
     let total = 0;
     const refreshLoadingText = () => {
-        zks.value.loading.text = `加载 酷狗歌单#${component.id} ${now}/${total}`;
+        runtimeData.loading.text = `加载 酷狗歌单#${component.id} ${now}/${total}`;
     }
     kugouAxios.get('/playlist/track/all', {
         params: {
@@ -256,8 +255,8 @@ function PlaylistHandlerKugou({component, parseComponent, comIndex, components}:
                 }))
             }
             Promise.all(tasks).then(() => {
-                zks.value.playlist.songs.push(...result);
-                console.log(zks.value.playlist.songs)
+                runtimeData.playlist.songs.push(...result);
+                console.log(runtimeData.playlist.songs)
                 comIndex++;
                 parseComponent(comIndex, components);
             })

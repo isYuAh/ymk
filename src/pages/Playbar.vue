@@ -12,7 +12,7 @@
         autoplay ref="songSource"></video>
 </div>
 
-<div v-show="!zks.showFullPlay" class="play forbidSelect">
+<div v-show="!runtimeData.showFullPlay" class="play forbidSelect">
   <Transition name="heightAnim">
     <div class="playlistSonglist" v-show="showPlaylistSonglist">
       <div class="fourHeightContainer">
@@ -42,7 +42,7 @@
       </div>
     </div>
   </Transition>
-    <div @click="zks.showFullPlay = true" v-show="playerStore.config.show_songface" class="songface">
+    <div @click="runtimeData.showFullPlay = true" v-show="playerStore.config.show_songface" class="songface">
         <img ref="songfaceImg" referrerpolicy="no-referrer" src="" alt="">
     </div>
     <div ref="progress_tooltip" style="display: none" class="progress-tooltip">00:00</div>
@@ -51,7 +51,7 @@
         <div ref="progressFill" :style="{width: `${playerStore.config.progress}%`}" class="fill"></div>
     </div>
     <div ref="songInformation" class="songInformation">
-        <div @click="zks.showFullPlay = true" class="title">{{ playerStore.song.title }}</div>
+        <div @click="runtimeData.showFullPlay = true" class="title">{{ playerStore.song.title }}</div>
         <div class="singer">{{ playerStore.song.singer }}</div>
     </div>
     <div class="controlButtons">
@@ -100,9 +100,8 @@
 
 <script setup lang='ts'>
 import {onMounted, onUnmounted, ref, watch, watchEffect} from 'vue';
-import {type playSongParams, type song_lrc, type songInPlay} from '@/types';
+import {type playSongParams, type songInPlay} from '@/types';
 import {minmax, secondsToMmss} from '@/utils/u';
-import { useZKStore } from '@/stores/useZKstore'
 import emitter from '@/emitter'
 import SonglistTooltip from "@/components/SonglistTooltip.vue";
 import {showMessage} from "@/utils/message";
@@ -118,8 +117,11 @@ import {MusicHandlers} from "@/utils/MusicHandlers";
 import {showContextMenu} from "@/utils/contextMenu";
 import {usePlayerStore} from "@/stores/modules/player";
 import {checkMusicPlayable} from "@/utils/Toolkit";
+import {useRuntimeDataStore} from "@/stores/modules/runtimeData";
+import {useConfigStore} from "@/stores/modules/config";
 const {onUrlScheme, playPauseStatusUpdate, onTrayControl_PlayPause, onTrayControl_PlaySong} = window.ymkAPI;
-const {zks} = storeToRefs(useZKStore());
+const runtimeData = useRuntimeDataStore()
+const config = useConfigStore()
 let songfaceImg = ref<HTMLImageElement>();
 let songInformation = ref<HTMLDivElement>();
 let keepCurrentTimeCausedByError = ref(-1);
@@ -155,7 +157,7 @@ function changeVolumeInfo() {
     if (songSource.value) {
         playerStore.config.volume = songSource.value.volume;
         playerStore.config.volume = songSource.value.volume
-        useZKStore().saveConfig();
+        config.saveConfig();
     }
 }
 function playEnded() {
@@ -383,7 +385,6 @@ function playNextSong() {
 }
 onMounted(() => {
   emitter.on("showPlayingSonglist", (show: boolean) => showPlaylistSonglist.value = show)
-  console.log(playerStore, playerStore.config, playerStore.config.volume)
   watch(() => playerStore.config.volume, (nv) => {
     changeVolumeTo(minmax(playerStore.config.volume, 0, 1))
   }, {immediate: true})

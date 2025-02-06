@@ -1,14 +1,13 @@
 <template>
 <div class="partContainer">
     <div class="text">Loading</div>
-    <div v-show="zks.loading.text" class="tipMessage">{{ zks.loading.text }}</div>
+    <div v-show="runtimeData.loading.text" class="tipMessage">{{ runtimeData.loading.text }}</div>
 </div>
 </template>
 
 <script setup lang='ts'>
-import { useZKStore } from '../stores/useZKstore';
-import {storeToRefs} from "pinia";
-const {zks} = storeToRefs(useZKStore());
+import {useRuntimeDataStore} from "@/stores/modules/runtimeData";
+const runtimeData = useRuntimeDataStore()
 
 </script>
 

@@ -1,12 +1,26 @@
-import {app, BrowserWindow, clipboard, dialog, ipcMain, screen, shell, MessageChannelMain} from 'electron'
+import {app, BrowserWindow, ipcMain} from 'electron'
 import path from 'path';
 import {fileURLToPath} from 'url';
-import * as fs from "node:fs";
 import {checkFolders, checkResources, startKugouServer, startNcmServer} from "./utils/utils.js";
 import express from "express";
 import {WBI} from "./utils/WBI.js";
 import axios from "axios";
 import {initTray} from "./utils/tray.js";
+import {
+    axiosRequestGet,
+    deletePlaylistFile, getBilibiliFav,
+    getBilibiliVideoPlayurl,
+    getBilibiliVideoView,
+    getConfig, getCursorPos,
+    getLocalPlaylists,
+    getSpecificConfig, openUrl,
+    readClipboard,
+    showAskDialog,
+    showChoosePlaylistDialog, showImportPlaylistDialog,
+    writeConfig,
+    writePlaylistFile,
+    writeSpecificConfig
+} from "./functions.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -66,99 +80,6 @@ if (!gotTheLock) {
     checkFolders(['./res', './res/lists'])
     checkResources()
 
-    function getLocalPlaylists() {
-        const lists = fs.readdirSync(path.resolve('./res/lists')).filter(file => file.endsWith('.json'))
-        let results = []
-        for (let f of lists) {
-            results.push({
-                originFilename: f,
-                ...JSON.parse(fs.readFileSync(path.resolve('./res/lists', f)).toString()),
-            })
-        }
-        return results;
-    }
-    function showChoosePlaylistDialog(_, options) {
-        return dialog.showOpenDialogSync(options)
-    }
-    function showAskDialog(_, options) {
-        return dialog.showMessageBoxSync({
-            buttons: ['取消', '确认'],
-            ...options
-        })
-    }
-    function writePlaylistFile(_, {fn, t}) {
-        return fs.writeFileSync(path.resolve('./res/lists', fn), t)
-    }
-    function deletePlaylistFile(_, fn) {
-        return fs.rmSync(path.resolve('./res/lists', fn))
-    }
-    function getConfig() {
-        return JSON.parse(fs.readFileSync(path.resolve('./res', 'config.json')).toString())
-    }
-    function writeConfig(_, config) {
-        return fs.writeFileSync(path.resolve('./res', 'config.json'), config)
-    }
-    function getSpecificConfig(_, fn) {
-        return JSON.parse(fs.readFileSync(path.resolve('./res', `${fn}.json`)).toString())
-    }
-    function writeSpecificConfig(_, fn, config) {
-        return fs.writeFileSync(path.resolve('./res', `${fn}.json`), config)
-    }
-    function readClipboard() {
-        return clipboard.readText();
-    }
-    async function getBilibiliVideoView(_, bv) {
-        return (await bilibiliClient.get('https://api.bilibili.com/x/web-interface/view', {
-            params: {
-                bvid: bv,
-            }
-        })).data
-    }
-    async function getBilibiliVideoPlayurl(_, params) {
-        return (await bilibiliClient.get('https://api.bilibili.com/x/player/wbi/playurl', {
-            params
-        })).data
-    }
-    async function getBilibiliFav(_, params) {
-        return (await bilibiliClient.get('https://api.bilibili.com/x/v3/fav/resource/list', {params})).data;
-    }
-    async function axiosRequestGet(_, url, config) {
-        return (await axios.get(url, config)).data;
-    }
-    function getCursorPos() {
-        let sp = screen.getCursorScreenPoint();
-        let wp = mainWindow.getPosition()
-        return {
-            left: sp.x - wp[0],
-            top: sp.y - wp[1],
-        };
-    }
-    function openUrl(_, url) {
-        shell.openExternal(url)
-    }
-    function showImportPlaylistDialog() {
-        dialog.showOpenDialog({
-            title: '请选择歌单文件',
-            filters: [{
-                name: 'JSON',
-                extensions: ['json']
-            }],
-            properties : ['multiSelections']
-        }).then(({canceled, filePaths}) => {
-            if (canceled) return;
-            let tasks = filePaths.map(fp => new Promise((resolve, reject) => {
-                try {
-                    fs.copyFileSync(fp, path.resolve('./res/lists', path.basename(fp)))
-                    resolve();
-                } catch(err) {
-                    reject(err)
-                }
-            }))
-            Promise.all(tasks).catch((e) => mainWindow.webContents.send('showMessage', e.message)).finally(() => {
-                mainWindow.webContents.send('refreshPlaylists')
-            })
-        })
-    }
 
     const createWindow = () => {
         mainWindow = new BrowserWindow({

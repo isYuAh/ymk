@@ -1,40 +1,35 @@
 <template>
   <div class="colorSetter" :style="{
-    '--ymk-color': colors.elColor,
-    '--ymk-text-color': colors.textColor,
-    '--ymk-progress-bg-color': colors.progressBgColor,
-    '--ymk-progress-fill-color': colors.progressFillColor,
-    '--ymk-progress-choose-fill-color': colors.progressChooseFillColor,
-    '--ymk-text-shadow-color': colors.textShadowColor,
-    '--ymk-container-bg-color': colors.containerBgColor,
+    '--ymk-color': config.colors.elColor,
+    '--ymk-text-color': config.colors.textColor,
+    '--ymk-progress-bg-color': config.colors.progressBgColor,
+    '--ymk-progress-fill-color': config.colors.progressFillColor,
+    '--ymk-progress-choose-fill-color': config.colors.progressChooseFillColor,
+    '--ymk-text-shadow-color': config.colors.textShadowColor,
+    '--ymk-container-bg-color': config.colors.containerBgColor,
   }" @drop.prevent="dropEvent" @dragover.prevent>
     <div v-if="backgroundType" class="backgroundFrame forbidSelect">
       <Component :is="backgroundType" autoplay muted loop class="object-cover wh100" :src="bgSrc"></Component>
     </div>
-<!--    <Transition name="uianim">-->
-<!--      <Dialog>-->
-<!--        <Component :is="zks.dialog.dialogEl" />-->
-<!--      </Dialog>-->
-<!--    </Transition>-->
     <Transition name="uianim">
-      <FullPlay v-show="zks.showFullPlay"></FullPlay>
+      <FullPlay v-show="runtimeData.showFullPlay"></FullPlay>
     </Transition>
     <div class="container">
       <div style="-webkit-app-region: drag" class="header forbidSelect">
-        <div v-if="zks.showFullPlay" @click="zks.showFullPlay = false" style="-webkit-app-region: no-drag" class="title">Return</div>
+        <div v-if="runtimeData.showFullPlay" @click="runtimeData.showFullPlay = false" style="-webkit-app-region: no-drag" class="title">Return</div>
         <div v-else class="title">Yumuzk</div>
         <Transition appear name="fade">
-          <div style="-webkit-app-region: no-drag" v-show="!zks.showFullPlay" class="tabs">
-            <RouterLink to="/playlist" :class="{tab: true, active: zks.nowTab === 'playlist'}">首页</RouterLink>
-            <RouterLink to="/recommendedPlaylists" :class="{tab: true, active: zks.nowTab === 'recommendedPlaylists'}">推荐</RouterLink>
-            <RouterLink to="/playlistDetail" v-if="zks.playlist.listIndex !== -1" :class="{tab: true, active: zks.nowTab === 'playlistDetail'}">歌单</RouterLink>
-            <RouterLink to="/albumPreview" v-if="zks.albumPreview.info.title !== ''" :class="{tab: true, active: zks.nowTab === 'albumPreview'}">专辑</RouterLink>
-            <RouterLink to="/search" :class="{tab: true, active: zks.nowTab === 'search'}">搜索</RouterLink>
-            <RouterLink to="/userCenter" :class="{tab: true, active: zks.nowTab === 'userCenter'}">
+          <div style="-webkit-app-region: no-drag" v-show="!runtimeData.showFullPlay" class="tabs">
+            <RouterLink to="/playlist" :class="{tab: true, active: runtimeData.nowTab === 'playlist'}">首页</RouterLink>
+            <RouterLink to="/recommendedPlaylists" :class="{tab: true, active: runtimeData.nowTab === 'recommendedPlaylists'}">推荐</RouterLink>
+            <RouterLink to="/playlistDetail" v-if="runtimeData.playlist.listIndex !== -1" :class="{tab: true, active: runtimeData.nowTab === 'playlistDetail'}">歌单</RouterLink>
+            <RouterLink @contextmenu.prevent="previewContextMenu('album')" to="/albumPreview" v-if="runtimeData.albumPreview.info.title !== ''" :class="{tab: true, active: runtimeData.nowTab === 'albumPreview'}">专辑</RouterLink>
+            <RouterLink to="/search" :class="{tab: true, active: runtimeData.nowTab === 'search'}">搜索</RouterLink>
+            <RouterLink to="/userCenter" :class="{tab: true, active: runtimeData.nowTab === 'userCenter'}">
               <div class="text">{{ user.neteaseUser.nickname || '用户' }}</div>
               <img v-if="user.neteaseUser.avatarUrl" style="border-radius: 50%;margin-left: 4px;margin-top:6px; height: 28px;" :src="user.neteaseUser.avatarUrl" alt="">
             </RouterLink>
-            <RouterLink to="/settings" :class="{tab: true, active: zks.nowTab === 'Settings'}">设置</RouterLink>
+            <RouterLink to="/settings" :class="{tab: true, active: runtimeData.nowTab === 'Settings'}">设置</RouterLink>
           </div>
         </Transition>
         <div style="-webkit-app-region: no-drag" class="controlbtn">
@@ -44,7 +39,7 @@
       </div>
       <div class="content">
         <router-view v-slot="{ Component }">
-          <transition v-show="!zks.showFullPlay" appear name="uianim">
+          <transition v-show="!runtimeData.showFullPlay" appear name="uianim">
             <keep-alive :exclude="['UserCenter', 'PlaylistDetail', 'Settings']">
               <component :is="Component" />
             </keep-alive>
@@ -53,33 +48,22 @@
       </div>
       <Playbar></Playbar>
     </div>
-<!--    <Message />-->
   </div>
 </template>
 
 <script setup lang="ts">
 import '@/assets/anim.css'
-import { useZKStore } from '@/stores/useZKstore'
-import {type list, type song} from '@/types';
-import { onUnmounted, provide, shallowRef, watch, computed } from 'vue';
-import Playlist from '@/pages/Playlist.vue';
-import PlaylistDetail from '@/pages/PlaylistDetail.vue';
-import Loading from '@/pages/Loading.vue'
+import { watch, computed } from 'vue';
 import FullPlay from '@/pages/FullPlay.vue'
 import Playbar from '@/pages/Playbar.vue'
-import Search from '@/pages/Search.vue'
-import UserCenter from '@/pages/UserCenter.vue';
-import Message from '@/components/Message.vue';
-import Dialog from '@/components/Dialog.vue'
 import emitter from '@/emitter';
-
 const {exit, minimize} = window.ymkAPI
 const user = useUserStore();
 const player = usePlayerStore();
 const backgroundType = computed(() => {
-  if (!config.value.bg) return 'img'
-  if (config.value.bg.endsWith(".mp4")) return "video"
-  else if (config.value.bg.endsWith(".png") || config.value.bg.endsWith(".jpg")) return "img"
+  if (!config.bg) return 'img'
+  if (config.bg.endsWith(".mp4")) return "video"
+  else if (config.bg.endsWith(".png") || config.bg.endsWith(".jpg")) return "img"
   else return ""
 })
 
@@ -95,23 +79,51 @@ if ("mediaSession" in navigator) {
   navigator.mediaSession.setActionHandler("previoustrack", () => emitter.emit('playPrevSong'));
   navigator.mediaSession.setActionHandler("nexttrack", () => emitter.emit('playNextSong'))
 }
-const {zks, config, colors} = storeToRefs(useZKStore());
+const runtimeData = useRuntimeDataStore()
+const config = useConfigStore()
 //监听cookie
 const bgSrc = computed(() => {
-  return `http://localhost:35652/api/bg?fn=${config.value.bg}`
+  return `http://localhost:35652/api/bg?fn=${config.bg}`
 })
 watch(() => user.neteaseUser.auth, (nv) => {
   document.cookie = nv;
 })
 
-import {storeToRefs} from "pinia";
 import {useUserStore} from "@/stores/modules/user";
 import {usePlayerStore} from "@/stores/modules/player";
+import {useConfigStore} from "@/stores/modules/config";
+import {showContextMenu} from "@/utils/contextMenu";
+import {useRuntimeDataStore} from "@/stores/modules/runtimeData";
+import router from "@/router";
+import {refreshPlaylists} from "@/utils/Toolkit";
 
-useZKStore().playlistToolkit.refreshPlaylists({notReset: false});
+refreshPlaylists({notReset: false});
 
 function dropEvent(e: DragEvent) {
   console.log(e)
+}
+function previewContextMenu(type: string) {
+  showContextMenu({
+    menuItems: [
+      {
+        title: "关闭",
+        action: (arg) => {
+          if (arg === "album") {
+            runtimeData.albumPreview = runtimeData.albumPreview = {
+              songs: [],
+              info: {
+                title: "",
+                creator: "",
+                pic: "",
+              }
+            }
+          }
+          router.push('/playlists')
+        }
+      }
+    ],
+    args: type
+  })
 }
 </script>
 

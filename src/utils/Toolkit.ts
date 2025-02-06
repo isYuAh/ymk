@@ -1,11 +1,11 @@
 import {useUserStore} from "@/stores/modules/user";
 import type {list, playlistComponent, song} from "@/types";
 import router from "@/router";
-import {useZKStore} from "@/stores/useZKstore";
 import {kugouAxios, neteaseAxios} from "@/utils/axiosInstances";
 import {replacePicSizeParam} from "@/utils/u";
 import {toRaw} from "vue";
 import {showMessage} from "@/utils/message";
+import {useRuntimeDataStore} from "@/stores/modules/runtimeData";
 
 const {getLocalPlaylists, writePlaylistFile} = window.ymkAPI
 
@@ -85,31 +85,31 @@ export async function parseComponent(comIndex: number, components: playlistCompo
 
 export function checkDetail(index: number, raw?: list) {
   router.push('/loading')
-  const zks = useZKStore()
-  zks.zks.loading.text = '';
+  const runtimeData = useRuntimeDataStore()
+  runtimeData.loading.text = '';
   if (index >= 0) {
-    if (zks.zks.playlist.listIndex === index) {
+    if (runtimeData.playlist.listIndex === index) {
       router.push('/playlistDetail')
     }else {
-      let list = zks.zks.playlists[index];
-      zks.zks.playlist.listIndex = index
-      zks.zks.playlist.raw = list;
-      zks.zks.playlist.songs = [];
+      let list = runtimeData.playlists[index];
+      runtimeData.playlist.listIndex = index
+      runtimeData.playlist.raw = list;
+      runtimeData.playlist.songs = [];
       let components = list.playlist;
       let comIndex = 0;
-      zks.zks.playlist.extraInfo.type = 'unknown';
+      runtimeData.playlist.extraInfo.type = 'unknown';
       parseComponent(comIndex, components);
     }
   }else {
-    if (JSON.stringify(zks.zks.playlist.raw) === JSON.stringify(raw)) {
+    if (JSON.stringify(runtimeData.playlist.raw) === JSON.stringify(raw)) {
       router.push('/playlistDetail')
     }else {
-      zks.zks.playlist.listIndex = -2;
-      zks.zks.playlist.songs = [];
-      zks.zks.playlist.raw = raw!;
+      runtimeData.playlist.listIndex = -2;
+      runtimeData.playlist.songs = [];
+      runtimeData.playlist.raw = raw!;
       let components = raw!.playlist;
       let comIndex = 0;
-      zks.zks.playlist.extraInfo.type = 'unknown';
+      runtimeData.playlist.extraInfo.type = 'unknown';
       parseComponent(comIndex, components);
     }
   }
@@ -117,12 +117,12 @@ export function checkDetail(index: number, raw?: list) {
 
 
 export function pushPlaylistPart(title: string, playlists: list[], begin = -1, type = "", other = {}) {
-  const zks = useZKStore()
+  const runtimeData = useRuntimeDataStore()
   if (begin === -1) {
-    begin = zks.zks.playlistsParts.length === 0 ? 0 : zks.zks.playlistsParts[zks.zks.playlistsParts.length - 1].begin + zks.zks.playlistsParts[zks.zks.playlistsParts.length - 1].count
+    begin = runtimeData.playlistsParts.length === 0 ? 0 : runtimeData.playlistsParts[runtimeData.playlistsParts.length - 1].begin + runtimeData.playlistsParts[runtimeData.playlistsParts.length - 1].count
   }
-  zks.zks.playlists.push(...playlists)
-  zks.zks.playlistsParts.push({
+  runtimeData.playlists.push(...playlists)
+  runtimeData.playlistsParts.push({
     title: title,
     begin: begin,
     count: playlists.length,
@@ -131,13 +131,13 @@ export function pushPlaylistPart(title: string, playlists: list[], begin = -1, t
   })
 }
 export async function refreshPlaylists({notReset}: {notReset: boolean}) {
-  const zks = useZKStore()
+  const runtimeData = useRuntimeDataStore()
   const user = useUserStore()
-  zks.zks.playlists = <list[]>[];
-  zks.zks.playlistsParts = [];
-  zks.zks.playlist.listIndex = -1;
+  runtimeData.playlists = <list[]>[];
+  runtimeData.playlistsParts = [];
+  runtimeData.playlist.listIndex = -1;
   if (!notReset) {
-    Object.assign(zks.zks.playlist, {
+    Object.assign(runtimeData.playlist, {
       songs: <song[]>[],
       raw: {}
     })
@@ -176,12 +176,12 @@ export async function refreshPlaylists({notReset}: {notReset: boolean}) {
 }
 
 export function addSongTo({song, playlistIndex, save = true} : {song: song, playlistIndex: number, save?: boolean}) {
-  const zks = useZKStore()
+  const runtimeData = useRuntimeDataStore()
   let pi;
   if (playlistIndex != undefined && playlistIndex >= 0) {
     pi = playlistIndex;
   }else return;
-  let pl = zks.zks.playlists[pi];
+  let pl = runtimeData.playlists[pi];
   let components = pl.playlist;
   let first = components[0];
   let originFn = pl.originFilename;
@@ -193,11 +193,11 @@ export function addSongTo({song, playlistIndex, save = true} : {song: song, play
       songs: [song],
     })
   }
-  if (pi === zks.zks.playlist.listIndex) {
-    zks.zks.playlist.songs.unshift(song)
+  if (pi === runtimeData.playlist.listIndex) {
+    runtimeData.playlist.songs.unshift(song)
   }
   if (save) {
-    writePlaylistFile(originFn, JSON.stringify(toRaw(zks.zks.playlists[pi]))).then(() => {
+    writePlaylistFile(originFn, JSON.stringify(toRaw(runtimeData.playlists[pi]))).then(() => {
       showMessage('添加成功');
     }).catch(() => {
       showMessage(`写入文件${originFn}失败`);
@@ -215,4 +215,26 @@ export async function checkMusicPlayable(song: song) {
   }else {
     return {result: true, msg: ''}
   }
+}
+
+function neteaseSongToSongType(s: any) {
+  return <song>{
+    id: s.id,
+    pic: s.al.picUrl,
+    singer: s.ar.map((a: any) => a.name).join(" & "),
+    type: 'netease',
+    title: s.name,
+  }
+}
+export function neteaseSongsToSongType(ss: any) {
+  return <song[]>ss.map((s: any) => neteaseSongToSongType(s))
+}
+
+export function saveSpecificPlaylist(playlist: list) {
+  if (!playlist.originFilename.endsWith(".json")) return;
+  writePlaylistFile(playlist.originFilename, JSON.stringify(toRaw(playlist))).then(() => {
+    showMessage(`保存成功${playlist.originFilename}`);
+  }).catch(() => {
+    showMessage(`写入文件${playlist.originFilename}失败`);
+  })
 }

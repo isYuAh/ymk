@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import {useZKStore} from "@/stores/useZKstore";
 import type {list, playlistPart} from "@/types";
 import TargetBorder from "@/components/TargetBorder.vue";
 const {

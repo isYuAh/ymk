@@ -88,19 +88,17 @@
 </template>
 
 <script setup lang='ts'>
-import { useZKStore } from '@/stores/useZKstore';
 import AroundTragetBorder from '@/components/AroundTargetBorder.vue'
 import emitter from '@/emitter';
-import {storeToRefs} from "pinia";
 import { computed, nextTick, ref, watch } from 'vue';
 import { minmax } from '@/utils/u';
 import type {song_lrc_item, songInPlay} from '@/types';
 import {VueDraggable} from "vue-draggable-plus";
 import {langStringMapper} from "@/utils/stringMapper";
 import {usePlayerStore} from "@/stores/modules/player";
-import {useConfigStore} from "@/stores/modules/config";
+import {useRuntimeDataStore} from "@/stores/modules/runtimeData";
 const {isMinimized, onRestore, openUrl} = window.ymkAPI;
-const {zks} = storeToRefs(useZKStore());
+const runtimeData = useRuntimeDataStore()
 const player = usePlayerStore()
 const playerStore = usePlayerStore();
 let playProgress = ref<HTMLDivElement>();
@@ -207,7 +205,7 @@ function lyricWheelEvent(e: WheelEvent) {
   lrcContainerEl.value.style.transform = `translateY(${minmax(transformVal - e.deltaY, minV, maxV)}px)`
 }
 freshLrcElement();
-watch([() => playerStore.config.lang, () => playerStore.song.lrcs, () => zks.value.showFullPlay], () => {
+watch([() => playerStore.config.lang, () => playerStore.song.lrcs, () => runtimeData.showFullPlay], () => {
   playerStore.config.highlightLrcIndex = -1
   updateHighlightedIndex(true);
 }, {deep: true})

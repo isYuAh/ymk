@@ -12,20 +12,12 @@
 </template>
 
 <script setup lang='ts'>
-import {useZKStore} from '@/stores/useZKstore';
-import {storeToRefs} from "pinia";
-//@ts-ignore
-import emitter from '@/emitter';
 import simplebar from "simplebar-vue";
 import 'simplebar-vue/dist/simplebar.min.css'
 import Playlists from "@/components/Playlists.vue";
 import type {list, playlistPart} from "@/types";
-import axios from "axios";
 import {ref} from "vue";
 import {neteaseAxios} from "@/utils/axiosInstances";
-
-const {deletePlaylistFile, showImportPlaylistDialog} = window.ymkAPI;
-const {config} = storeToRefs(useZKStore());
 
 const parts = ref<playlistPart[]>([]);
 const playlists = ref<list[]>([]);

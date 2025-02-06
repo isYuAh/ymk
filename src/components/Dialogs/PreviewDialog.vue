@@ -25,13 +25,10 @@
 </template>
 
 <script setup lang='ts'>
-import { useZKStore } from '@/stores/useZKstore';
 import {ref} from 'vue';
-import {storeToRefs} from "pinia";
-import {type playlistComponent, type song} from "@/types";
+import {type playlistComponent} from "@/types";
 import axios, {type AxiosResponse} from "axios";
 import {neteaseAxios, qqAxios} from "@/utils/axiosInstances";
-const {zks, config} = storeToRefs(useZKStore());
 import {checkDetail} from "@/utils/Toolkit";
 import {showMessage} from "@/utils/message";
 let previewLink = ref('');

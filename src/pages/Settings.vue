@@ -2,11 +2,9 @@
 import simplebar from "simplebar-vue";
 import 'simplebar-vue/dist/simplebar.min.css'
 import {ref} from "vue";
-import {useZKStore} from "@/stores/useZKstore";
 import PickColors from 'vue-pick-colors'
 import {showMessage} from "@/utils/message";
 import {useConfigStore} from "@/stores/modules/config";
-const zks = useZKStore()
 const config = useConfigStore()
 let apiConfig = ref({
   neteaseUrl: config.api.neteaseApi.url,
@@ -25,7 +23,7 @@ function saveBgConfig() {
   showMessage('保存成功')
 }
 function saveColorsConfig () {
-  useZKStore().saveColors();
+  config.saveColors();
   showMessage('保存成功')
 }
 </script>
@@ -65,9 +63,9 @@ function saveColorsConfig () {
       <div class="title">颜色</div>
       <div class="content">
         <div class="colorsSetter">
-          <div v-for="(_, k) in zks.colors" class="colorInput">
+          <div v-for="(_, k) in config.colors" class="colorInput">
             <div class="label">{{k}}</div>
-            <PickColors style="vertical-align: top" show-alpha format="rgb" :format-options="['rgb', 'hex']" v-model:value="zks.colors[k]" />
+            <PickColors style="vertical-align: top" show-alpha format="rgb" :format-options="['rgb', 'hex']" v-model:value="config.colors[k]" />
           </div>
         </div>
         <div class="controlBtns">
