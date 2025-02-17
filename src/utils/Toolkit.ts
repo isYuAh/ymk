@@ -23,7 +23,7 @@ export function checkSongPlayableByData(song: any, privilege?: any) {
   if (song.fee === 1 || privilege?.fee === 1) {
     status.vipOnly = true
     // 非VIP会员
-    if (!(user.isLogin().netease && user.neteaseUser.vipType === 11)) {
+    if (!(user.isLogin.netease && user.neteaseUser.vipType === 11)) {
       status.playable = false
       status.reason = '仅限 VIP 会员'
     }
@@ -33,7 +33,7 @@ export function checkSongPlayableByData(song: any, privilege?: any) {
   } else if (song.noCopyrightRcmd !== null && song.noCopyrightRcmd !== undefined) {
     status.playable = false
     status.reason = '无版权'
-  } else if ( privilege?.st < 0 && user.isLogin().netease) {
+  } else if ( privilege?.st < 0 && user.isLogin.netease) {
     status.playable = false
     status.reason = '已下架'
   }
@@ -144,8 +144,21 @@ export async function refreshPlaylists({notReset}: {notReset: boolean}) {
   }
   const ps = await getLocalPlaylists();
   pushPlaylistPart('本地', ps, undefined, "init")
-  if (user.isLogin().netease) {
-    let res = await neteaseAxios.post(`/user/playlist?uid=${user.neteaseUser.uid}`, {})
+  if (user.isLogin.netease) {
+    //每日推荐
+    let res = await neteaseAxios.post(`/recommend/resource`)
+    pushPlaylistPart('每日推荐', res.data.recommend.map((playlist: any) => ({
+      title: playlist.name,
+      pic: playlist.picUrl,
+      intro: 'Netease Daily Recommendation',
+      originFilename: 'REMOTE',
+      playlist: [{
+        type: 'trace_netease_playlist',
+        id: playlist.id
+      }]
+    })), undefined, "init")
+    //用户歌单
+    res = await neteaseAxios.post(`/user/playlist?uid=${user.neteaseUser.uid}`, {})
     pushPlaylistPart('网易云', res.data.playlist.map((playlist: any) => ({
       title: playlist.name,
       pic: playlist.coverImgUrl,
@@ -157,7 +170,7 @@ export async function refreshPlaylists({notReset}: {notReset: boolean}) {
       }]
     })), undefined, "init")
   }
-  if (user.isLogin().kugou) {
+  if (user.isLogin.kugou) {
     let res = await kugouAxios.post('/user/playlist')
     if ('status' in res.data && res.data.status === 1) {
       const data = res.data.data;

@@ -1,5 +1,5 @@
 import {defineStore} from "pinia";
-import {ref, watch} from "vue";
+import {computed, ref, watch} from "vue";
 import type {User} from "@/types/config";
 import {neteaseAxios} from "@/utils/axiosInstances";
 
@@ -10,10 +10,10 @@ export const useUserStore = defineStore('user', () => {
   const isVip = () => ({
     netease: neteaseUser.value.vipType === 11
   })
-  const isLogin = () => ({
+  const isLogin = computed(() => ({
     netease: neteaseUser.value.auth && neteaseUser.value.auth != '',
-    kugou: kugouUser
-  })
+    kugou: kugouUser.value.auth && kugouUser.value.auth != ''
+  }))
   watch(() => neteaseUser.value.auth, (nv) => {
     if (nv) {
       neteaseAxios.get(`/likelist?uid=${neteaseUser.value.uid}`).then((res) => {

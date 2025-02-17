@@ -1,4 +1,3 @@
-// contextMenu.ts
 import {type App, createApp} from 'vue'
 import MouseMenu from '@/components/MouseMenu.vue'
 import type {mouseMenuItem} from "@/types";

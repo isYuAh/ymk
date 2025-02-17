@@ -1,18 +1,30 @@
 <script setup lang="ts">
 import type {list, playlistPart} from "@/types";
 import TargetBorder from "@/components/TargetBorder.vue";
+import { ref, watch } from 'vue';
+
 const {
   parts,
   playlists,
   fromZks,
+  defaultExpandedStatus,
   menuEvent = () => {}
 } = defineProps<{
   parts: playlistPart[],
   playlists: list[],
   fromZks: boolean,
+  defaultExpandedStatus?: boolean[],
   menuEvent?: (list: list, pi: number, part: playlistPart) => void
 }>()
+
 import {checkDetail} from "@/utils/Toolkit";
+const expandedStates = ref<boolean[]>(defaultExpandedStatus || playlists.map(() => true));
+watch([() => defaultExpandedStatus], (nv) => {
+  expandedStates.value = defaultExpandedStatus || playlists.map(() => true);
+}, {immediate: true})
+function toggleExpand(index: number) {
+  expandedStates.value[index] = !expandedStates.value[index];
+}
 
 function checkPlaylist(i: number) {
   if (fromZks) {
@@ -25,18 +37,30 @@ function checkPlaylist(i: number) {
 
 <template>
   <div
-      v-for="(p, pi) in parts" class="playlistPart">
-    <div class="divideTitle">{{p.title}}</div>
-    <div class="lists">
-      <div @contextmenu.prevent="menuEvent(list, index, p)" @click="checkPlaylist(index + p.begin)" v-for="(list, index) in playlists.slice(p.begin, p.begin + p.count)" class="item">
-        <TargetBorder>
-          <div class="img">
-            <img referrerpolicy="no-referrer" :src="list.pic" alt="">
-          </div>
-        </TargetBorder>
-        <div class="title">{{ list.title }}</div>
-      </div>
+      v-for="(p, pi) in parts" 
+      :key="pi"
+      class="playlistPart">
+    <div class="divideTitle" @click="toggleExpand(pi)">
+      <span class="arrow" :class="{ expanded: expandedStates[pi] }">▶</span>
+      {{p.title}}
     </div>
+    <transition name="expand">
+      <div v-show="expandedStates[pi]" class="lists">
+        <div 
+          @contextmenu.prevent="menuEvent(list, index, p)" 
+          @click="checkPlaylist(index + p.begin)" 
+          v-for="(list, index) in playlists.slice(p.begin, p.begin + p.count)" 
+          :key="index"
+          class="item">
+          <TargetBorder>
+            <div class="img">
+              <img referrerpolicy="no-referrer" :src="list.pic" alt="">
+            </div>
+          </TargetBorder>
+          <div class="title">{{ list.title }}</div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -46,8 +70,40 @@ function checkPlaylist(i: number) {
   margin: 20px;
   font-size: 24px;
   font-family: PingFang SC;
-
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
 }
+
+.arrow {
+  display: inline-block;
+  margin-right: 8px;
+  transition: transform 0.2s;
+}
+
+.arrow.expanded {
+  transform: rotate(90deg);
+}
+
+.expand-enter-active,
+.expand-leave-active {
+  transition: all 0.2s ease-in-out;
+  transform-origin: top;
+}
+
+.expand-enter-from,
+.expand-leave-to {
+  opacity: 0;
+  transform: scaleY(0);
+}
+
+.expand-enter-to,
+.expand-leave-from {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
 .lists {
   flex: 1;
   display: grid;
@@ -56,6 +112,7 @@ function checkPlaylist(i: number) {
   grid-template-columns: repeat(auto-fill, minmax(182px, 1fr));
   justify-content: center;
   grid-auto-rows: 1fr;
+  transform-origin: top;
 }
 
 .item {

@@ -9,10 +9,10 @@
         <button @click="uploadPlaylists" class="controllerButton sync">同步</button>
         <button @click="testFunc" class="controllerButton test">测试</button>
         <button @click="testFunc2" class="controllerButton test">测试2</button>
-
       </div>
     </Transition>
-    <Playlists :from-zks="true" :parts="runtimeData.playlistsParts" :playlists="runtimeData.playlists" :menu-event="PlaylistMenu" />
+    <button @click="playDailyRecommend" v-if="user.isLogin.netease" class="floatingButton">每日推荐</button>
+    <Playlists :from-zks="true" :parts="runtimeData.playlistsParts" :playlists="runtimeData.playlists" :menu-event="PlaylistMenu" :default-expanded-status="defaultExpandedStatus" />
   </simplebar>
 </div>
 </template>
@@ -23,7 +23,8 @@ import 'simplebar-vue/dist/simplebar.min.css'
 import PreviewDialog from "@/components/Dialogs/PreviewDialog.vue";
 import Playlists from "@/components/Playlists.vue";
 const runtimeData = useRuntimeDataStore()
-import type {playlistPart, list, mouseMenuItem} from "@/types";
+const user = useUserStore()
+import type {playlistPart, list, mouseMenuItem, song} from "@/types";
 import {toRaw} from "vue";
 import axios from "axios";
 import {showContextMenu} from "@/utils/contextMenu";
@@ -31,6 +32,16 @@ import {showMessage} from "@/utils/message";
 import {showDialog} from "@/utils/dialog";
 import {useRuntimeDataStore} from "@/stores/modules/runtimeData";
 import {refreshPlaylists} from "@/utils/Toolkit";
+import AddSongToDialog from "@/components/Dialogs/addSongToDialog.vue";
+import { neteaseAxios } from "@/utils/axiosInstances";
+import { computed } from 'vue';
+import { usePlayerStore } from "@/stores/modules/player";
+import emitter from '@/emitter';
+import { useUserStore } from "@/stores/modules/user";
+
+const defaultExpandedStatus = computed(() => {
+  return runtimeData.playlistsParts.map(part => part.title !== "每日推荐");
+});
 
 const {deletePlaylistFile, showImportPlaylistDialog} = window.ymkAPI;
 function menu_deletePlaylist({pi, playlist}: {pi: number, playlist: list}) {
@@ -55,7 +66,7 @@ function PlaylistMenu(list: list, index: number, part: playlistPart) {
   if (part.title === "本地") {
     menu = [{
       title: '添加歌曲',
-      action: showAddSongToDialog,
+      action: () => showAddSongToDialog({pi: index + part.begin}),
     },{
       title: '删除',
       action: menu_deletePlaylist
@@ -87,26 +98,44 @@ async function uploadPlaylists() {
   })
 }
 async function testFunc() {
-  axios.post('http://suonan.xyz:2389/User/SignIn', {
-    id: "isyuah",
-    password: "icfi666"
+  neteaseAxios.post('/recommend/resource').then((res) => {
+    console.log(res)
   })
-  // kugouAxios.post('/user/playlist').then((res) => {
-  //   console.log(res)
-  //   if ('status' in res.data && res.data.status === 1) {
-  //     const data = res.data.data;
-  //
-  //   }
-  // })
 }
 async function testFunc2() {
-  showDialog(PreviewDialog)
+  neteaseAxios.post('/recommend/songs').then((res) => {
+    console.log(res)
+  })
 }
-function showAddSongToDialog() {
-  // useZKStore().showDialog(AddSongToDialog)
+function showAddSongToDialog(data: any) {
+  showDialog(AddSongToDialog, data)
 }
 function showPreviewDialog() {
-  // useZKStore().showDialog(PreviewDialog)
+  showDialog(PreviewDialog)
+}
+
+const player = usePlayerStore()
+
+function playDailyRecommend() {
+  neteaseAxios.post('/recommend/songs').then((res) => {
+    const recommendedSongs: song[] = res.data.data.dailySongs.map((song: any) => ({
+      id: song.id,
+      title: song.name,
+      singer: song.ar.map((ar: any) => ar.name).join(' & '),
+      pic: song.al.picUrl,
+      type: 'netease',
+    }))
+    player.playlist = structuredClone(recommendedSongs)
+    if (!player.playlist.length) {
+      return;
+    }
+    if (player.config.mode === 'rand') {
+      emitter.emit('playSong', {song: player.playlist[Math.floor(Math.random() * (player.playlist.length))]})
+    } else {
+      emitter.emit('playSong', {song: player.playlist[0]})
+    }
+  })
+  
 }
 </script>
 
@@ -115,6 +144,7 @@ function showPreviewDialog() {
     height: 100%;
     display: flex;
     flex-direction: column;
+    position: relative;
 }
 .partContainer .playlistControllers {
     padding: 10px 20px 0;
@@ -138,5 +168,32 @@ function showPreviewDialog() {
 
 .simplebar {
   height: 100%;
+}
+
+.floatingButton {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  padding: 10px 20px;
+  background-color: rgba(255, 255, 255, .15);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: 4px;
+  font-family: PingFang SC;
+  font-size: 16px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+}
+
+.floatingButton:hover {
+  background-color: rgba(255, 255, 255, .25);
+  border-color: rgba(255, 255, 255, .3);
+}
+
+.floatingButton:active {
+  background-color: rgba(255, 255, 255, .2);
+  border-color: rgba(255, 255, 255, .25);
 }
 </style>
