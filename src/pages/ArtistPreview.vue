@@ -1,22 +1,20 @@
 <template>
 <div class="transitionContainer">
-    <div @click="router.push('/playlist')" class="returnBtn">
+    <div @click="router.push('/search')" class="returnBtn">
         <svg t="1711457272465" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4244" width="48" height="48"><path d="M963.2 0L1024 67.2 512 614.4 0 67.2 60.8 0 512 480 963.2 0z" fill="currentColor" p-id="4245"></path></svg>
     </div>
     <div class="partContainer">
         <div class="listInfo">
             <div class="faceImg forbidSelect">
-                <img :src="runtimeData.playlist.raw.pic" alt="">
+                <img :src="runtimeData.artistPreview.info.pic" alt="">
             </div>
             <div class="info forbidSelect">
                 <div class="top">
-                  <div class="title">{{ runtimeData.playlist.raw.title }}</div>
-                  <button @click="subscribeToggle" class="subscribeBtn" v-if="runtimeData.playlist.extraInfo.type === 'pureNeteasePlaylist' && runtimeData.playlist.extraInfo.infos.subscribe > 0">{{runtimeData.playlist.extraInfo.infos.subscribe === 1 ? '取消收藏' : '收藏'}}</button>
-<!--                  <button @click="console.log(runtimeData.playlist)">{{runtimeData.playlist.extraInfo}}</button>-->
+                  <div class="title">{{ runtimeData.artistPreview.info.name }}</div>
                 </div>
                 <div class="bottom">
-                    <div class="total">TOTAL {{ runtimeData.playlist.songs.length }}</div>
-                    <div class="intro">{{ runtimeData.playlist.raw.intro || 'AN ALBUM CREATED'}}</div>
+                    <div class="total">TOTAL {{ runtimeData.artistPreview.songs.length }}</div>
+                    <div class="intro">{{ runtimeData.artistPreview.info.description || 'AN ARTIST' }}</div>
                     <button @click="playAll" class="PlayAll">
                         <div class="svgIcon">
                             <svg t="1711448701001" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3437"><path d="M73.142857 0 910.957714 512 73.142857 1024Z" fill="currentColor" p-id="3438"></path></svg>
@@ -35,24 +33,10 @@
           </div>
           <div class="songs">
             <div class="container">
-<!--              <simplebar data-auto-hide class="simplebar">-->
-<!--                <div class="songTable forbidSelect">-->
-<!--                  <div-->
-<!--                      @dblclick="playSong_withCheck(ITEM.item)"-->
-<!--                      class="song"-->
-<!--                      :class="{disabled: ITEM.item.type==='netease' && 'playable' in ITEM.item ? !ITEM.item.playable : false}"-->
-<!--                      @contextmenu.prevent="tryShowMenu({song: ITEM.item,si: ITEM.refIndex})"-->
-<!--                      v-for="ITEM in showingSonglist">-->
-<!--                    <div class="songInfo title">{{ ITEM.item.title }}<sub>{{ ITEM.item.type }}</sub></div>-->
-<!--                    <div class="songInfo author">{{ ITEM.item.singer }}</div>-->
-<!--                  </div>-->
-<!--                </div>-->
-<!--              </simplebar>-->
               <VirtualList :item-height="38" :items="showingSonglist" :size="8" v-slot="{item: ITEM}" class-name="songTable">
                 <div
                     @dblclick="playSong_withCheck(ITEM.item)"
                     class="song"
-                    :class="{disabled: (ITEM.item.type==='netease' && 'playable' in ITEM.item) ? !ITEM.item.playable : false}"
                     @contextmenu.prevent="tryShowMenu({song: ITEM.item,si: ITEM.refIndex})">
                   <div class="songInfo title">{{ ITEM.item.title }}<sub>{{ ITEM.item.type }}</sub></div>
                   <div class="songInfo author">{{ ITEM.item.singer }}</div>
@@ -60,153 +44,121 @@
               </VirtualList>
             </div>
           </div>
+          <div v-if="hasMore" class="loadMore forbidSelect">
+            <button @click="loadMore" :disabled="loading" class="loadMoreBtn">
+              {{ loading ? '加载中...' : '加载更多' }}
+            </button>
+          </div>
         </div>
     </div>
 </div>
 </template>
 
 <script setup lang='ts'>
-import {type list_data, type list_trace_netease_playlist, type song} from '@/types'
-import {computed, nextTick, ref, toRaw, watch} from 'vue';
+import {type song} from '@/types'
+import {computed, ref, toRaw, watch} from 'vue';
 import emitter from '@/emitter';
 import '@/assets/songlist.css'
 import Fuse from "fuse.js";
-import EditSongDialog from "@/components/Dialogs/EditSongDialog.vue";
 import {useRouter} from "vue-router";
-import {neteaseAxios} from "@/utils/axiosInstances";
 import VirtualList from "@/components/VirtualList.vue";
 import {showContextMenu} from "@/utils/contextMenu";
 import {usePlayerStore} from "@/stores/modules/player";
-import {showMessage} from "@/utils/message";
-import {showDialog} from "@/utils/dialog";
 import {useRuntimeDataStore} from "@/stores/modules/runtimeData";
-import {refreshPlaylists} from "@/utils/Toolkit";
+import {neteaseAxios} from "@/utils/axiosInstances";
+
 const router = useRouter();
-const {writePlaylistFile} = window.ymkAPI;
 const runtimeData = useRuntimeDataStore()
 const player = usePlayerStore()
 let filter = ref('');
-let FuseVal = ref(new Fuse(runtimeData.playlist.songs, {
+let loading = ref(false);
+let hasMore = ref(false);
+let offset = ref(0);
+
+let FuseVal = ref(new Fuse(runtimeData.artistPreview.songs, {
   keys: ['title', 'singer']
 }))
-watch(() => runtimeData.playlist, (nv) => {
+
+watch(() => runtimeData.artistPreview, (nv) => {
   FuseVal.value = new Fuse(nv.songs, {
     keys: ['title', 'singer']
   })
 }, {deep: true})
+
 let showingSonglist = computed(() => {
-  nextTick(() => emitter.emit('virtualList-refresh'))
   if (!filter.value) {
-    return runtimeData.playlist.songs.map((element, index) => ({item: element, refIndex: index}))
+    return runtimeData.artistPreview.songs.map((element, index) => ({item: element, refIndex: index}))
   }else {
     return FuseVal.value.search(filter.value)
   }
 })
+
+async function loadMore() {
+  if (loading.value || !hasMore.value) return
+  
+  loading.value = true
+  try {
+    const artistId = runtimeData.artistPreview.info.id
+    if (!artistId) return
+
+    const songs = await neteaseAxios.get(`/artist/songs?id=${artistId}&limit=30&offset=${offset.value + 30}`)
+    if (songs.data.code !== 200) return
+
+    const newSongs = songs.data.songs.map((song: any) => ({
+      type: 'netease',
+      title: song.name,
+      id: song.id,
+      singer: song.ar.map((ar: any) => ar.name).join(' & '),
+      playable: true
+    }))
+
+    runtimeData.artistPreview.songs.push(...newSongs)
+    offset.value += 30
+    hasMore.value = songs.data.more
+  } catch (error) {
+    console.error('加载更多歌曲失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
 function tryShowMenu(a: any) {
-  if (runtimeData.playlist.raw.playlist.length !== 1 || runtimeData.playlist.raw.playlist[0].type !== 'data') return
   showContextMenu({
     menuItems: [{
-      title: '编辑',
-      action: menu_edit,
-    }, {
-      title: '删除',
-      action: menu_deleteSong,
+      title: '收藏',
+      action: () => {},
     }],
     args: a
   })
 }
-function subscribeToggle() {
-  let t = runtimeData.playlist.extraInfo.infos.subscribe === 1 ? 2 : 1
-  neteaseAxios.get(`/playlist/subscribe`, {
-    params: {
-      timestamp: new Date().getTime(),
-      t,
-      id: (runtimeData.playlist.raw.playlist[0] as list_trace_netease_playlist).id,
-    }
-  }).then(res => {
-    if (res.data.code == 200) {
-      runtimeData.playlist.extraInfo.infos.subscribe = t;
-      showMessage(`${t === 1 ? '' : '取消'}收藏成功`)
-    }
-  })
-}
+
 function playAll() {
-  player.playlist = structuredClone(toRaw(runtimeData.playlist.songs))
-  if (!player.playlist.length) {
-    return;
-  }
-  if (player.config.mode === 'rand') {
-    emitter.emit('playSong', {song: player.playlist[Math.floor(Math.random() * (player.playlist.length))]})
-  }else {
-    emitter.emit('playSong',{song: player.playlist[0]})
-  }
+    player.playlist = structuredClone(toRaw(runtimeData.artistPreview.songs))
+    if (player.playlist[0]) {
+        emitter.emit('playSong',{song: player.playlist[0]})
+    }
 }
 
-function menu_edit(arg: any) {
-  showDialog(EditSongDialog, {
-    song: structuredClone(toRaw(arg.song)),
-    si: arg.si
-  })
-}
-function menu_deleteSong(arg: any) {
-    if (arg.song && arg.si >= 0) {
-        let ser = arg.si + 1;
-        let componentIndex = -1;
-        let np = runtimeData.playlists[runtimeData.playlist.listIndex];
-        for (let cI = 0; cI < np.playlist.length; cI++) {
-            let  c = np.playlist[cI];
-            if (c.type === 'data') {
-                if (c.songs.length >= ser) {
-                    componentIndex = cI
-                    break;
-                }else {
-                    ser -= c.songs.length;
-                }
-            }
-        }
-        if (componentIndex >= 0) {
-            let originFn = np.originFilename;
-            (np.playlist[componentIndex] as list_data).songs.splice(ser - 1, 1);
-            runtimeData.playlist.songs.splice(arg.si, 1);
-            writePlaylistFile(originFn, JSON.stringify(toRaw(np))).then(() => {
-                showMessage('删除成功');
-            }).catch(() => {
-                showMessage(`写入文件${originFn}失败`);
-            })
-            
-        }
-    }
-}
 function playSong_withCheck(song: song) {
     if (player.playlist.length) {
         emitter.emit('playSong',{song})
     }else {
-        player.playlist = structuredClone(toRaw(runtimeData.playlist.songs))
+        player.playlist = structuredClone(toRaw(runtimeData.artistPreview.songs))
         emitter.emit('playSong',{song})
     }
 }
-function collectPlaylist() {
-  let id = runtimeData.playlist.raw.title;
-  // if (runtimeData.playlist.raw.playlist[0].type === 'trace_netease_playlist') {
-  //
-  // }
-  writePlaylistFile(`${id}.json`, JSON.stringify({
-    title: runtimeData.playlist.raw.title,
-    pic: runtimeData.playlist.raw.pic,
-    intro: runtimeData.playlist.raw.intro,
-    playlist: runtimeData.playlist.raw.playlist,
-  })).then(() => {
-    showMessage('收藏成功');
-    refreshPlaylists({notReset: true});
-  }).catch(() => {
-    showMessage(`写入文件${id}.json失败`);
-  });
-}
-
 </script>
 
-
 <style scoped>
+.transitionContainer {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .returnBtn {
     width: 24px;
     color: var(--ymk-color);
@@ -220,16 +172,17 @@ function collectPlaylist() {
     height: 100%;
     width: 100%;
 }
+
 .partContainer {
     width: 100%;
     height: 100%;
     display: flex;
     flex-direction: column;
 }
-
 .listInfo {
     display: flex;
     padding: 15px;
+    max-height: 230px;
 }
 .listInfo .faceImg {
     width: 200px;
@@ -238,6 +191,7 @@ function collectPlaylist() {
     box-shadow: 0 0 5px rgba(0, 0, 0, .5)
 }
 .listInfo .faceImg img {
+    border-radius: 50%;
     object-fit: cover;
     width: 100%;
     height: 100%;
@@ -266,6 +220,16 @@ function collectPlaylist() {
     font-weight: bold;
     font-family: NovecentoWide;
 }
+.listInfo .info .intro {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  line-clamp: 3;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
 .listInfo .info .collectPlaylist {
   cursor: pointer;
   background-color: #18191C;
@@ -274,6 +238,11 @@ function collectPlaylist() {
   padding: 0 15px;
   height: 35px;
   line-height: 35px;
+}
+.listInfo .info .bottom {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 .listInfo .info .bottom .PlayAll {
     position: relative;
@@ -378,21 +347,4 @@ function collectPlaylist() {
 .container.scrollable {
   overflow-y: auto
 }
-
-.listInfo .info .intro {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  line-clamp: 3;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-}
-.listInfo .info .bottom {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-</style>
+</style> 

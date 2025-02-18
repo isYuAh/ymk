@@ -95,8 +95,8 @@ export type song_web = {
 export type song_netease = {
     type: 'netease',
     id: string,
-    playable: boolean,
-    reason: string
+    playable?: boolean,
+    reason?: string
 } & song_basic;
 export type song_siren = {
     type: 'siren',

@@ -24,6 +24,7 @@
             <RouterLink to="/recommendedPlaylists" :class="{tab: true, active: runtimeData.nowTab === 'recommendedPlaylists'}">推荐</RouterLink>
             <RouterLink to="/playlistDetail" v-if="runtimeData.playlist.listIndex !== -1" :class="{tab: true, active: runtimeData.nowTab === 'playlistDetail'}">歌单</RouterLink>
             <RouterLink @contextmenu.prevent="previewContextMenu('album')" to="/albumPreview" v-if="runtimeData.albumPreview.info.title !== ''" :class="{tab: true, active: runtimeData.nowTab === 'albumPreview'}">专辑</RouterLink>
+            <RouterLink @contextmenu.prevent="previewContextMenu('artist')" to="/artistPreview" v-if="runtimeData.artistPreview.info.id !== ''" :class="{tab: true, active: runtimeData.nowTab === 'artistPreview'}">歌手</RouterLink>
             <RouterLink to="/search" :class="{tab: true, active: runtimeData.nowTab === 'search'}">搜索</RouterLink>
             <RouterLink to="/userCenter" :class="{tab: true, active: runtimeData.nowTab === 'userCenter'}">
               <div class="text">{{ user.neteaseUser.nickname || '用户' }}</div>
@@ -117,8 +118,18 @@ function previewContextMenu(type: string) {
                 pic: "",
               }
             }
+          }else if (arg === "artist") {
+            runtimeData.artistPreview = {
+              songs: [],
+              info: {
+                name: "",
+                description: "",
+                pic: "",
+                id: ""
+              }
+            }
           }
-          router.push('/playlists')
+          router.push('/playlist')
         }
       }
     ],

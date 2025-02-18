@@ -25,6 +25,16 @@ export const useRuntimeDataStore = defineStore('runtimeData', () => {
       title: "",
       creator: "",
       pic: "",
+      intro: "",
+    }
+  })
+  const artistPreview = ref({
+    songs: <song[]>[],
+    info: {
+      name: "",
+      pic: "",
+      id: "",
+      description: ""
     }
   })
   return {
@@ -34,6 +44,7 @@ export const useRuntimeDataStore = defineStore('runtimeData', () => {
     loading,
     showFullPlay,
     playlist,
-    albumPreview
+    albumPreview,
+    artistPreview
   }
 })

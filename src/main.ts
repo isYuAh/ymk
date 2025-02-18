@@ -20,6 +20,7 @@ const runtimeData = useRuntimeDataStore()
 router.beforeEach((to, from) => {
   if (to.path === '/playlistDetail' && runtimeData.playlist.listIndex === -1) return {path: '/playlist'};
   if (to.path === '/albumPreview' && runtimeData.albumPreview.info.title === "") return {path: '/search'};
+  if (to.matched.length === 0) return {path: '/playlist'};
   if (to.path !== '/') runtimeData.nowTab = to.path.substring(1)
   return true
 })

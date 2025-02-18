@@ -14,7 +14,7 @@
                 </div>
                 <div class="bottom">
                     <div class="total">TOTAL {{ runtimeData.albumPreview.songs.length }}</div>
-                    <div class="total">{{ 'AN ALBUM'}}</div>
+                    <div class="intro">{{ 'AN ALBUM'}}</div>
                     <button @click="playAll" class="PlayAll">
                         <div class="svgIcon">
                             <svg t="1711448701001" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3437"><path d="M73.142857 0 910.957714 512 73.142857 1024Z" fill="currentColor" p-id="3438"></path></svg>
@@ -158,7 +158,7 @@ function playSong_withCheck(song: song) {
     text-shadow: 0 0 5px rgba(0, 0, 0, .2);
     /* letter-spacing: 1px; */
 }
-.listInfo .info .total {
+.listInfo .info .total, .listInfo .info .intro {
     margin-top: 2px;
     /* margin-left: 5px; */
     color: var(--ymk-text-color);
@@ -277,6 +277,22 @@ function playSong_withCheck(song: song) {
 
 .container.scrollable {
   overflow-y: auto
+}
+
+.listInfo .info .intro {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  line-clamp: 3;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+.listInfo .info .bottom {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 </style>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type {list, playlistPart} from "@/types";
 import TargetBorder from "@/components/TargetBorder.vue";
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 
 const {
   parts,
@@ -19,10 +19,22 @@ const {
 
 import {checkDetail} from "@/utils/Toolkit";
 const expandedStates = ref<boolean[]>(defaultExpandedStatus || playlists.map(() => true));
-watch([() => defaultExpandedStatus], (nv) => {
-  expandedStates.value = defaultExpandedStatus || playlists.map(() => true);
-}, {immediate: true})
+const contentHeights = ref<number[]>([]);
+
+onMounted(() => {
+  contentHeights.value = parts.map((_, i) => {
+    return expandedStates.value[i] ? getContentHeight(i) : 0;
+  });
+});
+
+function getContentHeight(index: number) {
+  const el = document.getElementById(`content-${index}`);
+  return el ? el.scrollHeight : 0;
+}
+
 function toggleExpand(index: number) {
+  const targetHeight = expandedStates.value[index] ? 0 : getContentHeight(index);
+  contentHeights.value[index] = targetHeight;
   expandedStates.value[index] = !expandedStates.value[index];
 }
 
@@ -44,8 +56,11 @@ function checkPlaylist(i: number) {
       <span class="arrow" :class="{ expanded: expandedStates[pi] }">▶</span>
       {{p.title}}
     </div>
-    <transition name="expand">
-      <div v-show="expandedStates[pi]" class="lists">
+    <div 
+      :id="`content-${pi}`"
+      class="content-wrapper"
+      :style="{ height: `${contentHeights[pi]}px` }">
+      <div class="lists">
         <div 
           @contextmenu.prevent="menuEvent(list, index, p)" 
           @click="checkPlaylist(index + p.begin)" 
@@ -60,7 +75,7 @@ function checkPlaylist(i: number) {
           <div class="title">{{ list.title }}</div>
         </div>
       </div>
-    </transition>
+    </div>
   </div>
 </template>
 
@@ -79,29 +94,16 @@ function checkPlaylist(i: number) {
 .arrow {
   display: inline-block;
   margin-right: 8px;
-  transition: transform 0.2s;
+  transition: transform 0.3s;
 }
 
 .arrow.expanded {
   transform: rotate(90deg);
 }
 
-.expand-enter-active,
-.expand-leave-active {
-  transition: all 0.2s ease-in-out;
-  transform-origin: top;
-}
-
-.expand-enter-from,
-.expand-leave-to {
-  opacity: 0;
-  transform: scaleY(0);
-}
-
-.expand-enter-to,
-.expand-leave-from {
-  opacity: 1;
-  transform: scaleY(1);
+.content-wrapper {
+  overflow: hidden;
+  transition: height 0.3s ease-in-out;
 }
 
 .lists {
@@ -112,7 +114,6 @@ function checkPlaylist(i: number) {
   grid-template-columns: repeat(auto-fill, minmax(182px, 1fr));
   justify-content: center;
   grid-auto-rows: 1fr;
-  transform-origin: top;
 }
 
 .item {

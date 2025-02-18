@@ -1,10 +1,5 @@
 import {createRouter, createWebHashHistory, type RouteRecordRaw} from 'vue-router';
 import App from '@/pages/App.vue';
-import Playlist from "@/pages/Playlist.vue";
-import PlaylistDetail from "@/pages/PlaylistDetail.vue";
-import Search from "@/pages/Search.vue";
-import UserCenter from "@/pages/UserCenter.vue";
-import Settings from "@/pages/Settings.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -35,6 +30,9 @@ const routes: Array<RouteRecordRaw> = [
     },{
       path: 'albumPreview',
       component: () => import('@/pages/AlbumPreview.vue')
+    },{
+      path: 'artistPreview',
+      component: () => import('@/pages/ArtistPreview.vue')
     }]
   }
 ];
