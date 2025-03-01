@@ -115,76 +115,133 @@ export function checkDetail(index: number, raw?: list) {
   }
 }
 
+interface PlaylistPartArg {
+  title: string,
+  playlists: list[],
+  begin?: number,
+  type?: string,
+  other?: any
+}
 
-export function pushPlaylistPart(title: string, playlists: list[], begin = -1, type = "", other = {}) {
+export function pushPlaylistPart(...parts: PlaylistPartArg[]) {
   const runtimeData = useRuntimeDataStore()
-  if (begin === -1) {
-    begin = runtimeData.playlistsParts.length === 0 ? 0 : runtimeData.playlistsParts[runtimeData.playlistsParts.length - 1].begin + runtimeData.playlistsParts[runtimeData.playlistsParts.length - 1].count
-  }
-  runtimeData.playlists.push(...playlists)
-  runtimeData.playlistsParts.push({
-    title: title,
-    begin: begin,
-    count: playlists.length,
-    type,
-    other,
+  runtimeData.$patch((state) => {
+    parts.forEach((value) => {
+      let {title, playlists, begin = -1, type = "", other = {}} = value
+      if (begin === -1) {
+        begin = runtimeData.playlistsParts.length === 0 ? 0 : runtimeData.playlistsParts[runtimeData.playlistsParts.length - 1].begin + runtimeData.playlistsParts[runtimeData.playlistsParts.length - 1].count
+      }
+      state.playlists.push(...playlists)
+      state.playlistsParts.push({
+        title: title,
+        begin: begin,
+        count: playlists.length,
+        type,
+        other,
+      })
+    })
   })
 }
 export async function refreshPlaylists({notReset}: {notReset: boolean}) {
   const runtimeData = useRuntimeDataStore()
   const user = useUserStore()
-  runtimeData.playlists = <list[]>[];
-  runtimeData.playlistsParts = [];
-  runtimeData.playlist.listIndex = -1;
-  if (!notReset) {
-    Object.assign(runtimeData.playlist, {
-      songs: <song[]>[],
-      raw: {}
-    })
-  }
-  const ps = await getLocalPlaylists();
-  pushPlaylistPart('本地', ps, undefined, "init")
+  
+  // 将所有状态重置操作合并到一个$patch调用中
+  runtimeData.$patch((state) => {
+    state.playlists = <list[]>[];
+    state.playlistsParts = [];
+    state.playlist.listIndex = -1;
+    
+    if (!notReset) {
+      state.playlist.songs = <song[]>[];
+      state.playlist.raw = {} as any;
+    }
+  })
+  
+  // 创建所有播放列表获取任务
+  const playlistTasks: Promise<PlaylistPartArg | null>[] = [];
+  
+  // 本地播放列表
+  const localPlaylistTask = getLocalPlaylists().then((ps: any) => ({
+    title: '本地',
+    playlists: ps,
+    begin: undefined,
+    type: "init"
+  }));
+  playlistTasks.push(localPlaylistTask);
+  
+  // 网易云播放列表
   if (user.isLogin.netease) {
-    //每日推荐
-    let res = await neteaseAxios.post(`/recommend/resource`)
-    pushPlaylistPart('每日推荐', res.data.recommend.map((playlist: any) => ({
-      title: playlist.name,
-      pic: playlist.picUrl,
-      intro: 'Netease Daily Recommendation',
-      originFilename: 'REMOTE',
-      playlist: [{
-        type: 'trace_netease_playlist',
-        id: playlist.id
-      }]
-    })), undefined, "init")
-    //用户歌单
-    res = await neteaseAxios.post(`/user/playlist?uid=${user.neteaseUser.uid}`, {})
-    pushPlaylistPart('网易云', res.data.playlist.map((playlist: any) => ({
-      title: playlist.name,
-      pic: playlist.coverImgUrl,
-      intro: 'FROM NETEASE',
-      originFilename: 'REMOTE',
-      playlist: [{
-        type: 'trace_netease_playlist',
-        id: playlist.id
-      }]
-    })), undefined, "init")
-  }
-  if (user.isLogin.kugou) {
-    let res = await kugouAxios.post('/user/playlist')
-    if ('status' in res.data && res.data.status === 1) {
-      const data = res.data.data;
-      pushPlaylistPart('酷狗', data.info.map((playlist: any) => ({
+    // 每日推荐
+    const dailyRecommendTask = neteaseAxios.post(`/recommend/resource`).then(res => ({
+      title: '每日推荐',
+      playlists: res.data.recommend.map((playlist: any) => ({
         title: playlist.name,
-        pic: replacePicSizeParam(playlist.pic || "https://c1.kgimg.com/custom/"),
-        intro: playlist.intro || 'FROM KUGOU',
+        pic: playlist.picUrl,
+        intro: 'Netease Daily Recommendation',
         originFilename: 'REMOTE',
         playlist: [{
-          type: 'trace_kugou_playlist',
-          id: playlist.global_collection_id
+          type: 'trace_netease_playlist',
+          id: playlist.id
         }]
-      })), undefined, "init")
-    }
+      })),
+      begin: undefined,
+      type: "init"
+    }));
+    playlistTasks.push(dailyRecommendTask);
+    
+    // 用户歌单
+    const userPlaylistTask = neteaseAxios.post(`/user/playlist?uid=${user.neteaseUser.uid}`, {}).then(res => ({
+      title: '网易云',
+      playlists: res.data.playlist.map((playlist: any) => ({
+        title: playlist.name,
+        pic: playlist.coverImgUrl,
+        intro: 'FROM NETEASE',
+        originFilename: 'REMOTE',
+        playlist: [{
+          type: 'trace_netease_playlist',
+          id: playlist.id
+        }]
+      })),
+      begin: undefined,
+      type: "init"
+    }));
+    playlistTasks.push(userPlaylistTask);
+  }
+  
+  // 酷狗播放列表
+  if (user.isLogin.kugou) {
+    const kugouPlaylistTask = kugouAxios.post('/user/playlist').then(res => {
+      if ('status' in res.data && res.data.status === 1) {
+        const data = res.data.data;
+        return {
+          title: '酷狗',
+          playlists: data.info.map((playlist: any) => ({
+            title: playlist.name,
+            pic: replacePicSizeParam(playlist.pic || "https://c1.kgimg.com/custom/"),
+            intro: playlist.intro || 'FROM KUGOU',
+            originFilename: 'REMOTE',
+            playlist: [{
+              type: 'trace_kugou_playlist',
+              id: playlist.global_collection_id
+            }]
+          })),
+          begin: undefined,
+          type: "init"
+        };
+      }
+      return null;
+    });
+    playlistTasks.push(kugouPlaylistTask);
+  }
+  
+  // 等待所有任务完成并统一添加
+  const results = await Promise.all(playlistTasks);
+  // 过滤掉null结果（如酷狗API返回错误状态）
+  const validResults = results.filter(result => result !== null) as PlaylistPartArg[];
+  // 一次性添加所有播放列表部分
+  if (validResults.length > 0) {
+    pushPlaylistPart(...validResults);
   }
 }
 

@@ -1,7 +1,6 @@
 import {ipcMain, nativeImage} from 'electron'
 import path from "path";
-export function initTray(window, app, __dirname, miniWindow) {
-    let winIsShow = true
+export function initTray(window, app, __dirname) {
     const thumbarButtons = [
         {
             icon: nativeImage.createFromPath(path.resolve(__dirname, './src/assets/controlBtnIcon/last.png')),

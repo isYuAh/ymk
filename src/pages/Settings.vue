@@ -11,15 +11,24 @@ let apiConfig = ref({
   qqUrl: config.api.qqApi.url,
 })
 let tmpConfig = ref({
-  bg: config.bg
+  bg: config.bg,
+  maskOpacity: config.maskOpacity || 0,
 })
 function saveApiConfig () {
-  config.api.neteaseApi.url = apiConfig.value.neteaseUrl;
-  config.api.qqApi.url = apiConfig.value.qqUrl;
+  config.$patch({
+    api: {
+      neteaseApi: {
+        url: apiConfig.value.neteaseUrl
+      },
+      qqApi: {
+        url: apiConfig.value.qqUrl
+      }
+    }
+  })
   showMessage('保存成功')
 }
 function saveBgConfig() {
-  config.bg = tmpConfig.value.bg;
+  config.$patch(tmpConfig.value);
   showMessage('保存成功')
 }
 function saveColorsConfig () {
@@ -53,6 +62,10 @@ function saveColorsConfig () {
         <div class="Input">
           <div class="label">背景</div>
           <input class="input" v-model="tmpConfig.bg" type="text" />
+        </div>
+        <div class="Input">
+          <div class="label">透明度</div>
+          <input class="input" v-model="tmpConfig.maskOpacity" type="text" />
         </div>
         <div class="controlBtns">
           <div @click="saveBgConfig" class="controlBtn">保存</div>

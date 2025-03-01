@@ -135,8 +135,7 @@ if (!gotTheLock) {
         if (app.isPackaged) {
             mainWindow.loadFile(path.resolve(__dirname, './dist', 'index.html'))
         }else {
-            mainWindow.loadURL('http://localhost:5173')
-            mainWindow.openDevTools()
+            mainWindow.loadURL('http://localhost:5201')
         }
     }
 

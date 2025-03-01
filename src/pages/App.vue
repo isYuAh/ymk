@@ -9,6 +9,7 @@
     '--ymk-container-bg-color': config.colors.containerBgColor,
   }" @drop.prevent="dropEvent" @dragover.prevent>
     <div v-if="backgroundType" class="backgroundFrame forbidSelect">
+      <div class="mask" :style="`background-color: rgba(0,0,0,${config.maskOpacity});`"></div>
       <Component :is="backgroundType" autoplay muted loop class="object-cover wh100" :src="bgSrc"></Component>
     </div>
     <Transition name="uianim">
@@ -116,6 +117,7 @@ function previewContextMenu(type: string) {
                 title: "",
                 creator: "",
                 pic: "",
+                intro: '',
               }
             }
           }else if (arg === "artist") {
@@ -154,7 +156,14 @@ body {
   top: 0;
   right: 0;
   bottom: 0;
-  z-index: -1;
+  z-index: -3;
+}
+.backgroundFrame .mask {
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  position: absolute;
 }
 .backgroundFrame video {
   object-fit: cover;

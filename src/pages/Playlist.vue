@@ -12,7 +12,7 @@
       </div>
     </Transition>
     <button @click="playDailyRecommend" v-if="user.isLogin.netease" class="floatingButton">每日推荐</button>
-    <Playlists :from-zks="true" :parts="runtimeData.playlistsParts" :playlists="runtimeData.playlists" :menu-event="PlaylistMenu" :default-expanded-status="defaultExpandedStatus" />
+    <Playlists :from-zks="true" :parts="runtimeData.playlistsParts" :playlists="runtimeData.playlists" :menu-event="PlaylistMenu"/>
   </simplebar>
 </div>
 </template>
@@ -34,17 +34,12 @@ import {useRuntimeDataStore} from "@/stores/modules/runtimeData";
 import {refreshPlaylists} from "@/utils/Toolkit";
 import AddSongToDialog from "@/components/Dialogs/addSongToDialog.vue";
 import { neteaseAxios } from "@/utils/axiosInstances";
-import { computed } from 'vue';
 import { usePlayerStore } from "@/stores/modules/player";
 import emitter from '@/emitter';
 import { useUserStore } from "@/stores/modules/user";
 
-const defaultExpandedStatus = computed(() => {
-  return runtimeData.playlistsParts.map(part => part.title !== "每日推荐");
-});
-
 const {deletePlaylistFile, showImportPlaylistDialog} = window.ymkAPI;
-function menu_deletePlaylist({pi, playlist}: {pi: number, playlist: list}) {
+function menu_deletePlaylist({pi}: {pi: number, playlist: list}) {
   if (pi < runtimeData.playlistsParts[0].count) {
     let p = runtimeData.playlists[pi];
     if ('originFilename' in p && p.originFilename.endsWith('json')) {
@@ -74,7 +69,6 @@ function PlaylistMenu(list: list, index: number, part: playlistPart) {
   }else if (part.title === "网易云") {
 
   }
-  // useZKStore().showMouseMenu(menu, {playlist: list, pi: index + part.begin})
   showContextMenu({
     menuItems: menu,
     args: {playlist: list, pi: index + part.begin}

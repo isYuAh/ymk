@@ -1,42 +1,61 @@
 <script setup lang="ts">
 import type {list, playlistPart} from "@/types";
 import TargetBorder from "@/components/TargetBorder.vue";
-import { ref, watch, onMounted } from 'vue';
+import { useTemplateRef, ref, onMounted, watch, nextTick } from 'vue';
 
 const {
   parts,
   playlists,
   fromZks,
-  defaultExpandedStatus,
   menuEvent = () => {}
 } = defineProps<{
   parts: playlistPart[],
   playlists: list[],
   fromZks: boolean,
-  defaultExpandedStatus?: boolean[],
   menuEvent?: (list: list, pi: number, part: playlistPart) => void
 }>()
 
 import {checkDetail} from "@/utils/Toolkit";
-const expandedStates = ref<boolean[]>(defaultExpandedStatus || playlists.map(() => true));
-const contentHeights = ref<number[]>([]);
+const itemRefs = useTemplateRef('itemRefs')
 
-onMounted(() => {
-  contentHeights.value = parts.map((_, i) => {
-    return expandedStates.value[i] ? getContentHeight(i) : 0;
-  });
-});
+const expandedStates = ref(parts.map(p => true))
+console.log(expandedStates.value, '$expandedStates')
+
+function toggleExpand(index: number) {
+  expandedStates.value[index] = !expandedStates.value[index];
+}
 
 function getContentHeight(index: number) {
   const el = document.getElementById(`content-${index}`);
   return el ? el.scrollHeight : 0;
 }
 
-function toggleExpand(index: number) {
-  const targetHeight = expandedStates.value[index] ? 0 : getContentHeight(index);
-  contentHeights.value[index] = targetHeight;
-  expandedStates.value[index] = !expandedStates.value[index];
-}
+const contentHeights = ref(
+  expandedStates.value.map((expanded, index) => {
+    if (expanded) {
+      return getContentHeight(index);
+    } else {
+      return 0;
+    }
+  })
+)
+onMounted(() => {
+  watch([parts], () => {
+    expandedStates.value = parts.map(p => true)
+  })
+  watch([expandedStates, itemRefs], () => {
+    // console.log('$expandedStates', expandedStates.value)
+    nextTick(() => {
+      contentHeights.value = expandedStates.value.map((expanded, index) => {
+        if (expanded) {
+          return getContentHeight(index);
+        } else {
+          return 0;
+        }
+      })
+    })
+  }, {deep: true, immediate: true})
+})
 
 function checkPlaylist(i: number) {
   if (fromZks) {
@@ -49,6 +68,7 @@ function checkPlaylist(i: number) {
 
 <template>
   <div
+      ref="itemRefs"
       v-for="(p, pi) in parts" 
       :key="pi"
       class="playlistPart">
@@ -65,7 +85,7 @@ function checkPlaylist(i: number) {
           @contextmenu.prevent="menuEvent(list, index, p)" 
           @click="checkPlaylist(index + p.begin)" 
           v-for="(list, index) in playlists.slice(p.begin, p.begin + p.count)" 
-          :key="index"
+          :key="list.title"
           class="item">
           <TargetBorder>
             <div class="img">

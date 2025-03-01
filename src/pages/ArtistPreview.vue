@@ -188,13 +188,13 @@ function playSong_withCheck(song: song) {
     width: 200px;
     height: 200px;
     margin-right: 20px;
-    box-shadow: 0 0 5px rgba(0, 0, 0, .5)
 }
 .listInfo .faceImg img {
     border-radius: 50%;
     object-fit: cover;
     width: 100%;
     height: 100%;
+    box-shadow: 0 0 5px rgba(0, 0, 0, .5)
 }
 .listInfo .info {
     flex: 1;

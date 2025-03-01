@@ -14,13 +14,15 @@ const {onShowMessage, onRefreshPlaylists, getConfig, getSpecificConfig} = window
 const user = useUserStore()
 const player = usePlayerStore()
 const config = useConfigStore()
-getConfig().then((res: any) => {
-  if (res) {
-    let jp = res;
+Promise.all([getConfig(), getSpecificConfig('colors')]).then(([r, rr]) => {
+  if (r) {
+    let jp = r;
+    console.log('$jp - maskOpacity', jp.config.maskOpacity)
     user.neteaseUser = jp.neteaseUser || {};
     user.kugouUser = jp.kugouUser || {};
     jp.config.api && (config.api = jp.config.api);
     jp.config.bg && (config.bg = jp.config.bg);
+    jp.config.maskOpacity && (config.maskOpacity = jp.config.maskOpacity)
     if (jp.config.mode) {
       player.config.mode = jp.config.mode;
     }
@@ -31,18 +33,19 @@ getConfig().then((res: any) => {
       player.config.volume = jp.config.volume
     }
   }
+  if (rr) {
+    config.colors = rr;
+  }
+}).finally(() => {
+  console.log(config, 2)
   watch([
     () => player.config.mode,
     () => player.config.langPreferences,
     () => player.config.volume,
-    user,
+    () => user.neteaseUser,
+    () => user.kugouUser,
     config
-  ], () => {config.saveConfig()}, {deep: true});
-})
-getSpecificConfig('colors').then((res: any) => {
-  if (res) {
-    config.colors = res;
-  }
+  ], () => {config.saveConfig()}, {deep: true, immediate:false});
 })
 
 onShowMessage((m: any) => showMessage(m))

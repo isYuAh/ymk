@@ -5,14 +5,15 @@
   "type": "module",
   "main": "main.js",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 5201",
     "startHMR": "nodemon --exec electron .",
     "start": "electron .",
     "build": "electron-builder",
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build --force",
-    "EBbuild": "vite build && electron-builder"
+    "EBbuild": "vite build && electron-builder",
+    "buildS": "vite build && electron-builder --dir --publish never"
   },
   "build": {
     "appId": "top.isyuah.dev",
