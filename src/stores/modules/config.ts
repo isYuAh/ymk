@@ -20,7 +20,6 @@ export const useConfigStore = defineStore('config', () => {
   const player = usePlayerStore()
   const user = useUserStore()
   function saveConfig() {
-    console.trace()
     writeConfig(JSON.stringify({
       config: <config>{
         api: api.value,

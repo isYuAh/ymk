@@ -37,6 +37,7 @@ import { neteaseAxios } from "@/utils/axiosInstances";
 import { usePlayerStore } from "@/stores/modules/player";
 import emitter from '@/emitter';
 import { useUserStore } from "@/stores/modules/user";
+import ChangePlaylistFace from "@/components/Dialogs/ChangePlaylistFace.vue";
 
 const {deletePlaylistFile, showImportPlaylistDialog} = window.ymkAPI;
 function menu_deletePlaylist({pi}: {pi: number, playlist: list}) {
@@ -62,6 +63,9 @@ function PlaylistMenu(list: list, index: number, part: playlistPart) {
     menu = [{
       title: '添加歌曲',
       action: () => showAddSongToDialog({pi: index + part.begin}),
+    },{
+      title: '修改封面',
+      action: () => showChangePlaylistFaceDialog(index + part.begin),
     },{
       title: '删除',
       action: menu_deletePlaylist
@@ -106,6 +110,9 @@ function showAddSongToDialog(data: any) {
 }
 function showPreviewDialog() {
   showDialog(PreviewDialog)
+}
+function showChangePlaylistFaceDialog(targetIndex: number) {
+  showDialog(ChangePlaylistFace, {targetPlaylistIndex: targetIndex})
 }
 
 const player = usePlayerStore()
