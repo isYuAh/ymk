@@ -12,15 +12,13 @@
       <div class="mask" :style="`background-color: rgba(0,0,0,${config.maskOpacity});`"></div>
       <Component :is="backgroundType" autoplay muted loop class="object-cover wh100" :src="bgSrc"></Component>
     </div>
-    <Transition name="uianim">
-      <FullPlay v-show="runtimeData.showFullPlay"></FullPlay>
-    </Transition>
     <div class="container">
-      <div style="-webkit-app-region: drag" class="header forbidSelect">
-        <div v-if="runtimeData.showFullPlay" @click="runtimeData.showFullPlay = false" style="-webkit-app-region: no-drag" class="title">Return</div>
-        <div v-else class="title">Yumuzk</div>
+      <div style="-webkit-app-region: drag" class="header forbidSelect noPointerEvents">
+        <Transition name="fade">
+          <div v-show="!runtimeData.showFullPlay" class="title">Yumuzk</div>
+        </Transition>
         <Transition appear name="fade">
-          <div style="-webkit-app-region: no-drag" v-show="!runtimeData.showFullPlay" class="tabs">
+          <div style="-webkit-app-region: no-drag;" v-show="!runtimeData.showFullPlay" class="tabs allPointerEvents">
             <RouterLink to="/playlist" :class="{tab: true, active: runtimeData.nowTab === 'playlist'}">首页</RouterLink>
             <RouterLink to="/recommendedPlaylists" :class="{tab: true, active: runtimeData.nowTab === 'recommendedPlaylists'}">推荐</RouterLink>
             <RouterLink to="/playlistDetail" v-if="runtimeData.playlist.listIndex !== -1" :class="{tab: true, active: runtimeData.nowTab === 'playlistDetail'}">歌单</RouterLink>
@@ -34,9 +32,9 @@
             <RouterLink to="/settings" :class="{tab: true, active: runtimeData.nowTab === 'Settings'}">设置</RouterLink>
           </div>
         </Transition>
-        <div style="-webkit-app-region: no-drag" class="controlbtn">
-          <button @click="minimize()" class="btn minimize">-</button>
-          <button @click="exit(1)" class="btn close">×</button>
+        <div style="-webkit-app-region: no-drag;" class="controlbtn noPointerEvents">
+          <button @click="minimize()" class="btn allPointerEvents minimize">-</button>
+          <button @click="exit(1)" class="btn allPointerEvents close">×</button>
         </div>
       </div>
       <div class="content">
@@ -50,6 +48,9 @@
       </div>
       <Playbar></Playbar>
     </div>
+    <Transition name="uianim">
+      <FullPlay v-show="runtimeData.showFullPlay"></FullPlay>
+    </Transition>
   </div>
 </template>
 
@@ -149,6 +150,7 @@ body {
 <style scoped>
 .colorSetter {
   text-shadow: var(--ymk-text-shadow-color);
+  overflow: hidden;
 }
 .backgroundFrame {
   position: fixed;
@@ -172,6 +174,7 @@ body {
 }
 
 .container {
+  position: relative;
   display: grid;
   grid-template-rows: 64px 1fr 64px;
   flex-direction: column;
@@ -194,7 +197,6 @@ body {
   margin-left: 24px;
   line-height: 32px;
   color: var(--ymk-color);
-  opacity: 0.9;
   width: 150px;
 }
 .header .controlbtn {

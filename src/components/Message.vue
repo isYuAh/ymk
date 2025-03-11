@@ -49,7 +49,7 @@ function handleAfterLeave() {
 .messageContainer .message {
     max-width: 60%;
     border-radius: 6px;
-    background-color: rgba(0, 0, 0, .8);
+    background-color: rgba(0, 0, 0, .4);
     padding: 5px 10px;
     max-height: 90px;
     overflow: hidden;
