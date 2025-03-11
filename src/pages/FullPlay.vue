@@ -17,8 +17,14 @@
         </div>
       </Transition>
       <div class="fixedSongInfo">
-        <div class="singleLineTextEl title" @click="copy(playerStore.song.title)">{{ playerStore.song.title }}</div>
-        <div class="singleLineTextEl singer" @click="copy(playerStore.song.singer)">{{ playerStore.song.singer }}</div>
+        <div class="title" @click="copy(playerStore.song.title, 'title')">
+          <div class="singleLineTextEl text">{{ playerStore.song.title }}</div>
+          <Transition appear name="fade"><img v-if="copySign.title" src="@/assets/checkmark.svg"/></Transition>
+        </div>
+        <div class="singer" @click="copy(playerStore.song.singer, 'signer')">
+          <div class="singleLineTextEl text">{{ playerStore.song.singer }}</div>
+          <Transition appear name="fade"><img v-if="copySign.signer" src="@/assets/checkmark.svg"/></Transition>
+        </div>
       </div>
     </div>
     <div class="controllPart">
@@ -82,7 +88,7 @@
 <script setup lang='ts'>
 import emitter from '@/emitter';
 import Progress from '@/components/Progress.vue';
-import { computed, nextTick, ref, useTemplateRef, watch } from 'vue';
+import { computed, nextTick, reactive, ref, useTemplateRef, watch } from 'vue';
 import { minmax } from '@/utils/u';
 import type {song_lrc_item} from '@/types';
 import {VueDraggable} from "vue-draggable-plus";
@@ -186,9 +192,15 @@ watch([() => playerStore.config.lang, () => playerStore.song.lrcs, () => runtime
   updateHighlightedIndex(true);
 }, {deep: true})
 onRestore(updateHighlightedIndex);
-function copy(content: string) {
+const copySign = reactive({
+  title: true,
+  signer: true,
+})
+function copy(content: string, sign: keyof typeof copySign) {
   navigator.clipboard.writeText(content)
   showMessage('复制成功')
+  copySign[sign] = true
+  setTimeout(() => copySign[sign] = false, 2000)
 }
 </script>
 
@@ -400,7 +412,8 @@ function copy(content: string) {
 }
 .fixedSongInfo {
   font-family: SourceSansCNM;
-  max-width: 20%;
+  max-width: 25%;
+  overflow: hidden;
   opacity: 0.5;
   position: absolute;
   left: 20px;
@@ -408,12 +421,23 @@ function copy(content: string) {
   /* text-shadow: 0 0 5px #fff; */
   bottom: 5px;
 }
-.fixedSongInfo .title {
+.fixedSongInfo > div {
   cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+.fixedSongInfo .singleLineTextE .text {
+  max-width: 100%;
+}
+.fixedSongInfo .singleLineTextEl img {
+  max-height: 100%;
+}
+.fixedSongInfo .title {
+  height: 24px;
   font-size: 20px;
 }
 .fixedSongInfo .singer {
-  cursor: pointer;
+  height: 20px;
   margin-top: 2px;
   font-size: 16px;
   opacity: 0.8;

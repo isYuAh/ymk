@@ -29,7 +29,7 @@
           <div class="divider forbidSelect">
             <div class="dividerTip">歌曲列表</div>
             <div class="divideLine"></div>
-            <input v-model="filter" class="search" placeholder="搜索" />
+            <input v-model="filter" class="search" placeholder="" />
           </div>
           <div class="songs">
             <div class="container">
@@ -250,7 +250,7 @@ function playSong_withCheck(song: song) {
 .divideLine {
     height: 1px;
     flex: 1;
-    background-color: #e2e3e5;
+    background-color: transparent;
 }
 .transitionContainer {
     width: 100%;
