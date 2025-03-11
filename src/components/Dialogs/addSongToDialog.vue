@@ -4,6 +4,7 @@ import {ref} from "vue";
 import {type song} from "@/types";
 import {neteaseAxios, qqAxios} from "@/utils/axiosInstances";
 import {addSongTo} from "@/utils/Toolkit";
+import DSelect from "@/components/DSelect.vue";
 const props = defineProps<{
   closeDialog: () => void
   data: any
@@ -12,7 +13,29 @@ const {readClipboard, getBilibiliVideoView} = window.ymkAPI
 let title = ref("");
 let singer = ref("");
 let id = ref("");
-let selectComponent = ref<HTMLSelectElement>();
+const songTypeOptions = ref([
+  {
+    value: "bilibili",
+    label: "哔哩哔哩"
+  },
+  {
+    value: "netease",
+    label: "网易云"
+  },
+  {
+    value: "qq",
+    label: "QQ音乐"
+  },
+  {
+    value: "siren",
+    label: "塞壬唱片"
+  },
+  {
+    value: "kugou",
+    label: "酷狗音乐"
+  }
+])
+const songType = ref("bilibili");
 async function autoDetectFromClipboard() {
   let clip = await readClipboard() || '';
   if (clip.startsWith('https://music.163.com/#/song?id=') ||
@@ -21,7 +44,7 @@ async function autoDetectFromClipboard() {
     let match = clip.match(/\/song\?id=(\d+)/);
     if (match) {
       id.value = match[1];
-      selectComponent.value!.value = 'netease';
+      songType.value = 'netease';
       let rawDetail = {} as any;
       neteaseAxios.get(`/song/detail?ids=${id.value}`).then((res: AxiosResponse) => {
         rawDetail = res.data['songs'][0];
@@ -33,7 +56,7 @@ async function autoDetectFromClipboard() {
     let match = clip.match(/\/video\/BV([a-zA-Z0-9]+)/);
     if (match) {
       id.value = match[1];
-      selectComponent.value!.value = 'bilibili';
+      songType.value = 'bilibili';
       let rawDetail = {} as any;
       getBilibiliVideoView(id.value).then((res: any) => {
         rawDetail = res.data
@@ -45,7 +68,7 @@ async function autoDetectFromClipboard() {
     let match = clip.match(/\/songDetail\/([a-zA-Z0-9]+)/);
     if (match) {
       id.value = match[1];
-      selectComponent.value!.value = 'qq';
+      songType.value = 'qq';
       let rawDetail = {} as any;
       qqAxios.post(`/api/y/get_song`, {
         type: "qq",
@@ -60,7 +83,7 @@ async function autoDetectFromClipboard() {
     let match = clip.match(/\/music\/(\d+)/);
     if (match) {
       id.value = match[1];
-      selectComponent.value!.value = 'siren';
+      songType.value = 'siren';
       let rawDetail = {} as any;
       axios.get(`https://monster-siren.hypergryph.com/api/song/${id.value}`).then((res: AxiosResponse) => {
         rawDetail = res.data.data
@@ -74,9 +97,9 @@ function addSong() {
   let song: song = {
     title: title.value,
     singer: singer.value,
-    type: selectComponent.value!.value,
+    type: songType.value,
   } as any;
-  switch(selectComponent.value!.value) {
+  switch(songType.value) {
     case 'netease':
       (song as any).id = id.value;
       break;
@@ -109,13 +132,14 @@ function addSong() {
     <div class="content">
       <div class="typeChoose">
         <label for="">类型：</label>
-        <select ref="selectComponent" style="width: 400px" name="" id="">
+        <!-- <select v-model="songType" style="width: 400px" name="" id="">
           <option value="bilibili">哔哩哔哩</option>
           <option value="netease">网易云</option>
           <option value="qq">QQ音乐</option>
           <option value="siren">塞壬唱片</option>
           <option value="kugou">酷狗音乐</option>
-        </select>
+        </select> -->
+        <DSelect style="width: 400px; margin: 5px 0" v-model="songType" :options="songTypeOptions"></DSelect>
       </div>
       <div>
         <label for="">歌名：</label>

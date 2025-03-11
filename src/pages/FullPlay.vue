@@ -372,6 +372,7 @@ onRestore(updateHighlightedIndex);
   background-color: rgba(0,0,0,.35);
   backdrop-filter: blur(2px);
   box-shadow: 0 0 8px rgba(0,0,0,.4);
+  border-radius: 8px;
   color: #fff;
 }
 .partContainer .playmodeController {

@@ -100,6 +100,7 @@
 
 <script setup lang='ts'>
 import {onMounted, onUnmounted, ref, watch, watchEffect} from 'vue';
+import '@/assets/songlist.css'
 import {type playSongParams, type songInPlay} from '@/types';
 import {minmax, secondsToMmss} from '@/utils/u';
 import emitter from '@/emitter'
@@ -520,7 +521,7 @@ onUnmounted(() => {
   color: var(--ymk-text-color);
   font-size: 14px;
   display: -webkit-box;
-  -webkit-line-clamp: 1;
+  line-clamp: 1;
   overflow: hidden;
   word-break: break-all;
   text-overflow: ellipsis;
@@ -587,9 +588,6 @@ onUnmounted(() => {
     width: 24px;
     height: 24px;
 }
-.play .playmodeController .modeitem:hover {
-    /*color: #18191C;*/
-}
 .play .fullPlayBtn {
   cursor: pointer;
   position: absolute;
@@ -601,9 +599,6 @@ onUnmounted(() => {
 }
 .play .fullPlayBtn svg {
   color: var(--ymk-color);
-}
-.play .fullPlayBtn:hover {
-  /*color: #18191C;*/
 }
 .play .playlistSonglist {
   box-shadow: 0 0 10px rgba(0,0,0,.4);

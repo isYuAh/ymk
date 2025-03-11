@@ -5,8 +5,8 @@ declare global {
 }
 
 export interface ymkInterface {
-  onTrayControl_PlayPause: (callback: (event: any) => void) => void;
-  onTrayControl_PlaySong: (callback: (event: any) => void) => void;
+  onTrayControl_PlayPause: (callback: (event: any, ...args: any) => void) => void;
+  onTrayControl_PlaySong: (callback: (event: any, ...args: any) => void) => void;
   playPauseStatusUpdate: (playing: boolean) => void;
   getLocalPlaylists: () => Promise<any>;
   showAskDialog: (options: any) => Promise<any>;
@@ -25,7 +25,7 @@ export interface ymkInterface {
   offRestore: (callback: (value: any) => void) => void;
   offRefreshPlaylists: (callback: () => void) => void;
   offShowMessage: (callback: (m: any) => void) => void;
-  onUrlScheme: (callback: (event: any) => void) => void;
+  onUrlScheme: (callback: (event: any, ...args: any) => void) => void;
   offUrlScheme: (callback: (event: any) => void) => void;
   showImportPlaylistDialog: () => Promise<any>;
   getBilibiliVideoView: (bv: string, p?: any) => Promise<any>;
