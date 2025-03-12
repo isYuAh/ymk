@@ -10,7 +10,8 @@
   }" @drop.prevent="dropEvent" @dragover.prevent>
     <div v-if="backgroundType" class="backgroundFrame forbidSelect">
       <div class="mask" :style="`background-color: rgba(0,0,0,${config.maskOpacity});`"></div>
-      <Component :is="backgroundType" autoplay muted loop class="object-cover wh100" :src="bgSrc"></Component>
+      <img :src="bgSrc" v-if="backgroundType === 'img'">
+      <video ref="videoBg" v-if="backgroundType === 'video'" @pause="videoBg?.play()" autoplay muted loop class="object-cover wh100" :src="bgSrc"></video>
     </div>
     <div class="container">
       <div style="-webkit-app-region: drag" class="header forbidSelect noPointerEvents">
@@ -56,13 +57,14 @@
 
 <script setup lang="ts">
 import '@/assets/anim.css'
-import { watch, computed } from 'vue';
+import { watch, computed, useTemplateRef } from 'vue';
 import FullPlay from '@/pages/FullPlay.vue'
 import Playbar from '@/pages/Playbar.vue'
 import emitter from '@/emitter';
 const {exit, minimize} = window.ymkAPI
 const user = useUserStore();
 const player = usePlayerStore();
+const videoBg = useTemplateRef('videoBg')
 const backgroundType = computed(() => {
   if (!config.bg) return 'img'
   if (config.bg.endsWith(".mp4")) return "video"

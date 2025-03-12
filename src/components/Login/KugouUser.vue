@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import {ref} from "vue";
+import {ref, useTemplateRef} from "vue";
 import UserInfo from "@/components/Login/UserInfo.vue";
 import KugouQR from "@/components/Login/KugouQR.vue";
 import {useUserStore} from "@/stores/modules/user";
 
 const user = useUserStore()
-const qrComponent = ref()
+const qrComponent = useTemplateRef('qrComponent')
 const phase = ref(user.kugouUser.auth && user.kugouUser.auth !== '' ? 'logined' : 'unlogin');
 
 function refreshStatus() {

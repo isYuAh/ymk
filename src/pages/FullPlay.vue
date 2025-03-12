@@ -193,8 +193,8 @@ watch([() => playerStore.config.lang, () => playerStore.song.lrcs, () => runtime
 }, {deep: true})
 onRestore(updateHighlightedIndex);
 const copySign = reactive({
-  title: true,
-  signer: true,
+  title: false,
+  signer: false,
 })
 function copy(content: string, sign: keyof typeof copySign) {
   navigator.clipboard.writeText(content)
@@ -363,6 +363,9 @@ function copy(content: string, sign: keyof typeof copySign) {
 }
 .lrcContainer .lrcItem.active, .lrcContainer .lrcItem:hover {
   cursor: pointer;
+}
+.lrcContainer .lrcItem.active {
+  scale: 1.1
 }
 .lrcContainer .lrcItem.active:not(.blank), .lrcContainer .lrcItem:not(.blank):hover {
   color: #fff;

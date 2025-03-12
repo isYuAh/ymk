@@ -7,7 +7,13 @@ const exec = require('child_process').exec
 const cache = require('./util/apicache').middleware
 const { cookieToJson } = require('./util/index')
 const fileUpload = require('express-fileupload')
-const decode = require('safe-decode-uri-component')
+const decode = function(string) {
+  const k = string.indexOf('%');
+  if (k === -1) {
+    return string;
+  }
+  return decodeURIComponent(string, k);
+};
 
 /**
  * The version check result.

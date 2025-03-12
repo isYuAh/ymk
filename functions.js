@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "path";
-import {clipboard, dialog, screen, shell} from "electron";
+import {clipboard, dialog, shell} from "electron";
 import axios from "axios";
 
 export function getLocalPlaylists() {

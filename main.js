@@ -21,7 +21,8 @@ import {
 } from "./functions.js";
 import fs from "node:fs";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+try {
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let mainWindow = null;
 
@@ -186,4 +187,7 @@ function getCursorPos() {
         left: sp.x - wp[0],
         top: sp.y - wp[1],
     };
+}
+} catch(err) {
+    exit(1)
 }

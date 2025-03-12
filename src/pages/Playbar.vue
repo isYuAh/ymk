@@ -99,7 +99,7 @@
 </template>
 
 <script setup lang='ts'>
-import {onMounted, onUnmounted, ref, watch, watchEffect} from 'vue';
+import {onBeforeUnmount, onMounted, onUnmounted, ref, watch, watchEffect} from 'vue';
 import '@/assets/songlist.css'
 import {type playSongParams, type songInPlay} from '@/types';
 import {minmax, secondsToMmss} from '@/utils/u';
@@ -112,7 +112,6 @@ let progressChooseFill = ref<HTMLDivElement>();
 let progress_tooltip = ref<HTMLDivElement>();
 let volumeProgressFill = ref<HTMLDivElement>();
 const playerStore = usePlayerStore();
-import {storeToRefs} from "pinia";
 import VirtualList from "@/components/VirtualList.vue";
 import {MusicHandlers} from "@/utils/MusicHandlers";
 import {showContextMenu} from "@/utils/contextMenu";
@@ -404,6 +403,21 @@ onMounted(() => {
       playNextSong();
     }
   })
+  window.addEventListener('keydown', keyDownEvent)
+})
+function keyDownEvent(e: KeyboardEvent) {
+  if (!songSource.value || !playerStore.song.title) return;
+  if (e.key === ' ') {
+    e.preventDefault()
+    if (songSource.value.paused) {
+      songSource.value.play()
+    }else {
+      songSource.value.pause()
+    }
+  }
+}
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', keyDownEvent)
 })
 watch(() => playerStore.config.status, (nv) => {
     if (!songSource.value) return;
@@ -429,11 +443,11 @@ emitter.on('playNextSong', playNextSong)
 emitter.on('changeVolumeTo', changeVolumeTo)
 emitter.on('changeCurTimeTo', changeCurTimeTo)
 onUnmounted(() => {
-    emitter.off('playSong');
-    emitter.off('changeVolumeTo')
-    emitter.off('playPrevSong')
-    emitter.off('playNextSong')
-    emitter.off('changeCurTimeTo')
+  emitter.off('playSong');
+  emitter.off('changeVolumeTo')
+  emitter.off('playPrevSong')
+  emitter.off('playNextSong')
+  emitter.off('changeCurTimeTo')
 })
 </script>
 

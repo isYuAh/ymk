@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import {ref} from "vue";
+import {ref, useTemplateRef} from "vue";
 import NeteaseQR from "@/components/Login/NeteaseQR.vue";
 import UserInfo from "@/components/Login/UserInfo.vue";
 import axios from "axios";
 import {useUserStore} from "@/stores/modules/user";
 import {useConfigStore} from "@/stores/modules/config";
 
-const qrComponent = ref()
+const qrComponent = useTemplateRef('qrComponent')
 const user = useUserStore()
 const config = useConfigStore()
 const phase = ref(user.neteaseUser.auth && user.neteaseUser.auth !== '' ? 'logined' : 'unlogin');
