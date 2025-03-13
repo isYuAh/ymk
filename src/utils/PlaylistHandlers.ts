@@ -216,6 +216,8 @@ function PlaylistHandlerKugou({component, parseComponent, comIndex, components}:
                     result[i] = songs[i - start]
                 }
             }
+            console.log(data)
+            if (!(data.info instanceof Array)) data.info = []
             AssignSongs(0, 99, data.info.map((d: any) => {
                 const info = d.name.split(' - ');
                 return <song_kugou>{

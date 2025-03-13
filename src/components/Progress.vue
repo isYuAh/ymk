@@ -1,6 +1,6 @@
 <template>
   <div ref="progresscontainer" @click="handleProgressClick" class="progressbar">
-    <div class="progressfill" :style="{width: `${progress}%`}"></div>
+    <div class="progressfill" ref="progressfill" :style="{width: `${progress}%`}"></div>
     <div ref="progresstip" class="progresstip"></div>
   </div>
 </template>
@@ -30,6 +30,12 @@ onBeforeUnmount(() => {
 })
 const progresstip = useTemplateRef('progresstip')
 const progresscontainer = useTemplateRef('progresscontainer')
+const progressfill = useTemplateRef('progressfill')
+defineExpose({
+  progresstip,
+  progresscontainer,
+  progressfill
+})
 function handleProgressClick(e: MouseEvent) {
   const rect = progresscontainer.value!.getBoundingClientRect()
   const target = (e.clientX - rect.left) / rect.width

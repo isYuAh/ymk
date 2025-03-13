@@ -12,9 +12,9 @@
         autoplay ref="songSource"></video>
 </div>
 
-<div v-show="!runtimeData.showFullPlay" class="play forbidSelect">
+<div ref="fullContainer" v-show="!runtimeData.showFullPlay" class="play forbidSelect">
   <Transition name="heightAnim">
-    <div class="playlistSonglist" v-show="showPlaylistSonglist">
+    <div class="playlistSonglist DEF-SONGLIST" v-show="showPlaylistSonglist">
       <div class="fourHeightContainer">
         <div class="playlistSonglistTitle">播放列表</div>
         <div class="songs">
@@ -99,7 +99,7 @@
 </template>
 
 <script setup lang='ts'>
-import {onBeforeUnmount, onMounted, onUnmounted, ref, watch, watchEffect} from 'vue';
+import {onBeforeUnmount, onMounted, onUnmounted, ref, useTemplateRef, watch, watchEffect} from 'vue';
 import '@/assets/songlist.css'
 import {type playSongParams, type songInPlay} from '@/types';
 import {minmax, secondsToMmss} from '@/utils/u';
@@ -126,7 +126,7 @@ let songfaceImg = ref<HTMLImageElement>();
 let songInformation = ref<HTMLDivElement>();
 let keepCurrentTimeCausedByError = ref(-1);
 const showPlaylistSonglist = ref(false)
-
+const fullContainer = useTemplateRef('fullContainer')
 function videoOnError(e: Event) {
   console.log(e);
   showMessage(JSON.stringify(e));
@@ -337,7 +337,9 @@ onUrlScheme((event: any, uri: any) => {
   }
 })
 
-
+function handleCloseCurrentPlaylistUI(e: MouseEvent) {
+  if (!fullContainer.value!.contains(e.target as Node)) showPlaylistSonglist.value = false
+}
 
 function changeVolumeTo(to: number) {
     if (songSource.value) {
@@ -360,7 +362,7 @@ function deleteSongInPlaylistSonglist(index: number) {
 }
 function playPrevSong() {
   const noEffectWhenNotPlayable = false;
-    if (playerStore.config.mode === 'list' || playerStore.config.mode === '') {
+    if (playerStore.config.mode === 'list' || playerStore.config.mode === '' || playerStore.config.mode === 'loop') {
       let si = playerStore.config.indexInPlaylist;
       if (si <= 0 || si > playerStore.playlist.length - 1) {
         playSong({
@@ -381,13 +383,29 @@ function playPrevSong() {
     }
 }
 function playNextSong() {
-  playEnded();
+  if (playerStore.config.mode === 'loop') {
+    let si = playerStore.config.indexInPlaylist;
+      if (si === playerStore.playlist.length - 1) {
+        playSong({
+          song: playerStore.playlist[0],
+          noEffectWhenNotPlayable: false
+        })
+      }else {
+        playSong({
+          song: playerStore.playlist[si + 1],
+          noEffectWhenNotPlayable: false
+        });
+      }
+  }else {
+    playEnded();
+  }
 }
 onMounted(() => {
   emitter.on("showPlayingSonglist", (show: boolean) => showPlaylistSonglist.value = show)
   watch(() => playerStore.config.volume, (nv) => {
     changeVolumeTo(minmax(playerStore.config.volume, 0, 1))
   }, {immediate: true})
+  window.addEventListener('click', handleCloseCurrentPlaylistUI)
   onTrayControl_PlayPause((_e: any, status: boolean) => {
     if (!songSource.value) return;
     if (status) {
@@ -418,6 +436,7 @@ function keyDownEvent(e: KeyboardEvent) {
 }
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', keyDownEvent)
+  window.removeEventListener('click', handleCloseCurrentPlaylistUI)
 })
 watch(() => playerStore.config.status, (nv) => {
     if (!songSource.value) return;
@@ -624,6 +643,8 @@ onUnmounted(() => {
   bottom: 64px;
 }
 .play .playlistSonglist .fourHeightContainer {
+  backdrop-filter: blur(10px);
+  box-shdaow: 0 0 5px #000;
   height: 400px;
   display: flex;
   flex-direction: column;
@@ -635,10 +656,13 @@ onUnmounted(() => {
   padding-bottom: 10px;
   font-size: 20px;
   font-family: SourceSansCNM;
-  border-bottom: 1px solid #f2f3f4;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
   color: var(--ymk-text-color);
 }
 .songTable .song {
   grid-template-columns: 12fr 10fr;
+}
+.fourHeightContainer .songTable .song:hover, .songTable .song.active {
+  background-color: rgba(255,255,255,.3);
 }
 </style>

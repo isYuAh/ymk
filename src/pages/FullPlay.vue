@@ -75,7 +75,7 @@
           </div>
         </div>
         <div class="volumeProgress">
-          <Progress @pclick="changeVolumeProgress" :progress="playerStore.config.volume * 100"></Progress>
+          <Progress ref="volumeProgressRef" @pclick="changeVolumeProgress" :progress="playerStore.config.volume * 100"></Progress>
           <div ref="volumeTip" class="tips">
             {{ (playerStore.config.volume  * 100).toFixed() }}
           </div>
@@ -88,7 +88,7 @@
 <script setup lang='ts'>
 import emitter from '@/emitter';
 import Progress from '@/components/Progress.vue';
-import { computed, nextTick, reactive, ref, useTemplateRef, watch } from 'vue';
+import { computed, nextTick, onMounted, reactive, ref, useTemplateRef, watch } from 'vue';
 import { minmax } from '@/utils/u';
 import type {song_lrc_item} from '@/types';
 import {VueDraggable} from "vue-draggable-plus";
@@ -100,10 +100,11 @@ const {isMinimized, onRestore} = window.ymkAPI;
 const runtimeData = useRuntimeDataStore()
 const player = usePlayerStore()
 const playerStore = usePlayerStore();
-let lrcContentEl = ref<HTMLDivElement>();
-let lrcContainerEl = ref<HTMLDivElement>();
+let lrcContentEl = useTemplateRef('lrcContentEl')
+let lrcContainerEl = useTemplateRef('lrcContainerEl')
 let lyricAutoScrollLock = false;
 let lyricAutoScrollLockTimer = -2;
+const volumeProgressRef = useTemplateRef('volumeProgressRef')
 const LRC = computed(() => playerStore.song.lrcs[playerStore.config.lang] || {enableAutoScroll: false, items: []})
 function turnSongToSpecificLyric(lrcItem: song_lrc_item) {
   emitter.emit('changeCurTimeTo', lrcItem.time + playerStore.song.lyricConfig.offset)
@@ -123,11 +124,12 @@ function changePlayProgress(targetProgress: number) {
 }
 const volumeTip = useTemplateRef('volumeTip')
 function changeVolumeProgress(target: number, left: number, width: number) {
-  const rect = volumeTip.value!.getBoundingClientRect()
-  volumeTip.value!.style.left = `${minmax(left - rect.width, 0, width)}px`;
   playerStore.config.volume = minmax(target, 0, 1)
+  nextTick(() => {
+    const rect = volumeTip.value!.getBoundingClientRect()
+    volumeTip.value!.style.transform = `translateX(${minmax(left - rect.width, 0, width)}px)`;
+  })
 }
-
 function updateHighlightedIndex(ignoreLock = false) {
   if (!LRC.value.enableAutoScroll) {
     return
@@ -196,6 +198,12 @@ const copySign = reactive({
   title: false,
   signer: false,
 })
+onMounted(() => {
+  const rect = volumeTip.value!.getBoundingClientRect()
+  const fillrect = volumeProgressRef.value!.progressfill!.getBoundingClientRect()
+  const maxw = volumeProgressRef.value!.progresscontainer!.getBoundingClientRect().width
+  volumeTip.value!.style.transform = `translateX(${minmax(fillrect.width - rect.width, 0, maxw)}px)`;
+})
 function copy(content: string, sign: keyof typeof copySign) {
   navigator.clipboard.writeText(content)
   showMessage('复制成功')
@@ -261,7 +269,7 @@ function copy(content: string, sign: keyof typeof copySign) {
 .volumeProgress .tips {
   margin-top: 5px;
   position: relative;
-  transition: left .2s;
+  transition: all .2s;
   display: inline-block;
 }
 .exitButton {

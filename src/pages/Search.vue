@@ -1,5 +1,5 @@
 <template>
-<div class="partContainer">
+<div class="partContainer DEF-SONGLIST">
     <div class="searchBar">
         <div class="searchInputContainer">
             <input
