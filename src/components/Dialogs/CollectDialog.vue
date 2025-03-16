@@ -12,46 +12,22 @@
 </template>
 
 <script setup lang='ts'>
-import { ref, toRaw } from 'vue';
-import {showMessage} from "@/utils/message";
+import { ref } from 'vue';
 import {useRuntimeDataStore} from "@/stores/modules/runtimeData";
-const {writePlaylistFile} = window.ymkAPI;
 import DSelect from '@/components/DSelect.vue';
-const runtimeData = useRuntimeDataStore()
+import { collectToLocalPlaylist, determinCollectFunction, getAvailableCollectTarget } from '@/utils/CollectHandler';
+import type { song } from '@/types';
 const props = defineProps<{
   closeDialog: () => void
-  data: any
+  data: {
+    waitCollect: song
+  }
 }>()
-const options = runtimeData.playlists.filter((val, index) => {
-    return index < runtimeData.playlistsParts[0].count
-}).map((p, index) => {
-    return {
-        label: p.title,
-        value: index
-    }
-})
+const options = getAvailableCollectTarget(props.data.waitCollect)
 const targetPlaylist = ref(0)
 function collect() {
     if (targetPlaylist.value > -1) {
-        let components = runtimeData.playlists[targetPlaylist.value].playlist;
-        let first = components[0];
-        let originFn = runtimeData.playlists[targetPlaylist.value].originFilename;
-        if (first.type === 'data') {
-            first.songs.unshift(props.data.waitCollect);
-        }else {
-            components.unshift({
-                type: "data",
-                songs: [props.data.waitCollect],
-            })
-        }
-        if (targetPlaylist.value === runtimeData.playlist.listIndex) {
-            runtimeData.playlist.songs.unshift(props.data.waitCollect)
-        }
-        writePlaylistFile(originFn, JSON.stringify(toRaw(runtimeData.playlists[targetPlaylist.value]))).then(() => {
-            showMessage('添加成功');
-        }).catch(() => {
-            showMessage(`写入文件${originFn}失败`);
-        })
+        determinCollectFunction(targetPlaylist.value, props.data.waitCollect)
         props.closeDialog()
     }
 }

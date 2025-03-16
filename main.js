@@ -20,6 +20,7 @@ import {
     writeSpecificConfig
 } from "./functions.js";
 import fs from "node:fs";
+import { Stream } from 'stream';
 
 try {
     const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -48,11 +49,42 @@ if (!gotTheLock) {
     }
     startNcmServer()
     startKugouServer()
-    const appServer = express();
-    appServer.get('/api/bg', (req, res) => {
-        res.sendFile(path.resolve('./res', req.query.fn));
+    const proxyServer = express()
+    proxyServer.use(express.json())
+    proxyServer.post('/', async (req, res) => {
+        try {
+            console.log(req.body.headers)
+            const res_1 = await axios({
+                url: req.body.url,
+                method: req.body.method,
+                headers: req.body.headers,
+                data: req.body.data,
+                params: req.body.params,
+                responseType: 'stream'
+            });
+            // 处理 Set-Cookie 头信息
+            if (res_1.headers['set-cookie']) {
+                // 将 cookies 添加到响应头中
+                res.setHeader('x-set-cookies', JSON.stringify(res_1.headers['set-cookie']));
+            }
+            
+            Object.keys(res_1.headers).forEach(key => {
+                res.header(key, res_1.headers[key]);
+                // if (key === 'set-cookie') {
+                //     res.append('set-cookie', res_1.headers[key])
+                // }
+            });
+            if (res_1.headers['content-type'] && res_1.headers['content-type'].includes('application/json')) {
+                res.setHeader('Content-Type', 'application/json; charset=utf-8');
+            }
+            res.status(res_1.status);
+            res_1.data.pipe(res)
+        } catch (err) {
+            console.trace(err, '@proxyError');
+            res.status(500).send(err);
+        }
     })
-    appServer.listen(35652)
+    proxyServer.listen(35652)
     const bilibiliClient = axios.create({
         headers: {
             "User-Agent": 'Mozilla',
@@ -71,6 +103,7 @@ if (!gotTheLock) {
                 sub_url.lastIndexOf('.')
             )
         }
+        console.log(res.data, 32323232)
         bilibiliClient.interceptors.request.use((config) => {
             config.params = WBI(wbi, config.params);
             return config;

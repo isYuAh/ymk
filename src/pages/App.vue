@@ -10,8 +10,8 @@
   }" @drop.prevent="dropEvent" @dragover.prevent>
     <div v-if="backgroundType" class="backgroundFrame forbidSelect">
       <div class="mask" :style="`background-color: rgba(0,0,0,${config.maskOpacity});`"></div>
-      <img :src="bgSrc" v-if="backgroundType === 'img'">
-      <video ref="videoBg" v-if="backgroundType === 'video'" @pause="videoBg?.play()" autoplay muted loop class="object-cover wh100" :src="bgSrc"></video>
+      <img :src="config.bg" v-if="backgroundType === 'img'">
+      <video ref="videoBg" v-if="backgroundType === 'video'" @pause="videoBg?.play()" autoplay muted loop class="object-cover wh100" :src="config.bg"></video>
     </div>
     <div class="container">
       <div style="-webkit-app-region: drag" class="header forbidSelect noPointerEvents">
@@ -86,10 +86,6 @@ if ("mediaSession" in navigator) {
 }
 const runtimeData = useRuntimeDataStore()
 const config = useConfigStore()
-//监听cookie
-const bgSrc = computed(() => {
-  return `http://localhost:35652/api/bg?fn=${config.bg}`
-})
 watch(() => user.neteaseUser.auth, (nv) => {
   document.cookie = nv;
 })

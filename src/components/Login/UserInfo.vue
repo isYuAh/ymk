@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type {User} from "@/types/config";
+import type {BilibiliUser, User} from "@/types/config";
 const emit = defineEmits(['refreshStatus', 'logout'])
 
 defineProps<{
-  user: User
+  user: User | BilibiliUser
 }>()
 </script>
 

@@ -22,3 +22,11 @@ export type User = {
     vipType: number,
     signature: string,
 }
+export type BilibiliUser = {
+    auth: string[],
+    nickname: string,
+    avatarUrl: string,
+    uid: number,
+    vipType: number,
+    signature: string,
+}

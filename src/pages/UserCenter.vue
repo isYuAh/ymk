@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import NeteaseUser from "@/components/Login/NeteaseUser.vue";
 import KugouUser from "@/components/Login/KugouUser.vue";
+import BilibiliUser from "@/components/Login/BilibiliUser.vue";
 
 
 </script>
@@ -9,6 +10,7 @@ import KugouUser from "@/components/Login/KugouUser.vue";
 <div class="UserCenterContainer">
   <NeteaseUser />
   <KugouUser />
+  <BilibiliUser />
 </div>
 </template>
 

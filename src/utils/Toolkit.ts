@@ -162,12 +162,20 @@ export async function refreshPlaylists({notReset}: {notReset: boolean}) {
   const playlistTasks: Promise<PlaylistPartArg | null>[] = [];
   
   // 本地播放列表
-  const localPlaylistTask = getLocalPlaylists().then((ps: any) => ({
-    title: '本地',
-    playlists: ps,
-    begin: undefined,
-    type: "init"
-  }));
+  const localPlaylistTask = getLocalPlaylists().then((ps: any) => {
+    ps = ps.map((p: any) => {
+      if (!('type' in p)) {
+        p.type = 'local'
+      }
+      return p
+    })
+    return {
+      title: '本地',
+      playlists: ps,
+      begin: undefined,
+      type: "local"
+    }
+  });
   playlistTasks.push(localPlaylistTask);
   
   // 网易云播放列表
@@ -175,36 +183,38 @@ export async function refreshPlaylists({notReset}: {notReset: boolean}) {
     // 每日推荐
     const dailyRecommendTask = neteaseAxios.post(`/recommend/resource`).then(res => ({
       title: '每日推荐',
-      playlists: res.data.recommend.map((playlist: any) => ({
+      playlists: res.data.recommend.map((playlist: any) => (<list>{
         title: playlist.name,
         pic: playlist.picUrl,
         intro: 'Netease Daily Recommendation',
         originFilename: 'REMOTE',
+        type: 'netease_daily_recommend',
         playlist: [{
           type: 'trace_netease_playlist',
           id: playlist.id
         }]
       })),
       begin: undefined,
-      type: "init"
+      type: "netease_daily_recommend"
     }));
     playlistTasks.push(dailyRecommendTask);
     
     // 用户歌单
     const userPlaylistTask = neteaseAxios.post(`/user/playlist?uid=${user.neteaseUser.uid}`, {}).then(res => ({
       title: '网易云',
-      playlists: res.data.playlist.map((playlist: any) => ({
+      playlists: res.data.playlist.map((playlist: any) => (<list>{
         title: playlist.name,
         pic: playlist.coverImgUrl,
         intro: 'FROM NETEASE',
         originFilename: 'REMOTE',
+        type: `netease${playlist.creator.userId === user.neteaseUser.uid ? '_self' : ''}`,
         playlist: [{
           type: 'trace_netease_playlist',
           id: playlist.id
         }]
       })),
       begin: undefined,
-      type: "init"
+      type: "netease"
     }));
     playlistTasks.push(userPlaylistTask);
   }
@@ -216,18 +226,19 @@ export async function refreshPlaylists({notReset}: {notReset: boolean}) {
         const data = res.data.data;
         return {
           title: '酷狗',
-          playlists: data.info.map((playlist: any) => ({
+          type: "kugou",
+          playlists: data.info.map((playlist: any) => (<list>{
             title: playlist.name,
             pic: replacePicSizeParam(playlist.pic || "https://c1.kgimg.com/custom/"),
             intro: playlist.intro || 'FROM KUGOU',
             originFilename: 'REMOTE',
+            type: 'kugou',
             playlist: [{
               type: 'trace_kugou_playlist',
               id: playlist.global_collection_id
             }]
           })),
           begin: undefined,
-          type: "init"
         };
       }
       return null;
