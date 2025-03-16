@@ -24,7 +24,8 @@ import PreviewDialog from "@/components/Dialogs/PreviewDialog.vue";
 import Playlists from "@/components/Playlists.vue";
 const runtimeData = useRuntimeDataStore()
 const user = useUserStore()
-import type {playlistPart, list, mouseMenuItem, song} from "@/types";
+import type {playlistPart, list, mouseMenuItem} from "@/types";
+import type {song} from "@/types/song";
 import {toRaw} from "vue";
 import axios from "axios";
 import {showContextMenu} from "@/utils/contextMenu";

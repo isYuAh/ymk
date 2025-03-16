@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import axios, {type AxiosResponse} from "axios";
 import {ref} from "vue";
-import {type song} from "@/types";
+import {BasicSongTypeEnum, type song, type supportSongTypes} from "@/types/song";
 import {neteaseAxios, qqAxios} from "@/utils/axiosInstances";
 import {addSongTo} from "@/utils/Toolkit";
 import DSelect from "@/components/DSelect.vue";
@@ -35,7 +35,7 @@ const songTypeOptions = ref([
     label: "酷狗音乐"
   }
 ])
-const songType = ref("bilibili");
+const songType = ref<supportSongTypes>("bilibili");
 async function autoDetectFromClipboard() {
   let clip = await readClipboard() || '';
   if (clip.startsWith('https://music.163.com/#/song?id=') ||
@@ -44,7 +44,7 @@ async function autoDetectFromClipboard() {
     let match = clip.match(/\/song\?id=(\d+)/);
     if (match) {
       id.value = match[1];
-      songType.value = 'netease';
+      songType.value = BasicSongTypeEnum.netease;
       let rawDetail = {} as any;
       neteaseAxios.get(`/song/detail?ids=${id.value}`).then((res: AxiosResponse) => {
         rawDetail = res.data['songs'][0];
@@ -68,7 +68,7 @@ async function autoDetectFromClipboard() {
     let match = clip.match(/\/songDetail\/([a-zA-Z0-9]+)/);
     if (match) {
       id.value = match[1];
-      songType.value = 'qq';
+      songType.value = BasicSongTypeEnum.qq;
       let rawDetail = {} as any;
       qqAxios.post(`/api/y/get_song`, {
         type: "qq",
@@ -83,7 +83,7 @@ async function autoDetectFromClipboard() {
     let match = clip.match(/\/music\/(\d+)/);
     if (match) {
       id.value = match[1];
-      songType.value = 'siren';
+      songType.value = BasicSongTypeEnum.siren;
       let rawDetail = {} as any;
       axios.get(`https://monster-siren.hypergryph.com/api/song/${id.value}`).then((res: AxiosResponse) => {
         rawDetail = res.data.data
@@ -98,26 +98,8 @@ function addSong() {
     title: title.value,
     singer: singer.value,
     type: songType.value,
-  } as any;
-  switch(songType.value) {
-    case 'netease':
-      (song as any).id = id.value;
-      break;
-    case 'qq':
-      (song as any).mid = id.value;
-      break;
-    case 'siren':
-      (song as any).id = id.value;
-      break;
-    case 'bilibili':
-      (song as any).BV = id.value;
-      break;
-    case 'kugou':
-      (song as any).hash = id.value;
-      break;
-    default:
-      return;
-  }
+    symbol: id.value
+  };
   addSongTo({
     song,
     playlistIndex: props.data.pi,
@@ -132,13 +114,6 @@ function addSong() {
     <div class="content">
       <div class="typeChoose">
         <label for="">类型：</label>
-        <!-- <select v-model="songType" style="width: 400px" name="" id="">
-          <option value="bilibili">哔哩哔哩</option>
-          <option value="netease">网易云</option>
-          <option value="qq">QQ音乐</option>
-          <option value="siren">塞壬唱片</option>
-          <option value="kugou">酷狗音乐</option>
-        </select> -->
         <DSelect style="width: 400px; margin: 5px 0" v-model="songType" :options="songTypeOptions"></DSelect>
       </div>
       <div>

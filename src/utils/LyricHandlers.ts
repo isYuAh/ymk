@@ -1,5 +1,5 @@
 import {type AxiosResponse} from "axios";
-import type {song_kugou, song_netease, songInPlay} from "@/types";
+import type {songInPlay} from "@/types";
 import {proceedKrcText, proceedLrcText} from "@/utils/u";
 import {kugouAxios, neteaseAxios} from "@/utils/axiosInstances";
 

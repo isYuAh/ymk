@@ -42,7 +42,7 @@
                 <simplebar data-auto-hide class="simplebar">
                   <div class="searchResultSongTable forbidSelect">
                     <div
-                        @dblclick="tryPlaySong(song as song_netease)"
+                        @dblclick="tryPlaySong(song as SongTypes.netease)"
                         class="song"
                         :class="{disabled: 'playable' in song && !song.playable}"
                         v-for="(song, index) in resultSongList"
@@ -120,7 +120,7 @@ import {onMounted, onUnmounted, ref, toRaw} from "vue";
 import '@/assets/songlist.css'
 import simplebar from "simplebar-vue";
 import 'simplebar-vue/dist/simplebar.min.css'
-import {type song, type song_netease, type song_kugou, type song_basic} from "@/types";
+import {BasicSongTypeEnum, type song, type SongTypes, type supportSongTypes} from '@/types/song'
 import { type AxiosResponse } from "axios";
 import Pagination from '@/components/Pagination.vue'
 import emitter from "@/emitter";
@@ -131,7 +131,7 @@ import {checkDetail, mapCheckSongPlayable, neteaseSongsToSongType} from "@/utils
 import {showDialog} from "@/utils/dialog";
 import {useRuntimeDataStore} from "@/stores/modules/runtimeData";
 import {showContextMenu} from "@/utils/contextMenu";
-import type { SearchResults, SearchSource, UnifiedAlbum, UnifiedArtist, UnifiedPlaylist } from '@/types/search';
+import type { SearchSource, UnifiedArtist, UnifiedPlaylist } from '@/types/search';
 import { replacePicSizeParam } from "@/utils/u";
 
 const router = useRouter();
@@ -139,7 +139,7 @@ const runtimeData = useRuntimeDataStore();
 
 // 添加防抖函数
 function debounce(fn: Function, delay: number) {
-    let timer: number | null = null;
+    let timer: any = null;
     return function (this: any, ...args: any[]) {
         if (timer) clearTimeout(timer);
         timer = setTimeout(() => {
@@ -224,9 +224,9 @@ function getKugouSearchResults(query: string) {
       // 处理歌曲搜索结果 (index 0)
       if (lists[0]?.lists) {
         resultSongList.value = lists[0].lists.map((song: any) => {
-          return <song_kugou & song_basic>{
+          return <SongTypes.kugou>{
             type: 'kugou',
-            hash: song.FileHash,
+            symbol: song.FileHash,
             title: song.SongName,
             singer: song.SingerName,
             pic: song.Image
@@ -379,7 +379,7 @@ function getSearchSongResult(query: string, offset = 0) {
           return <song>{
             type: 'netease',
             title: song.name,
-            id: song.id,
+            symbol: song.id,
             singer: song.ar.map((ar: any) => ar.name).join(' & '),
             playable: song.playable,
             reason: song.reason
@@ -465,7 +465,7 @@ function tryShowSongMenu(song: song) {
     }]
   })
 }
-function tryPlaySong(song: song_netease) {
+function tryPlaySong(song: SongTypes.netease) {
   emitter.emit('playSong', {song, justtry: true})
 }
 function checkSearchPlaylist(playlist: UnifiedPlaylist) {
@@ -478,7 +478,8 @@ function checkSearchPlaylist(playlist: UnifiedPlaylist) {
     playlist: [{
       type: `trace_${playlist.source}_playlist` as const,
       id: playlist.id,
-    }]
+    }],
+    type: 'search_result'
   })
   console.log("#checkPlaylist#", {
     title: playlist.name,
@@ -584,9 +585,9 @@ async function checkArtist(singer: UnifiedArtist) {
       }
 
       runtimeData.artistPreview.songs = allSongs.map((song: any) => ({
-        type: 'netease',
+        type: BasicSongTypeEnum.netease,
         title: song.name,
-        id: song.id,
+        symbol: song.id,
         singer: song.ar.map((ar: any) => ar.name).join(' & '),
       }))
 

@@ -1,5 +1,5 @@
 import { useRuntimeDataStore } from "@/stores/modules/runtimeData";
-import type { song, song_netease } from "@/types";
+import type {song, SongTypes} from '@/types/song'
 import { toRaw } from "vue";
 import { showMessage } from "./message";
 import { neteaseAxios } from "./axiosInstances";
@@ -28,7 +28,7 @@ export function collectToLocalPlaylist(targetPlaylistIndex: number, song: song) 
   })
 }
 
-export function collectToNeteasePlaylist(targetPlaylistIndex: number, song: song_netease) {
+export function collectToNeteasePlaylist(targetPlaylistIndex: number, song: SongTypes.netease) {
   const runtimeData = useRuntimeDataStore()
   let components = runtimeData.playlists[targetPlaylistIndex].playlist;
   if (components[0].type === 'trace_netease_playlist') {
@@ -36,7 +36,7 @@ export function collectToNeteasePlaylist(targetPlaylistIndex: number, song: song
     neteaseAxios.post('/playlist/tracks', {
       op: 'add',
       pid: id,
-      tracks: `${song.id}`
+      tracks: `${song.symbol}`
     }).then(() => {
       showMessage('添加成功');
     }).catch(() => {
@@ -56,7 +56,7 @@ export function determinCollectFunction(targetPlaylistIndex: number, song: song)
   if (p.type === 'local') {
     collectToLocalPlaylist(targetPlaylistIndex, song)
   }else if (p.type === 'netease_self') {
-    collectToNeteasePlaylist(targetPlaylistIndex, song as song_netease)
+    collectToNeteasePlaylist(targetPlaylistIndex, song as SongTypes.netease)
   }else if (p.type === 'kugou') {
     // collectToKugouPlaylist(targetPlaylistIndex, song)
   }else {

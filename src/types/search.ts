@@ -1,6 +1,4 @@
-import type { song } from './index';
-
-// 统一的搜索结果类型定义
+import type { song } from "./song";
 
 export type SearchSource = 'netease' | 'kugou';
 

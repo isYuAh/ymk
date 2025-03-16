@@ -21,7 +21,7 @@
 
 <script setup lang='ts'>
 import {ref} from 'vue';
-import {type playlistComponent} from "@/types";
+import {PlaylistType, type playlistComponent} from "@/types";
 import {type AxiosResponse} from "axios";
 import DSelect from '@/components/DSelect.vue';
 import {neteaseAxios, qqAxios} from "@/utils/axiosInstances";
@@ -66,7 +66,8 @@ function preview() {
             pic: res.data.playlist.coverImgUrl,
             intro: 'NETEASE PREVIEW',
             originFilename: 'REMOTE',
-            playlist: playlist
+            playlist: playlist,
+            type: 'remote_preview'
           })
         })
       }
@@ -93,7 +94,8 @@ function preview() {
             pic: res.data.data.info.pic,
             intro: 'QQ PREVIEW',
             originFilename: 'REMOTE',
-            playlist: playlist
+            playlist: playlist,
+            type: 'remote_preview'
           })
         })
       }
@@ -106,7 +108,8 @@ function preview() {
       playlist: [{
         type: "trace_siren"
       }],
-      originFilename: 'REMOTE'
+      originFilename: 'REMOTE',
+      type: PlaylistType.preview
     })
   }else if (targetPlatform.value === 'qq') {
     qqAxios.post("/api/y/get_playlistDetail", {
@@ -127,7 +130,8 @@ function preview() {
         pic: res.data.data.info.pic,
         intro: 'QQ PREVIEW',
         originFilename: 'REMOTE',
-        playlist: playlist
+        playlist: playlist,
+        type: PlaylistType.preview
       })
     })
   }else if (targetPlatform.value === 'netease') {
@@ -142,7 +146,8 @@ function preview() {
         pic: res.data.playlist.coverImgUrl,
         intro: 'NETEASE PREVIEW',
         originFilename: 'REMOTE',
-        playlist: playlist
+        playlist: playlist,
+        type: PlaylistType.preview
       })
     })
   }

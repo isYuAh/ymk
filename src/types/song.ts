@@ -8,6 +8,7 @@ export enum BasicSongTypeEnum {
   local = 'local',
   web = 'web',
 }
+export type supportSongTypes = BasicSongTypeEnum | 'bilibili'
 
 export type song_basic = {
   title?: string,
@@ -27,4 +28,18 @@ export type basicSong = {
   symbol: string,
 } & song_basic
 
+export type SongOfType<T extends supportSongTypes> = 
+  T extends 'bilibili' 
+    ? song_bilibili 
+    : basicSong & { type: T };
+
 export type song = basicSong | song_bilibili
+export namespace SongTypes {
+  export type netease = SongOfType<BasicSongTypeEnum.netease>
+  export type qq = SongOfType<BasicSongTypeEnum.qq>
+  export type kugou = SongOfType<BasicSongTypeEnum.kugou>
+  export type local = SongOfType<BasicSongTypeEnum.local>
+  export type web = SongOfType<BasicSongTypeEnum.web>
+  export type siren = SongOfType<BasicSongTypeEnum.siren>
+  export type bilibili = SongOfType<'bilibili'>
+}

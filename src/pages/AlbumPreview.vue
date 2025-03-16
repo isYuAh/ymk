@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang='ts'>
-import {type song} from '@/types'
+import type {song} from "@/types/song";
 import {computed, ref, toRaw, watch} from 'vue';
 import emitter from '@/emitter';
 import '@/assets/songlist.css'

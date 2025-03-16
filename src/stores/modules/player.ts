@@ -1,5 +1,6 @@
 import {defineStore} from "pinia";
-import type {song, songInPlay} from "@/types";
+import type {songInPlay} from "@/types";
+import type {song} from '@/types/song'
 import {ref, shallowRef} from "vue";
 export const usePlayerStore = defineStore('player', () => {
   const song = ref(<songInPlay>{

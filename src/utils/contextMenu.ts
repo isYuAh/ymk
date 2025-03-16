@@ -7,7 +7,7 @@ let currentApp: App<Element> | null = null
 export async function showContextMenu(options: {
   menuItems: mouseMenuItem[]
   args?: any
-  position?: { x: number; y: number }
+  position?: { left: number; top: number }
 }) {
   if (currentApp) {
     currentApp.unmount()

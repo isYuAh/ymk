@@ -4,8 +4,8 @@ import type {
     list_trace_netease_playlist, list_trace_qq_playlist,
     list_trace_siren,
     playlistComponent,
-    song, song_kugou,
 } from "@/types";
+import type {song, SongTypes} from '@/types/song'
 const {getBilibiliFav} = window.ymkAPI;
 import axios, {type AxiosResponse} from "axios";
 import {kugouAxios, neteaseAxios} from "@/utils/axiosInstances";
@@ -92,7 +92,7 @@ function PlaylistHandlerSiren({component, parseComponent, comIndex, components}:
                 title: s.name,
                 singer: s.artists.join(' / '),
                 type: 'siren',
-                cid: s.cid
+                symbol: s.cid
             }
         }))
         comIndex++;
@@ -211,7 +211,7 @@ function PlaylistHandlerKugou({component, parseComponent, comIndex, components}:
             const data = res.data.data;
             const result = Array(data.count)
             const times = Math.ceil(data.count / ps);
-            const AssignSongs = (start: number, idealEnd: number, songs: song_kugou[]) => {
+            const AssignSongs = (start: number, idealEnd: number, songs: SongTypes.kugou[]) => {
                 for (let i = start; i <= idealEnd && i < data.count; i++) {
                     result[i] = songs[i - start]
                 }
@@ -220,9 +220,9 @@ function PlaylistHandlerKugou({component, parseComponent, comIndex, components}:
             if (!(data.info instanceof Array)) data.info = []
             AssignSongs(0, 99, data.info.map((d: any) => {
                 const info = d.name.split(' - ');
-                return <song_kugou>{
+                return <SongTypes.kugou>{
                     type: 'kugou',
-                    hash: d.hash,
+                    symbol: d.hash,
                     pic: d.cover,
                     title: info.slice(1).join(' - ') || "",
                     singer: info[0],
@@ -242,9 +242,9 @@ function PlaylistHandlerKugou({component, parseComponent, comIndex, components}:
                     }).then(() => {
                         AssignSongs((i+1) * 100, (i+1) * 100 + 199, data.info.map((d: any) => {
                             const info = d.name.split(' - ');
-                            return <song_kugou>{
+                            return <SongTypes.kugou>{
                                 type: 'kugou',
-                                hash: d.hash,
+                                symbol: d.hash,
                                 pic: d.cover,
                                 title: info.slice(1).join(' - '),
                                 singer: info[0],

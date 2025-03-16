@@ -103,7 +103,7 @@ const playerStore = usePlayerStore();
 let lrcContentEl = useTemplateRef('lrcContentEl')
 let lrcContainerEl = useTemplateRef('lrcContainerEl')
 let lyricAutoScrollLock = false;
-let lyricAutoScrollLockTimer = -2;
+let lyricAutoScrollLockTimer: any = -2;
 const volumeProgressRef = useTemplateRef('volumeProgressRef')
 const LRC = computed(() => playerStore.song.lrcs[playerStore.config.lang] || {enableAutoScroll: false, items: []})
 function turnSongToSpecificLyric(lrcItem: song_lrc_item) {

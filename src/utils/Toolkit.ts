@@ -1,5 +1,6 @@
 import {useUserStore} from "@/stores/modules/user";
-import type {list, playlistComponent, song} from "@/types";
+import type {list, playlistComponent} from "@/types";
+import type {song} from '@/types/song'
 import router from "@/router";
 import {kugouAxios, neteaseAxios} from "@/utils/axiosInstances";
 import {replacePicSizeParam} from "@/utils/u";
@@ -289,7 +290,7 @@ export async function checkMusicPlayable(song: song) {
   if (song.type === 'netease') {
     let res = await neteaseAxios.get(`/check/music`, {
       params: {
-        id: song.id
+        id: song.symbol
       }
     })
     return {result: res.data.success, msg: res.data.message}
@@ -300,7 +301,7 @@ export async function checkMusicPlayable(song: song) {
 
 function neteaseSongToSongType(s: any) {
   return <song>{
-    id: s.id,
+    symbol: s.id,
     pic: s.al.picUrl,
     singer: s.ar.map((a: any) => a.name).join(" & "),
     type: 'netease',

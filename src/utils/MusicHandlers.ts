@@ -1,8 +1,9 @@
 import axios, {AxiosError, type AxiosResponse} from "axios";
-import type {song_bilibili, song_kugou, song_netease, song_qq, song_siren, songInPlay, songTypeMap} from "@/types";
+import type {SongTypes} from "@/types/song";
 import {proceedLrcText, replacePicSizeParam} from "@/utils/u";
 import {kugouAxios, neteaseAxios, qqAxios} from "@/utils/axiosInstances";
 import {LyricHandlers} from "@/utils/LyricHandlers";
+import type { songInPlay } from "@/types";
 const {getBilibiliVideoView, getBilibiliVideoPlayurl, axiosRequestGet} = window.ymkAPI;
 
 interface MusicHandlerFunctionParams<T> {
@@ -11,9 +12,9 @@ interface MusicHandlerFunctionParams<T> {
     song: T,
 }
 
-function MusicHandlerBilibili({tasks, tmpSong, song}: MusicHandlerFunctionParams<song_bilibili>) {
+function MusicHandlerBilibili({tasks, tmpSong, song}: MusicHandlerFunctionParams<SongTypes.bilibili>) {
     tasks.push(new Promise((resolve, reject) => {
-        getBilibiliVideoView(song.BV).then((res: any) => {
+        getBilibiliVideoView(song.symbol).then((res: any) => {
             if (res.data.pic) {
                 tmpSong.pic = res.data.pic;
             }
@@ -28,7 +29,7 @@ function MusicHandlerBilibili({tasks, tmpSong, song}: MusicHandlerFunctionParams
             tmpSong.singer = tmpSong.singer || rawDetail.owner.name;
 
             getBilibiliVideoPlayurl({
-                bvid: song.BV,
+                bvid: song.symbol,
                 cid,
                 platform: "html5"
             }).then((res: AxiosResponse) => {
@@ -39,10 +40,10 @@ function MusicHandlerBilibili({tasks, tmpSong, song}: MusicHandlerFunctionParams
     }))
 }
 
-function MusicHandlerSiren({tasks, tmpSong, song}: MusicHandlerFunctionParams<song_siren>) {
+function MusicHandlerSiren({tasks, tmpSong, song}: MusicHandlerFunctionParams<SongTypes.siren>) {
     tasks.push(new Promise((resolve, reject) => {
         let subTasks = <Promise<void>[]>[]
-        axios.get(`https://monster-siren.hypergryph.com/api/song/${song.cid}`).then(res => {
+        axios.get(`https://monster-siren.hypergryph.com/api/song/${song.symbol}`).then(res => {
             if (res.data.data.lyricUrl) {
                 subTasks.push(new Promise((resolve, reject) => {
                     axiosRequestGet(res.data.data.lyricUrl).then((res: any) => {
@@ -70,11 +71,11 @@ function MusicHandlerSiren({tasks, tmpSong, song}: MusicHandlerFunctionParams<so
 }
 
 //TODO: 可空title singer支持
-function MusicHandlerQQ({tasks, tmpSong, song}: MusicHandlerFunctionParams<song_qq>) {
+function MusicHandlerQQ({tasks, tmpSong, song}: MusicHandlerFunctionParams<SongTypes.qq>) {
     tasks.push(new Promise((resolve, reject) => {
         qqAxios.post("/api/y/get_song", {
             type: "qq",
-            mid: song.mid,
+            mid: song.symbol,
         }).then((res: AxiosResponse) => {
             let result = res.data.data[0];
             if (result.pic) {
@@ -86,9 +87,9 @@ function MusicHandlerQQ({tasks, tmpSong, song}: MusicHandlerFunctionParams<song_
     }))
 }
 
-function MusicHandlerNetease({tasks, tmpSong, song}: MusicHandlerFunctionParams<song_netease>) {
+function MusicHandlerNetease({tasks, tmpSong, song}: MusicHandlerFunctionParams<SongTypes.netease>) {
     tasks.push(new Promise((resolve, reject) => {
-        neteaseAxios.get('/song/detail', {params: {ids: song.id}}).then((res: AxiosResponse) => {
+        neteaseAxios.get('/song/detail', {params: {ids: song.symbol}}).then((res: AxiosResponse) => {
             if (res.data.songs[0].al.picUrl) {
                 tmpSong.pic = res.data.songs[0].al.picUrl;
             }
@@ -99,11 +100,11 @@ function MusicHandlerNetease({tasks, tmpSong, song}: MusicHandlerFunctionParams<
             reject(err.message);
         })
     }))
-    LyricHandlers.LyricHandlerNetease({tasks, tmpSong, unique: song.id})
+    LyricHandlers.LyricHandlerNetease({tasks, tmpSong, unique: song.symbol})
     tasks.push(new Promise((resolve, reject) => {
         neteaseAxios.get('/song/url/v1', {
             params: {
-                id: song.id,
+                id: song.symbol,
                 level: 'standard'
             }
         }).then(res => {
@@ -119,9 +120,9 @@ function MusicHandlerNetease({tasks, tmpSong, song}: MusicHandlerFunctionParams<
     }))
 }
 
-function MusicHandlerKugou({tasks, tmpSong, song}: MusicHandlerFunctionParams<song_kugou>) {
+function MusicHandlerKugou({tasks, tmpSong, song}: MusicHandlerFunctionParams<SongTypes.kugou>) {
     tasks.push(new Promise((resolve, reject) => {
-        kugouAxios.get('/song/url', {params: {hash: song.hash}}).then((res: AxiosResponse) => {
+        kugouAxios.get('/song/url', {params: {hash: song.symbol}}).then((res: AxiosResponse) => {
             if (res.data.status === 1) {
                 tmpSong.url = res.data.url[0]
                 resolve();
@@ -132,9 +133,9 @@ function MusicHandlerKugou({tasks, tmpSong, song}: MusicHandlerFunctionParams<so
             reject(err.message);
         })
     }))
-    LyricHandlers.LyricHandlerKugou({tasks, tmpSong, unique: song.hash});
+    LyricHandlers.LyricHandlerKugou({tasks, tmpSong, unique: song.symbol});
     tasks.push(new Promise((resolve, reject) => {
-        kugouAxios.get('/privilege/lite', {params: {hash: song.hash}}).then((res: AxiosResponse) => {
+        kugouAxios.get('/privilege/lite', {params: {hash: song.symbol}}).then((res: AxiosResponse) => {
             if (res.data.error_code !== 0) reject(res)
             const d = res.data.data[0]
             tmpSong.pic = replacePicSizeParam(d.trans_param.union_cover)
@@ -153,7 +154,7 @@ export const MusicHandlers = {
     MusicHandlerQQ,
     MusicHandlerNetease,
     MusicHandlerKugou,
-    record: <{[K in songTypes]: (params: MusicHandlerFunctionParams<songTypeMap[K]>) => void}>{
+    record: <{[K in songTypes]: (params: MusicHandlerFunctionParams<any>) => void}>{
         bilibili: MusicHandlerBilibili,
         siren: MusicHandlerSiren,
         qq: MusicHandlerQQ,

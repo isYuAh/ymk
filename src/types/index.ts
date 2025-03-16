@@ -1,3 +1,5 @@
+import type { song } from "./song"
+
 export type list_basic = {
     pic: string,
     title: string,
@@ -73,62 +75,6 @@ export type song_lrc = {
     enableAutoScroll: boolean,
     items: song_lrc_item[],
 };
-export type song_basic = {
-    title?: string,
-    singer?: string,
-    pic?: string,
-    lrc?: Record<string, song_lrcConfig>
-}
-
-export type song_bilibili = {
-    type: 'bilibili',
-    BV: string,
-    p?: number
-} & song_basic;
-export type song_local = {
-    type: 'local',
-    path: string
-} & song_basic;
-export type song_web = {
-    type: 'web',
-    url: string,
-} & song_basic;
-export type song_netease = {
-    type: 'netease',
-    id: string,
-    playable?: boolean,
-    reason?: string
-} & song_basic;
-export type song_siren = {
-    type: 'siren',
-    cid: string
-} & song_basic;
-export type song_qq = {
-    type: 'qq',
-    mid: string
-} & song_basic;
-export type song_kugou = {
-    type: 'kugou',
-    hash: string
-} & song_basic
-
-export type song = song_bilibili |
-                    song_local |
-                    song_web |
-                    song_netease |
-                    song_siren |
-                    song_qq |
-                    song_kugou
-
-export type songTypeMap = {
-    bilibili: song_bilibili,
-    local: song_local,
-    web: song_web,
-    netease: song_netease,
-    siren: song_siren,
-    qq: song_qq,
-    kugou: song_kugou
-}
 
 export type songInPlay = {
     pic: string,
@@ -156,4 +102,9 @@ export type mouseMenuItem = {
     title: string,
     action: (...args: any[]) => void,
     show?: boolean
+}
+
+export enum PlaylistType {
+    local = 'local',
+    preview = 'preview'
 }

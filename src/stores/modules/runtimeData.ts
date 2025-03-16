@@ -1,6 +1,7 @@
 import {defineStore} from "pinia";
 import {ref} from "vue";
-import type {list, playlistPart, song} from "@/types";
+import type {list, playlistPart} from "@/types";
+import type {song} from '@/types/song'
 
 export const useRuntimeDataStore = defineStore('runtimeData', () => {
   const playlists = ref<list[]>([])

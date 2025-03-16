@@ -66,7 +66,8 @@
 </template>
 
 <script setup lang='ts'>
-import {type list_data, type list_trace_netease_playlist, type song} from '@/types'
+import type {list_data, list_trace_netease_playlist} from '@/types'
+import type {song} from '@/types/song'
 import {computed, nextTick, ref, toRaw, watch} from 'vue';
 import emitter from '@/emitter';
 import '@/assets/songlist.css'

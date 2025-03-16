@@ -265,7 +265,7 @@ async function playSong({song, justtry = false, noEffectWhenNotPlayable = true}:
     })
   }
   else if (song.type === 'web') {
-    tmpSong.url = song.url;
+    tmpSong.url = song.symbol;
   }
   else if (song.type === 'local') {
 
