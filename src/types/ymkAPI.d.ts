@@ -28,10 +28,6 @@ export interface ymkInterface {
   onUrlScheme: (callback: (event: any, ...args: any) => void) => void;
   offUrlScheme: (callback: (event: any) => void) => void;
   showImportPlaylistDialog: () => Promise<any>;
-  getBilibiliVideoView: (bv: string, p?: any) => Promise<any>;
-  getBilibiliVideoPlayurl: (params: any) => Promise<any>;
-  getBilibiliFav: (params: any) => Promise<any>;
-  axiosRequestGet: (url: string, config?: any) => Promise<any>;
   getCursorPos: () => Promise<{left: number; top: number}>;
   getSpecificConfig: (fn: string) => Promise<any>;
   writeSpecificConfig: (fn: string, t: string) => Promise<any>;

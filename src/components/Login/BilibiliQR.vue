@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import {onUnmounted, ref, watch} from "vue";
-import {proxyAxios} from "@/utils/axiosInstances";
 import QRCode from 'qrcode'
 import {showMessage} from "@/utils/message";
 import {useUserStore} from "@/stores/modules/user";
+import { proxyRequest } from "@/utils/proxyRequest";
 
 const phase = defineModel('phase', {type: String})
 let qrimgEl = ref<HTMLImageElement>();
@@ -13,7 +13,7 @@ let cookies = <string[]>[]
 const user = useUserStore()
 let timer = (-1 as any);
 async function checkQRCodeStatus() {
-  const status = await proxyAxios.get('https://passport.bilibili.com/x/passport-login/web/qrcode/poll', {
+  const status = await proxyRequest.get('https://passport.bilibili.com/x/passport-login/web/qrcode/poll', {
     params: {
       qrcode_key: key
     }
@@ -39,7 +39,7 @@ async function checkQRCodeStatus() {
   }
 }
 function getQRCode() {
-  proxyAxios.get('https://passport.bilibili.com/x/passport-login/web/qrcode/generate').then(async res => {
+  proxyRequest.get('https://passport.bilibili.com/x/passport-login/web/qrcode/generate').then(async res => {
     console.log('@getQRCode', res.data)
     if ('data' in res.data && res.data.code === 0) {
       const data = res.data.data;
@@ -51,7 +51,7 @@ function getQRCode() {
   })
 }
 function checkStatus(refresh: boolean = false) {
-  proxyAxios.get('https://api.bilibili.com/x/web-interface/nav',{
+  proxyRequest.get('https://api.bilibili.com/x/web-interface/nav',{
     headers: {
       Cookie: cookies.join(';')
     }
@@ -59,10 +59,12 @@ function checkStatus(refresh: boolean = false) {
     console.log('$checkStatus-bilibili', res.data)
     if (res.data.code === 0) {
       const mid = res.data.data.mid;
-      proxyAxios('https://api.bilibili.com/x/space/wbi/acc/info', {
-        method: 'get',
+      proxyRequest.get('https://api.bilibili.com/x/space/wbi/acc/info', {
+        headers: {
+          Cookie: cookies.join(';') + ";buvid3=1"
+        },
         params: {
-          mid
+          mid,
         }
       }).then((res) => {
         console.log('$checkStatus-bilibili-2', res.data)
@@ -74,7 +76,8 @@ function checkStatus(refresh: boolean = false) {
               avatarUrl: data.face,
               uid: data.mid,
               vipType: data.vip.type,
-              signature: data.sign
+              signature: data.sign,
+              auth: cookies
             }
           })
           phase.value = 'logined';

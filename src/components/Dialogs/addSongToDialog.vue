@@ -9,7 +9,8 @@ const props = defineProps<{
   closeDialog: () => void
   data: any
 }>()
-const {readClipboard, getBilibiliVideoView} = window.ymkAPI
+const {readClipboard} = window.ymkAPI
+import {getBilibiliVideoView} from '@/utils/bilibiliAPI'
 let title = ref("");
 let singer = ref("");
 let id = ref("");

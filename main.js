@@ -3,11 +3,9 @@ import path from 'path';
 import {fileURLToPath} from 'url';
 import {checkFolders, checkResources, startKugouServer, startNcmServer} from "./utils/utils.js";
 import express from "express";
-import {WBI} from "./utils/WBI.js";
 import axios from "axios";
 import {initTray} from "./utils/tray.js";
 import {
-    axiosRequestGet,
     deletePlaylistFile,
     getConfig,
     getLocalPlaylists,
@@ -62,17 +60,11 @@ if (!gotTheLock) {
                 params: req.body.params,
                 responseType: 'stream'
             });
-            // 处理 Set-Cookie 头信息
             if (res_1.headers['set-cookie']) {
-                // 将 cookies 添加到响应头中
                 res.setHeader('x-set-cookies', JSON.stringify(res_1.headers['set-cookie']));
             }
-            
             Object.keys(res_1.headers).forEach(key => {
                 res.header(key, res_1.headers[key]);
-                // if (key === 'set-cookie') {
-                //     res.append('set-cookie', res_1.headers[key])
-                // }
             });
             if (res_1.headers['content-type'] && res_1.headers['content-type'].includes('application/json')) {
                 res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -85,50 +77,9 @@ if (!gotTheLock) {
         }
     })
     proxyServer.listen(35652)
-    const bilibiliClient = axios.create({
-        headers: {
-            "User-Agent": 'Mozilla',
-            referer: 'https://www.bilibili.com',
-        }
-    });
-    bilibiliClient.get('https://api.bilibili.com/x/web-interface/nav').then(res => {
-        const {data: {data: { wbi_img: { img_url, sub_url } } } } = res;
-        let wbi = {
-            img_key: img_url.slice(
-                img_url.lastIndexOf('/') + 1,
-                img_url.lastIndexOf('.')
-            ),
-            sub_key: sub_url.slice(
-                sub_url.lastIndexOf('/') + 1,
-                sub_url.lastIndexOf('.')
-            )
-        }
-        console.log(res.data, 32323232)
-        bilibiliClient.interceptors.request.use((config) => {
-            config.params = WBI(wbi, config.params);
-            return config;
-        })
-    }).catch(err => {console.log(err);})
 
     checkFolders(['./res', './res/lists'])
     checkResources()
-
-
-    async function getBilibiliVideoView(_, bv) {
-        return (await bilibiliClient.get('https://api.bilibili.com/x/web-interface/view', {
-            params: {
-                bvid: bv,
-            }
-        })).data
-    }
-    async function getBilibiliVideoPlayurl(_, params) {
-        return (await bilibiliClient.get('https://api.bilibili.com/x/player/wbi/playurl', {
-            params
-        })).data
-    }
-    async function getBilibiliFav(_, params) {
-        return (await bilibiliClient.get('https://api.bilibili.com/x/v3/fav/resource/list', {params})).data;
-    }
 
     const createWindow = () => {
         mainWindow = new BrowserWindow({
@@ -153,10 +104,6 @@ if (!gotTheLock) {
         ipcMain.handle('writeSpecificConfig', writeSpecificConfig)
         ipcMain.handle('readClipboard', readClipboard)
         ipcMain.handle('isMinimized', () => mainWindow.isMinimized())
-        ipcMain.handle('getBilibiliVideoView', getBilibiliVideoView)
-        ipcMain.handle('getBilibiliVideoPlayurl', getBilibiliVideoPlayurl)
-        ipcMain.handle('getBilibiliFav', getBilibiliFav)
-        ipcMain.handle('axiosRequestGet', axiosRequestGet)
         ipcMain.handle('getCursorPos', getCursorPos)
         ipcMain.handle('openUrl', openUrl)
         ipcMain.handle('showImportPlaylistDialog', showImportPlaylistDialog);

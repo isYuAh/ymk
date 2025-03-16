@@ -70,6 +70,10 @@
                 </div>
               </template>
               </VDropdown>
+              <div @click="toggleLikeDislike" class="playbutton like">
+                <svg v-if="isLiked" t="1742108569321" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5332" id="mx_n_1742108569322" width="24" height="24"><path d="M512 926h-6c-6 0-12-3-15-9L143 569C92 518 62 449 62 374s30-144 81-195c51-51 120-81 195-81 63 0 126 21 174 63 108-90 270-81 369 18 108 108 108 282 0 390L533 917c-6 6-12 9-21 9z" fill="currentColor" p-id="5333"></path></svg>
+                <svg v-else t="1742108433940" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2355" width="24" height="24"><path d="M908.8 166.4c-105.6-108.8-278.4-118.4-396.8-25.6-118.4-96-291.2-86.4-396.8 22.4C6.4 281.6 9.6 467.2 128 582.4l348.8 348.8c9.6 9.6 22.4 16 38.4 16s28.8-6.4 38.4-16L896 582.4c118.4-115.2 121.6-300.8 12.8-416z m-57.6 371.2L512 880 172.8 537.6c-92.8-89.6-96-236.8-9.6-326.4 44.8-44.8 105.6-70.4 166.4-70.4 51.2 0 105.6 19.2 147.2 54.4 19.2 19.2 51.2 19.2 73.6 0 92.8-76.8 230.4-70.4 313.6 16 83.2 89.6 80 236.8-12.8 326.4z" fill="currentColor" p-id="2356"></path></svg>
+              </div>
             </div>
             <div class="duration">{{ playerStore.config.durationTime }}</div>
           </div>
@@ -96,10 +100,16 @@ import {langStringMapper} from "@/utils/stringMapper";
 import {usePlayerStore} from "@/stores/modules/player";
 import {useRuntimeDataStore} from "@/stores/modules/runtimeData";
 import { showMessage } from '@/utils/message';
+import { isSongInPlaylist } from '@/utils/checkSongExist';
+import { addSongToPlaylist, removeSongFromPlaylist } from '@/utils/Toolkit';
 const {isMinimized, onRestore} = window.ymkAPI;
 const runtimeData = useRuntimeDataStore()
 const player = usePlayerStore()
 const playerStore = usePlayerStore();
+const isLiked = computed(() => {
+  const [result] = isSongInPlaylist(playerStore.song.origin, runtimeData.defaultPlaylist)
+  return result
+})
 let lrcContentEl = useTemplateRef('lrcContentEl')
 let lrcContainerEl = useTemplateRef('lrcContainerEl')
 let lyricAutoScrollLock = false;
@@ -210,6 +220,13 @@ function copy(content: string, sign: keyof typeof copySign) {
   copySign[sign] = true
   setTimeout(() => copySign[sign] = false, 2000)
 }
+function toggleLikeDislike() {
+  if (isLiked.value) {
+    removeSongFromPlaylist(playerStore.song.origin, runtimeData.defaultPlaylist, true)
+  }else {
+    addSongToPlaylist(playerStore.song.origin, runtimeData.defaultPlaylist, true)
+  }
+}
 </script>
 
 <style scoped>
@@ -314,14 +331,14 @@ function copy(content: string, sign: keyof typeof copySign) {
     margin: 10px 0;
     display: grid;
     justify-content: center;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
 }
 .partContainer .controllPart .controlButtons .playbutton {
     width: 24px;
     height: 24px;
     color: var(--ymk-color);
     margin: 0 20px;
-    filter: drop-shadow(0 0 5px #fff);
+    filter: drop-shadow(0 0 5px currentColor);
 }
 
 .partContainer .controllPart .controlButtons .translate {
@@ -452,5 +469,15 @@ function copy(content: string, sign: keyof typeof copySign) {
   margin-top: 2px;
   font-size: 16px;
   opacity: 0.8;
+}
+
+.playbutton.like {
+  transition: all .3s;
+  &:hover {
+    scale: 1.05;
+  }
+  &:active {
+    scale: 0.95;
+  }
 }
 </style>

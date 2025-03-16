@@ -66,6 +66,8 @@ import {showContextMenu} from "@/utils/contextMenu";
 import {usePlayerStore} from "@/stores/modules/player";
 import {useRuntimeDataStore} from "@/stores/modules/runtimeData";
 import {neteaseAxios} from "@/utils/axiosInstances";
+import { showDialog } from "@/utils/dialog";
+import CollectDialog from "@/components/Dialogs/CollectDialog.vue";
 
 const router = useRouter();
 const runtimeData = useRuntimeDataStore()
@@ -122,13 +124,20 @@ async function loadMore() {
   }
 }
 
-function tryShowMenu(a: any) {
+function tryShowMenu(data: {
+  song: song,
+  si: number
+}) {
   showContextMenu({
     menuItems: [{
       title: '收藏',
-      action: () => {},
+      action: () => {
+        showDialog(CollectDialog, {
+          waitCollect: data.song
+        })
+      },
     }],
-    args: a
+    args: data
   })
 }
 

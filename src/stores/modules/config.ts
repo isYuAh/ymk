@@ -17,6 +17,7 @@ export const useConfigStore = defineStore('config', () => {
   const bg = ref("")
   const maskOpacity = ref(0)
   const colors = ref<Record<string, string>>({});
+  const defaultPlaylist = ref('isyuah_converted.json');
   const player = usePlayerStore()
   const user = useUserStore()
   function saveConfig() {
@@ -27,10 +28,14 @@ export const useConfigStore = defineStore('config', () => {
         volume: player.config.volume,
         mode: player.config.mode,
         maskOpacity: maskOpacity.value,
-        langPreferences: player.config.langPreferences
+        langPreferences: player.config.langPreferences,
+        defaultPlaylist: defaultPlaylist.value,
       },
-      neteaseUser: user.neteaseUser,
-      kugouUser: user.kugouUser
+      user: {
+        bilibiliUser: user.bilibiliUser,
+        kugouUser: user.kugouUser,
+        neteaseUser: user.neteaseUser,
+      }
     }))
   }
   function saveColors() {
@@ -42,6 +47,7 @@ export const useConfigStore = defineStore('config', () => {
     bg,
     colors,
     maskOpacity,
+    defaultPlaylist,
     saveConfig,
     saveColors,
   }

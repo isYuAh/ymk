@@ -12,10 +12,7 @@ document.body.appendChild(dialogContainer)
 let dialogApps: App[] = []
 
 export function showDialog<T>(dialogComponent: Component<{data: T}>, data?: T): DialogInstance {
-  // 创建挂载容器
   const mountNode = document.createElement('div')
-
-  // 创建应用实例
   let dialogApp: App
 
   const closeHandler = () => {

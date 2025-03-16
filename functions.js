@@ -1,15 +1,14 @@
 import fs from "node:fs";
 import path from "path";
 import {clipboard, dialog, shell} from "electron";
-import axios from "axios";
 
 export function getLocalPlaylists() {
   const lists = fs.readdirSync(path.resolve('./res/lists')).filter(file => file.endsWith('.json'))
   let results = []
   for (let f of lists) {
     results.push({
-      originFilename: f,
       ...JSON.parse(fs.readFileSync(path.resolve('./res/lists', f)).toString()),
+      originFilename: f,
     })
   }
   return results;
@@ -43,9 +42,6 @@ export function writeSpecificConfig(_, fn, config) {
 }
 export function readClipboard() {
   return clipboard.readText();
-}
-export async function axiosRequestGet(_, url, config) {
-  return (await axios.get(url, config)).data;
 }
 export function openUrl(_, url) {
   shell.openExternal(url)

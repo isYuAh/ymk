@@ -42,18 +42,6 @@ function isMinimized() {
 function showImportPlaylistDialog() {
     return ipcRenderer.invoke('showImportPlaylistDialog')
 }
-function getBilibiliVideoView(bv, p) {
-    return ipcRenderer.invoke('getBilibiliVideoView', bv)
-}
-function getBilibiliVideoPlayurl(params) {
-    return ipcRenderer.invoke('getBilibiliVideoPlayurl', params)
-}
-function getBilibiliFav(params) {
-    return ipcRenderer.invoke('getBilibiliFav', params)
-}
-function axiosRequestGet(url, config) {
-    return ipcRenderer.invoke('axiosRequestGet', url, config)
-}
 function getCursorPos() {
     return ipcRenderer.invoke('getCursorPos')
 }
@@ -95,10 +83,6 @@ const apis = {
     onUrlScheme: callback => ipcRenderer.on('urlScheme', callback),
     offUrlScheme: callback => ipcRenderer.off('urlScheme', callback),
     showImportPlaylistDialog,
-    getBilibiliVideoView,
-    getBilibiliVideoPlayurl,
-    getBilibiliFav,
-    axiosRequestGet,
     getCursorPos,
     getSpecificConfig,
     writeSpecificConfig,

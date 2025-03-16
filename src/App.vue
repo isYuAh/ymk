@@ -17,9 +17,10 @@ const config = useConfigStore()
 Promise.all([getConfig(), getSpecificConfig('colors')]).then(([r, rr]) => {
   if (r) {
     let jp = r;
-    console.log('$jp - maskOpacity', jp.config.maskOpacity)
-    user.neteaseUser = jp.neteaseUser || {};
-    user.kugouUser = jp.kugouUser || {};
+    console.log('$jsonConfig', jp)
+    user.neteaseUser = jp.user.neteaseUser || {};
+    user.bilibiliUser = jp.user.bilibiliUser || {};
+    user.kugouUser = jp.user.kugouUser || {};
     jp.config.api && (config.api = jp.config.api);
     jp.config.bg && (config.bg = jp.config.bg);
     jp.config.maskOpacity && (config.maskOpacity = jp.config.maskOpacity)
@@ -37,13 +38,11 @@ Promise.all([getConfig(), getSpecificConfig('colors')]).then(([r, rr]) => {
     config.colors = rr;
   }
 }).finally(() => {
-  console.log(config, 2)
   watch([
     () => player.config.mode,
     () => player.config.langPreferences,
     () => player.config.volume,
-    () => user.neteaseUser,
-    () => user.kugouUser,
+    () => user,
     config
   ], () => {config.saveConfig()}, {deep: true, immediate:false});
 })

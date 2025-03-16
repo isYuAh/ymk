@@ -6,7 +6,7 @@ import type {
     playlistComponent,
 } from "@/types";
 import type {song, SongTypes} from '@/types/song'
-const {getBilibiliFav} = window.ymkAPI;
+import {getBilibiliFav} from '@/utils/bilibiliAPI';
 import axios, {type AxiosResponse} from "axios";
 import {kugouAxios, neteaseAxios} from "@/utils/axiosInstances";
 import {useUserStore} from "@/stores/modules/user";
@@ -48,7 +48,7 @@ function PlaylistHandlerBilibili({component, parseComponent, components, comInde
                         for (let i = 1; i <= m.page;i++) {
                             runtimeData.playlist.songs.push({
                                 type: 'bilibili',
-                                BV: m.bvid,
+                                symbol: m.bvid,
                                 title: `P${i} ${m.title}`,
                                 pic: m.cover,
                                 singer: m.upper.name,
@@ -58,7 +58,7 @@ function PlaylistHandlerBilibili({component, parseComponent, components, comInde
                     }else {
                         runtimeData.playlist.songs.push({
                             type: 'bilibili',
-                            BV: m.bvid,
+                            symbol: m.bvid,
                             title: m.title,
                             pic: m.cover,
                             singer: m.upper.name})
@@ -149,12 +149,12 @@ function PlaylistHandlerNetease({component, parseComponent, comIndex, components
                             completeCount++;
                             runtimeData.loading.text = `加载 网易云歌单#${component.id} | 分片 ${completeCount} / ${spliceCount}`;
                             resolve(res.data.songs.map((s: any) => {
-                                return {
+                                return <song>{
                                     pic: s.al.picUrl,
                                     title: s.name,
                                     type: 'netease',
                                     singer: s.ar.map((ar: any) => (ar.name)).join(' & '),
-                                    id: s.id,
+                                    symbol: s.id,
                                 }
                             }));
                         }else {

@@ -4,8 +4,9 @@ import {proceedLrcText, replacePicSizeParam} from "@/utils/u";
 import {kugouAxios, neteaseAxios, qqAxios} from "@/utils/axiosInstances";
 import {LyricHandlers} from "@/utils/LyricHandlers";
 import type { songInPlay } from "@/types";
-const {getBilibiliVideoView, getBilibiliVideoPlayurl, axiosRequestGet} = window.ymkAPI;
-
+import {getBilibiliVideoView, getBilibiliVideoPlayurl} from '@/utils/bilibiliAPI'
+import { proxyRequest } from "./proxyRequest";
+import { useUserStore } from "@/stores/modules/user";
 interface MusicHandlerFunctionParams<T> {
     tasks: Promise<void>[],
     tmpSong: songInPlay,
@@ -15,25 +16,29 @@ interface MusicHandlerFunctionParams<T> {
 function MusicHandlerBilibili({tasks, tmpSong, song}: MusicHandlerFunctionParams<SongTypes.bilibili>) {
     tasks.push(new Promise((resolve, reject) => {
         getBilibiliVideoView(song.symbol).then((res: any) => {
-            if (res.data.pic) {
-                tmpSong.pic = res.data.pic;
+            const data = res.data
+            if (data.data.pic) {
+                tmpSong.pic = data.data.pic;
             }
-            let rawDetail = res.data
+            let rawDetail = data.data
             let cid
-            if (song.p !== undefined && 'pages' in res.data) {
-                cid = res.data.pages[song.p - 1].cid;
+            if (song.p !== undefined && 'pages' in data.data) {
+                cid = data.data.pages[song.p - 1].cid;
             }else {
-                cid = res.data.cid;
+                cid = data.data.cid;
             }
             tmpSong.title = tmpSong.title || rawDetail.title;
             tmpSong.singer = tmpSong.singer || rawDetail.owner.name;
-
-            getBilibiliVideoPlayurl({
+            const par: any = {
                 bvid: song.symbol,
                 cid,
-                platform: "html5"
-            }).then((res: AxiosResponse) => {
-                tmpSong.url = res.data.durl[0].url;
+                platform: "html5",
+            }
+            if (useUserStore().isLogin.bilibili) {
+                par.high_quality = 1
+            }
+            getBilibiliVideoPlayurl(par).then((res: AxiosResponse) => {
+                tmpSong.url = res.data.data.durl[0].url;
                 resolve();
             }).catch(() => reject(new Error('获取视频播放地址失败')))
         }).catch(() => reject(new Error('获取视频信息失败')));
@@ -46,7 +51,7 @@ function MusicHandlerSiren({tasks, tmpSong, song}: MusicHandlerFunctionParams<So
         axios.get(`https://monster-siren.hypergryph.com/api/song/${song.symbol}`).then(res => {
             if (res.data.data.lyricUrl) {
                 subTasks.push(new Promise((resolve, reject) => {
-                    axiosRequestGet(res.data.data.lyricUrl).then((res: any) => {
+                    proxyRequest.get(res.data.data.lyricUrl).then((res: any) => {
                         const {result, enableAutoScroll} = proceedLrcText(res)
                         tmpSong.lrcs['origin'] = {
                             items: result,

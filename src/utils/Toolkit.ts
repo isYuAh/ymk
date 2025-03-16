@@ -1,5 +1,5 @@
 import {useUserStore} from "@/stores/modules/user";
-import type {list, playlistComponent} from "@/types";
+import type {list, list_data, playlistComponent} from "@/types";
 import type {song} from '@/types/song'
 import router from "@/router";
 import {kugouAxios, neteaseAxios} from "@/utils/axiosInstances";
@@ -7,6 +7,7 @@ import {replacePicSizeParam} from "@/utils/u";
 import {toRaw} from "vue";
 import {showMessage} from "@/utils/message";
 import {useRuntimeDataStore} from "@/stores/modules/runtimeData";
+import { isSongInPlaylist } from "./checkSongExist";
 
 const {getLocalPlaylists, writePlaylistFile} = window.ymkAPI
 
@@ -143,6 +144,7 @@ export function pushPlaylistPart(...parts: PlaylistPartArg[]) {
     })
   })
 }
+
 export async function refreshPlaylists({notReset}: {notReset: boolean}) {
   const runtimeData = useRuntimeDataStore()
   const user = useUserStore()
@@ -174,7 +176,7 @@ export async function refreshPlaylists({notReset}: {notReset: boolean}) {
       title: '本地',
       playlists: ps,
       begin: undefined,
-      type: "local"
+      type: "local",
     }
   });
   playlistTasks.push(localPlaylistTask);
@@ -267,7 +269,7 @@ export function addSongTo({song, playlistIndex, save = true} : {song: song, play
   let components = pl.playlist;
   let first = components[0];
   let originFn = pl.originFilename;
-  if (first.type === 'data') {
+  if (first && first.type === 'data') {
     first.songs.unshift(song);
   }else {
     components.unshift({
@@ -293,6 +295,7 @@ export async function checkMusicPlayable(song: song) {
         id: song.symbol
       }
     })
+    console.log(res.data)
     return {result: res.data.success, msg: res.data.message}
   }else {
     return {result: true, msg: ''}
@@ -319,4 +322,42 @@ export function saveSpecificPlaylist(playlist: list) {
   }).catch(() => {
     showMessage(`写入文件${playlist.originFilename}失败`);
   })
+}
+
+export function addSongToPlaylist(song?: song, playlist?: list, save = false) {
+  if (!song || !playlist || playlist.type !== 'local') return;
+  let components = playlist.playlist;
+  let first = components[0];
+  if (first && first.type === 'data') {
+    first.songs.unshift(song);
+  }else {
+    components.unshift({
+      type: "data",
+      songs: [song],
+    })
+  }
+  if (save) {
+    writePlaylistFile(playlist.originFilename, JSON.stringify(toRaw(playlist))).then(() => {
+      showMessage('添加成功');
+    }).catch(() => {
+      showMessage(`写入文件${playlist.originFilename}失败`);
+    })
+  }
+}
+
+export function removeSongFromPlaylist(song?: song, playlist?: list, save = false) {
+  if (!song || !playlist || playlist.type !== 'local') return;
+  const runtimeData = useRuntimeDataStore()
+  let components = playlist.playlist;
+  const result = isSongInPlaylist(song, playlist);
+  if (playlist.originFilename === runtimeData.playlist.raw.originFilename) {
+    runtimeData.playlist.songs.splice(result[2], 1)
+  }
+  if (!result[0]) return;
+  else {
+    (components[result[1]] as list_data).songs.splice(result[2], 1)
+  }
+  if (save) {
+    saveSpecificPlaylist(playlist)
+  }
 }

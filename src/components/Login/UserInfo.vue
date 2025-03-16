@@ -10,7 +10,7 @@ defineProps<{
 <template>
   <div class="loginedContainer">
     <div class="userInfo">
-      <img :src="user.avatarUrl" class="avatar"  :alt="user.nickname"/>
+      <img referrerpolicy="no-referrer" :src="user.avatarUrl" class="avatar"  :alt="user.nickname"/>
       <div class="user">
         <div class="nickname">{{user.nickname}}</div>
         <div class="signature">{{user.signature}}</div>
@@ -60,4 +60,5 @@ defineProps<{
   background-color: var(--ymk-text-shadow-color);
   transition: all .25s;
 }
+
 </style>

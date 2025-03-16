@@ -13,9 +13,8 @@
 
 <script setup lang='ts'>
 import { ref } from 'vue';
-import {useRuntimeDataStore} from "@/stores/modules/runtimeData";
 import DSelect from '@/components/DSelect.vue';
-import { collectToLocalPlaylist, determinCollectFunction, getAvailableCollectTarget } from '@/utils/CollectHandler';
+import { determinCollectFunction, getAvailableCollectTarget } from '@/utils/CollectHandler';
 import type {song} from "@/types/song";
 const props = defineProps<{
   closeDialog: () => void

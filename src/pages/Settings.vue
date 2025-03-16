@@ -13,6 +13,7 @@ let apiConfig = ref({
 let tmpConfig = ref({
   bg: config.bg,
   maskOpacity: config.maskOpacity || 0,
+  defaultPlaylist: config.defaultPlaylist,
 })
 function saveApiConfig () {
   config.$patch({
@@ -66,6 +67,10 @@ function saveColorsConfig () {
         <div class="Input">
           <div class="label">透明度</div>
           <input class="input" v-model="tmpConfig.maskOpacity" type="text" />
+        </div>
+        <div class="Input">
+          <div class="label">默认歌单</div>
+          <input placeholder="文件名(like按钮保存的位置)" class="input" v-model="tmpConfig.defaultPlaylist" type="text" />
         </div>
         <div class="controlBtns">
           <div @click="saveBgConfig" class="controlBtn">保存</div>
