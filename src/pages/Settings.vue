@@ -6,6 +6,7 @@ import PickColors from 'vue-pick-colors'
 import {showMessage} from "@/utils/message";
 import {useConfigStore} from "@/stores/modules/config";
 const config = useConfigStore()
+console.log(config, config.minimizeToTray)
 let apiConfig = ref({
   neteaseUrl: config.api.neteaseApi.url,
   qqUrl: config.api.qqApi.url,

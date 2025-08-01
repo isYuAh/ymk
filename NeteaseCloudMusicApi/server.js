@@ -172,7 +172,7 @@ async function consturctServer(moduleDefs) {
     ;(req.headers.cookie || '').split(/;\s+|(?<!\s)\s+$/g).forEach((pair) => {
       let crack = pair.indexOf('=')
       if (crack < 1 || crack == pair.length - 1) return
-      req.cookies[decode(pair.slice(0, crack)).trim()] = decode(
+      req.cookies[decode(pair.slice(0, crack)).trim()] = decode(  
         pair.slice(crack + 1),
       ).trim()
     })

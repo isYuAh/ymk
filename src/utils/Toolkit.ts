@@ -249,11 +249,8 @@ export async function refreshPlaylists({notReset}: {notReset: boolean}) {
     playlistTasks.push(kugouPlaylistTask);
   }
   
-  // 等待所有任务完成并统一添加
   const results = await Promise.all(playlistTasks);
-  // 过滤掉null结果（如酷狗API返回错误状态）
   const validResults = results.filter(result => result !== null) as PlaylistPartArg[];
-  // 一次性添加所有播放列表部分
   if (validResults.length > 0) {
     pushPlaylistPart(...validResults);
   }

@@ -24,6 +24,7 @@ Promise.all([getConfig(), getSpecificConfig('colors')]).then(([r, rr]) => {
     jp.config.api && (config.api = jp.config.api);
     jp.config.bg && (config.bg = jp.config.bg);
     jp.config.maskOpacity && (config.maskOpacity = jp.config.maskOpacity)
+    jp.config.minimizeToTray && (config.minimizeToTray = jp.config.minimizeToTray)
     if (jp.config.mode) {
       player.config.mode = jp.config.mode;
     }
