@@ -14,6 +14,7 @@ let tmpConfig = ref({
   bg: config.bg,
   maskOpacity: config.maskOpacity || 0,
   defaultPlaylist: config.defaultPlaylist,
+  minimizeToTray: config.minimizeToTray || false,
 })
 function saveApiConfig () {
   config.$patch({
@@ -34,6 +35,12 @@ function saveBgConfig() {
 }
 function saveColorsConfig () {
   config.saveColors();
+  showMessage('保存成功')
+}
+function saveOtherConfig () {
+  config.$patch({
+    minimizeToTray: tmpConfig.value.minimizeToTray
+  })
   showMessage('保存成功')
 }
 </script>
@@ -91,6 +98,23 @@ function saveColorsConfig () {
         </div>
       </div>
     </div>
+    <div class="SettingsPane forbidSelect">
+      <div class="title">其他</div>
+      <div class="content">
+        <div class="Checkbox">
+          <input id="minimizeToTray" class="input" v-model="tmpConfig.minimizeToTray" type="checkbox" />
+          <label for="minimizeToTray" class="label">关闭窗口后最小化到托盘</label>
+          <label for="minimizeToTray" class="checkmark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12l5 5L20 7"></path>
+            </svg>
+          </label>
+        </div>
+        <div class="controlBtns">
+          <div @click="saveOtherConfig" class="controlBtn">保存</div>
+        </div>
+      </div>
+    </div>
   </simplebar>
 </div>
 </template>
@@ -125,6 +149,29 @@ function saveColorsConfig () {
 .Input .label {
   width: 70px;
   margin-right: 10px;
+}
+.Checkbox {
+  margin: 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.Checkbox input {
+  display: none;
+}
+.Checkbox .checkmark {
+  height: 20px;
+  width: 20px;
+  background-color: rgba(255,255,255,.1);
+  border: 1px solid #18191C;
+  border-radius: 4px;
+  position: relative;
+}
+.Checkbox .checkmark svg {
+  display: none;
+}
+.Checkbox input:checked ~ .checkmark svg {
+  display: block;
 }
 .colorInput .label {
   width: auto;

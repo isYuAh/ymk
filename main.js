@@ -18,7 +18,6 @@ import {
     writeSpecificConfig
 } from "./functions.js";
 import fs from "node:fs";
-import { Stream } from 'stream';
 
 try {
     const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -108,7 +107,18 @@ if (!gotTheLock) {
         ipcMain.handle('openUrl', openUrl)
         ipcMain.handle('showImportPlaylistDialog', showImportPlaylistDialog);
         ipcMain.on('minimize', () => mainWindow.minimize())
-        ipcMain.on('exit', () => mainWindow.close())
+        ipcMain.on('exit', () => {
+            const config = getConfig();
+            try {
+                if (config.config.minimizeToTray) {
+                    mainWindow.hide();
+                } else {
+                    mainWindow.close();
+                }
+            } catch (error) {
+                mainWindow.close();
+            }
+        })
         mainWindow.on('restore', () => mainWindow.webContents.send('restore'))
 
         initTray(mainWindow, app, __dirname)

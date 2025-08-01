@@ -11,7 +11,8 @@ export type config = {
     },
     mode: 'list' | 'pause' | 'loop' | 'rand',
     bg: string,
-    langPreferences: string[]
+    langPreferences: string[],
+    minimizeToTray: boolean
 }
 
 export type User = {

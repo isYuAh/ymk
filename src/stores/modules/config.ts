@@ -18,6 +18,7 @@ export const useConfigStore = defineStore('config', () => {
   const maskOpacity = ref(0)
   const colors = ref<Record<string, string>>({});
   const defaultPlaylist = ref('isyuah_converted.json');
+  const minimizeToTray = ref(false);
   const player = usePlayerStore()
   const user = useUserStore()
   function saveConfig() {
@@ -30,6 +31,7 @@ export const useConfigStore = defineStore('config', () => {
         maskOpacity: maskOpacity.value,
         langPreferences: player.config.langPreferences,
         defaultPlaylist: defaultPlaylist.value,
+        minimizeToTray: minimizeToTray.value,
       },
       user: {
         bilibiliUser: user.bilibiliUser,
@@ -48,6 +50,7 @@ export const useConfigStore = defineStore('config', () => {
     colors,
     maskOpacity,
     defaultPlaylist,
+    minimizeToTray,
     saveConfig,
     saveColors,
   }
