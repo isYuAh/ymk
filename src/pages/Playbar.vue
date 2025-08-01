@@ -424,6 +424,10 @@ onMounted(() => {
   window.addEventListener('keydown', keyDownEvent)
 })
 function keyDownEvent(e: KeyboardEvent) {
+  if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+    return;
+  }
+  
   if (!songSource.value || !playerStore.song.title) return;
   if (e.key === ' ') {
     e.preventDefault()
