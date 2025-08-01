@@ -7,8 +7,7 @@
   "scripts": {
     "dev": "vite --port 5201",
     "startHMR": "nodemon --exec electron .",
-    "start": "electron .",
-    "build": "electron-builder",
+    "start": "electron-forge start",
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build --force",
@@ -17,40 +16,9 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "makes": "electron-forge make --skip-package",
-    "clean": "node ./release/clean.js"
-  },
-  "build": {
-    "appId": "top.isyuah.dev",
-    "directories": {
-      "output": "release"
-    },
-    "productName": "Yumuzk",
-    "files": [
-      "**/*",
-      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
-      "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
-      "!**/node_modules/*.d.ts",
-      "!**/node_modules/.bin",
-      "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
-      "!.editorconfig",
-      "!**/._*",
-      "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
-      "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
-      "!**/{appveyor.yml,.travis.yml,circle.yml}",
-      "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}",
-      "!src/*",
-      "!vite.config.ts",
-      "!.vscode/*",
-      "!index.html",
-      "!res/*",
-      "!ignoreFolder/*"
-    ],
-    "win": {
-      "icon": "./logo.ico",
-      "target": [
-        "zip"
-      ]
-    }
+    "clean": "node ./release/clean.js",
+    "debug": "npm-run-all --parallel dev start",
+    "build": "pnpm build-only && pnpm package && pnpm clean && pnpm makes"
   },
   "dependencies": {
     "axios": "^1.8.2",
@@ -81,6 +49,7 @@
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.7.0",
+    "@electron-forge/maker-deb": "^7.8.1",
     "@electron-forge/maker-zip": "^7.7.0",
     "@tsconfig/node20": "^20.1.4",
     "@types/express": "^5.0.0",

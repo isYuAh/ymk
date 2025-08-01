@@ -106,10 +106,10 @@ async function loadMore() {
     const songs = await neteaseAxios.get(`/artist/songs?id=${artistId}&limit=30&offset=${offset.value + 30}`)
     if (songs.data.code !== 200) return
 
-    const newSongs = songs.data.songs.map((song: any) => ({
+    const newSongs = songs.data.songs.map((song: any) => (<song>{
       type: 'netease',
       title: song.name,
-      id: song.id,
+      symbol: song.id,
       singer: song.ar.map((ar: any) => ar.name).join(' & '),
       playable: true
     }))

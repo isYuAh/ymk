@@ -60,7 +60,7 @@ async function autoDetectFromClipboard() {
       songType.value = 'bilibili';
       let rawDetail = {} as any;
       getBilibiliVideoView(id.value).then((res: any) => {
-        rawDetail = res.data
+        rawDetail = res.data.data
         title.value = rawDetail.title;
         singer.value = rawDetail.owner.name;
       })

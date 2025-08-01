@@ -44,17 +44,14 @@ onMounted(() => {
     expandedStates.value = parts.map(p => true)
   })
   watch([expandedStates, itemRefs], () => {
-    // console.log('$expandedStates', expandedStates.value)
-    nextTick(() => {
-      contentHeights.value = expandedStates.value.map((expanded, index) => {
-        if (expanded) {
-          return getContentHeight(index);
-        } else {
-          return 0;
-        }
-      })
+    contentHeights.value = expandedStates.value.map((expanded, index) => {
+      if (expanded) {
+        return getContentHeight(index);
+      } else {
+        return 0;
+      }
     })
-  }, {deep: true, immediate: true})
+  }, {deep: true, immediate: true, flush: 'post'})
 })
 
 function checkPlaylist(i: number) {

@@ -295,7 +295,6 @@ export async function checkMusicPlayable(song: song) {
         id: song.symbol
       }
     })
-    console.log(res.data)
     return {result: res.data.success, msg: res.data.message}
   }else {
     return {result: true, msg: ''}

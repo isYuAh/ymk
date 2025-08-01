@@ -9,7 +9,12 @@ export default {
     {
       name: '@electron-forge/maker-zip',
       config: {}
-    }
+    },
+    // {
+    //   name: '@electron-forge/maker-deb',
+    //   platforms: ['linux'],
+    //   config: {}
+    // }
   ],
   outDir: "release"
 };

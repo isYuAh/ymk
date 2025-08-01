@@ -59,7 +59,6 @@ function importPlaylist() {
 }
 function PlaylistMenu(list: list, index: number, part: playlistPart) {
   let menu = <mouseMenuItem[]>[]
-  if (part.type !== "init") return;
   if (part.title === "本地") {
     menu = [{
       title: '添加歌曲',
@@ -120,8 +119,8 @@ const player = usePlayerStore()
 
 function playDailyRecommend() {
   neteaseAxios.post('/recommend/songs').then((res) => {
-    const recommendedSongs: song[] = res.data.data.dailySongs.map((song: any) => ({
-      id: song.id,
+    const recommendedSongs: song[] = res.data.data.dailySongs.map((song: any) => (<song>{
+      symbol: song.id,
       title: song.name,
       singer: song.ar.map((ar: any) => ar.name).join(' & '),
       pic: song.al.picUrl,
