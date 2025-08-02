@@ -10,35 +10,12 @@ import {refreshPlaylists} from "@/utils/Toolkit";
 import {useUserStore} from "@/stores/modules/user";
 import {usePlayerStore} from "@/stores/modules/player";
 import {useConfigStore} from "@/stores/modules/config";
-const {onShowMessage, onRefreshPlaylists, getConfig, getSpecificConfig} = window.ymkAPI;
+const {onShowMessage, onRefreshPlaylists} = window.ymkAPI;
 const user = useUserStore()
 const player = usePlayerStore()
 const config = useConfigStore()
-Promise.all([getConfig(), getSpecificConfig('colors')]).then(([r, rr]) => {
-  if (r) {
-    let jp = r;
-    console.log('$jsonConfig', jp)
-    user.neteaseUser = jp.user.neteaseUser || {};
-    user.bilibiliUser = jp.user.bilibiliUser || {};
-    user.kugouUser = jp.user.kugouUser || {};
-    jp.config.api && (config.api = jp.config.api);
-    jp.config.bg && (config.bg = jp.config.bg);
-    jp.config.maskOpacity && (config.maskOpacity = jp.config.maskOpacity)
-    jp.config.minimizeToTray && (config.minimizeToTray = jp.config.minimizeToTray)
-    if (jp.config.mode) {
-      player.config.mode = jp.config.mode;
-    }
-    if (jp.config.langPreferences) {
-      player.config.langPreferences = jp.config.langPreferences;
-    }
-    if (jp.config.volume) {
-      player.config.volume = jp.config.volume
-    }
-  }
-  if (rr) {
-    config.colors = rr;
-  }
-}).finally(() => {
+
+config.initConfig().finally(() => {
   watch([
     () => player.config.mode,
     () => player.config.langPreferences,
