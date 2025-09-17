@@ -462,6 +462,11 @@ function tryShowSongMenu(song: song) {
           waitCollect: structuredClone(toRaw(song))
         })
       }
+    },{
+      title: '复制symbol',
+      action: () => {
+        navigator.clipboard.writeText(song.symbol)
+      }
     }]
   })
 }

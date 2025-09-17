@@ -43,6 +43,7 @@ function MusicHandlerBilibili({tasks, tmpSong, song}: MusicHandlerFunctionParams
             }).catch(() => reject(new Error('获取视频播放地址失败')))
         }).catch(() => reject(new Error('获取视频信息失败')));
     }))
+    LyricHandlers.ProceedLyric(song, {tasks, tmpSong, unique: song.symbol});
 }
 
 function MusicHandlerSiren({tasks, tmpSong, song}: MusicHandlerFunctionParams<SongTypes.siren>) {
@@ -105,7 +106,7 @@ function MusicHandlerNetease({tasks, tmpSong, song}: MusicHandlerFunctionParams<
             reject(err.message);
         })
     }))
-    LyricHandlers.LyricHandlerNetease({tasks, tmpSong, unique: song.symbol})
+    LyricHandlers.ProceedLyric(song, {tasks, tmpSong, unique: song.symbol});
     tasks.push(new Promise((resolve, reject) => {
         neteaseAxios.get('/song/url/v1', {
             params: {

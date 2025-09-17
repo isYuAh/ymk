@@ -2,16 +2,9 @@ import {defineStore} from "pinia";
 import type {songInPlay} from "@/types";
 import type {song} from '@/types/song'
 import {ref, shallowRef} from "vue";
+import { Creator } from "@/utils/blankCreator";
 export const usePlayerStore = defineStore('player', () => {
-  const song = ref(<songInPlay>{
-    pic: '',
-    title: '',
-    singer: '',
-    type: '',
-    url: '',
-    lrcs: {},
-    origin: null as any
-  })
+  const song = ref(Creator.SongInPlay())
   const config = ref({
     curTime: '',
     lang: 'origin',

@@ -2,12 +2,35 @@ import {type AxiosResponse} from "axios";
 import type {songInPlay} from "@/types";
 import {proceedKrcText, proceedLrcText} from "@/utils/u";
 import {kugouAxios, neteaseAxios} from "@/utils/axiosInstances";
+import type { song } from "@/types/song";
 
 interface LyricHandlerParams<T> {
     tasks: Promise<void>[],
     tmpSong: songInPlay,
     unique: T,
     offset ?: number,
+}
+
+function ProceedLyric(song: song, {tasks, tmpSong, unique, offset}: LyricHandlerParams<string>) {
+    if (!song.customLyric) {
+        switch (song.type) {
+            case 'netease':
+                LyricHandlerNetease({tasks, tmpSong, unique: song.symbol})
+                break;
+            case 'kugou':
+                LyricHandlerKugou({tasks, tmpSong, unique: song.symbol})
+                break;
+        }
+        return;
+    }
+    switch(song.customLyric?.type) {
+        case 'netease':
+            LyricHandlerNetease({tasks, tmpSong, unique: song.customLyric.symbol})
+            break;
+        case 'kugou':
+            LyricHandlerKugou({tasks, tmpSong, unique: song.customLyric.symbol})
+            break;
+    }
 }
 
 function LyricHandlerKugou({tasks, tmpSong, unique, offset}: LyricHandlerParams<string>) {
@@ -134,4 +157,5 @@ function LyricHandlerNetease({tasks, tmpSong, unique, offset}: LyricHandlerParam
 export const LyricHandlers = {
     LyricHandlerKugou,
     LyricHandlerNetease,
+    ProceedLyric,
 }

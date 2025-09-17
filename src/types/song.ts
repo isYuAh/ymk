@@ -10,11 +10,26 @@ export enum BasicSongTypeEnum {
 }
 export type supportSongTypes = BasicSongTypeEnum | 'bilibili'
 
+type CustomLyric = {
+  type: 'netease',
+  symbol: string,
+} | {
+  type: 'kugou',
+  symbol: string,
+} | {
+  type: 'local',
+  symbol: string,
+} | {
+  type: 'web',
+  symbol: string,
+}
+
 export type song_basic = {
   title?: string,
   singer?: string,
   pic?: string,
-  lrc?: Record<string, song_lrcConfig>
+  lrc?: Record<string, song_lrcConfig>,
+  customLyric?: CustomLyric,
 }
 
 export type song_bilibili = {

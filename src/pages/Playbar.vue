@@ -119,6 +119,7 @@ import {usePlayerStore} from "@/stores/modules/player";
 import {checkMusicPlayable} from "@/utils/Toolkit";
 import {useRuntimeDataStore} from "@/stores/modules/runtimeData";
 import {useConfigStore} from "@/stores/modules/config";
+import { Creator } from '@/utils/blankCreator';
 const {onUrlScheme, playPauseStatusUpdate, onTrayControl_PlayPause, onTrayControl_PlaySong} = window.ymkAPI;
 const runtimeData = useRuntimeDataStore()
 const config = useConfigStore()
@@ -237,18 +238,7 @@ watchEffect(() => {
   }
 })
 async function playSong({song, justtry = false, noEffectWhenNotPlayable = true}: playSongParams) {
-  let tmpSong: songInPlay = {
-    title: song.title || "",
-    type: song.type,
-    singer: song.singer || "",
-    pic: song.pic || '',
-    lrcs: {},
-    url: '',
-    origin: song,
-    lyricConfig: {
-      offset: 0,
-    }
-  }
+  let tmpSong: songInPlay = Creator.SongInPlay(song);
   let {result, msg} = await checkMusicPlayable(song);
   if (!result) {
     showMessage(`歌曲无法播放, ${msg}`)
@@ -274,7 +264,6 @@ async function playSong({song, justtry = false, noEffectWhenNotPlayable = true}:
     MusicHandlers.record[song.type]({
       tasks,
       tmpSong,
-      //@ts-ignore
       song,
     })
   }
