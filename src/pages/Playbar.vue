@@ -295,9 +295,9 @@ async function playSong({song, justtry = false, noEffectWhenNotPlayable = true}:
         songfaceImg.value.src = tmpSong.pic;
         playerStore.config.show_songface = true;
       }
-    }else {{
+    }else {
       playerStore.config.show_songface = false;
-    }}
+    }
     if (songSource.value) {
       songSource.value.src = tmpSong.url;
       songSource.value.addEventListener('loadedmetadata', () => {
@@ -637,7 +637,7 @@ onUnmounted(() => {
 }
 .play .playlistSonglist .fourHeightContainer {
   backdrop-filter: blur(10px);
-  box-shdaow: 0 0 5px #000;
+  box-shadow: 0 0 5px #000;
   height: 400px;
   display: flex;
   flex-direction: column;

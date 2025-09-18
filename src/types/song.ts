@@ -30,6 +30,7 @@ export type song_basic = {
   pic?: string,
   lrc?: Record<string, song_lrcConfig>,
   customLyric?: CustomLyric,
+  lyricOffset?: number,
 }
 
 export type song_bilibili = {

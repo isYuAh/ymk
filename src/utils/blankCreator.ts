@@ -12,7 +12,7 @@ export class Creator {
       url: '',
       origin: song,
       lyricConfig: {
-        offset: 0,
+        offset: song.lyricOffset || 0,
       }
     } : {
       title: '',
