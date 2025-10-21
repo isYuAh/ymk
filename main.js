@@ -166,6 +166,7 @@ if (!gotTheLock) {
         lyricWindow = new BrowserWindow({
             menuBarVisible: false,
             titleBarStyle: 'hidden',
+            frame: false,
             transparent: true,
             height: 180,
             width: 1000,
