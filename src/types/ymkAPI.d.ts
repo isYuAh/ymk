@@ -32,4 +32,8 @@ export interface ymkInterface {
   getSpecificConfig: (fn: string) => Promise<any>;
   writeSpecificConfig: (fn: string, t: string) => Promise<any>;
   openUrl: (url: string) => Promise<any>;
+  createLyricWindow: () => Promise<any>;
+  closeLyricWindow: () => Promise<any>;
+  toggleLyricWindow: () => Promise<any>;
+  sendLyric: (lyric: any) => Promise<any>;
 }

@@ -13,17 +13,18 @@ defineProps(['text'])
 <style scoped>
 .TooltipContainer {
   position: relative;
+  width: 100%;
+  height: 100%;
 }
 .TooltipContainer:hover .tooltipText {
-  display: inline-block;
+  top: -100%;
+  position: absolute;
+  display: block;
 }
 .tooltipText {
   display: none;
+  width: max-content;
   font-family: PingFang SC;
-  position: absolute;
-  right: 0;
-  width: 74px;
-  bottom: 4px;
   background-color: rgba(0, 0, 0);
   padding: 2px 5px;
   line-height: 20px;

@@ -105,7 +105,7 @@ import {useRuntimeDataStore} from "@/stores/modules/runtimeData";
 import { showMessage } from '@/utils/message';
 import { isSongInPlaylist } from '@/utils/checkSongExist';
 import { addSongToPlaylist, removeSongFromPlaylist } from '@/utils/Toolkit';
-const {isMinimized, onRestore} = window.ymkAPI;
+const {isMinimized, onRestore, sendLyric} = window.ymkAPI;
 const runtimeData = useRuntimeDataStore()
 const player = usePlayerStore()
 const playerStore = usePlayerStore();
@@ -144,19 +144,33 @@ function changeVolumeProgress(target: number, left: number, width: number) {
   })
 }
 function updateHighlightedIndex(ignoreLock = false) {
-  if (!LRC.value.enableAutoScroll) {
+  if (!LRC.value || !LRC.value.enableAutoScroll || !LRC.value.items.length) {
+    sendLyric(JSON.stringify({
+      lyric: {
+        time: -1,
+        text: '暂无歌词'
+      }
+    }));
     return
   }
-  if (!LRC.value) return;
   let offset = playerStore.song.lyricConfig.offset;
   for (let i = 0; i < LRC.value.items.length; i++) {
     if (playerStore.config.curTimeNum + offset < LRC.value.items[i].time) {
-      playerStore.config.highlightLrcIndex = i - 1 >= 0 ? i - 1 : 0;
+      const targetLrcItemIndex = i - 1 >= 0 ? i - 1 : 0;
+      playerStore.config.highlightLrcIndex = targetLrcItemIndex;
+      sendLyric(JSON.stringify({
+        lyric: LRC.value.items[targetLrcItemIndex]
+      }));
       freshLrcElement(ignoreLock)
       return;
     }
   }
-  playerStore.config.highlightLrcIndex = LRC.value.items.length - 1;
+  const lastLrcItemIndex = LRC.value.items.length - 1;
+  
+  playerStore.config.highlightLrcIndex = lastLrcItemIndex;
+  sendLyric(JSON.stringify({
+    lyric: LRC.value.items[lastLrcItemIndex]
+  }));
   freshLrcElement(ignoreLock)
   return;
 }

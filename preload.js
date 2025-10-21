@@ -86,6 +86,10 @@ const apis = {
     getCursorPos,
     getSpecificConfig,
     writeSpecificConfig,
+    createLyricWindow: () => ipcRenderer.invoke('createLyricWindow'),
+    closeLyricWindow: () => ipcRenderer.invoke('closeLyricWindow'),
+    sendLyric: (lyric) => ipcRenderer.invoke('sendLyric', lyric),
+    toggleLyricWindow: () => ipcRenderer.invoke('toggleLyricWindow'),
     openUrl,
 }
 contextBridge.exposeInMainWorld('ymkAPI', apis)
