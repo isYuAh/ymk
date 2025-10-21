@@ -32,7 +32,7 @@
       </div>
     </div>
     <div class="lyric-container">
-      <div class="original-lyric">{{ lyric.text.original || '暂无歌词' }}</div>
+      <div class="original-lyric">{{ lyric.none ? '暂无歌词' : lyric.text.original }}</div>
       <div class="translated-lyric" v-if="lyric.text.translated">{{ lyric.text.translated }}</div>
     </div>
   </div>
@@ -53,12 +53,14 @@ const lyric = computed<Lyric>(() => {
       type: LyricType.Mix,
       none: true,
     }
-  }else {
-
+  } else {
+    const originalText = l.text[0] || '';
+    const translatedText = l.text[1] || '';
+    
     return {
       text: {
-        original: l.text[0],
-        translated: l.text[1] || '',
+        original: originalText,
+        translated: translatedText,
       },
       type: LyricType.Mix,
       none: false,
