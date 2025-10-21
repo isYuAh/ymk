@@ -11,9 +11,13 @@ export default {
       config: {}
     },
     // {
-    //   name: '@electron-forge/maker-deb',
-    //   platforms: ['linux'],
-    //   config: {}
+      // name: '@electron-forge/maker-deb',
+      // platforms: ['linux'],
+      // config: {
+      //   options: {
+      //     categories: 'Audio'
+      //   }
+      // }
     // }
   ],
   outDir: "release"

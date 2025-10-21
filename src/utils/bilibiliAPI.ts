@@ -1,3 +1,4 @@
+import { useUserStore } from "@/stores/modules/user";
 import { proxyRequest } from "./proxyRequest";
 
 export function getBilibiliVideoView(bv: string) {
@@ -8,10 +9,11 @@ export function getBilibiliVideoView(bv: string) {
 })
 }
 export function getBilibiliVideoPlayurl(params: any) {
+  const user = useUserStore()
   return proxyRequest.get('https://api.bilibili.com/x/player/wbi/playurl', {
     params,
     headers: {
-      Cookie: ''
+      Cookie: user.bilibiliUser.auth || '',
     }
   })
 }
