@@ -96,14 +96,10 @@ async function uploadPlaylists() {
   })
 }
 async function testFunc() {
-  neteaseAxios.post('/recommend/resource').then((res) => {
-    console.log(res)
-  })
+  window.ymkAPI.createLyricWindow()
 }
 async function testFunc2() {
-  neteaseAxios.post('/recommend/songs').then((res) => {
-    console.log(res)
-  })
+  window.ymkAPI.closeLyricWindow()
 }
 function showAddSongToDialog(data: any) {
   showDialog(AddSongToDialog, data)

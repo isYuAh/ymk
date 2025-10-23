@@ -21,6 +21,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
+        lyric: resolve(__dirname, 'lyric.html'),
       }
     }
   }

@@ -23,6 +23,7 @@ try {
     const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let mainWindow = null;
+let lyricWindow = null;
 
 const gotTheLock = app.requestSingleInstanceLock()
 if (!gotTheLock) {
@@ -106,7 +107,27 @@ if (!gotTheLock) {
         ipcMain.handle('getCursorPos', getCursorPos)
         ipcMain.handle('openUrl', openUrl)
         ipcMain.handle('showImportPlaylistDialog', showImportPlaylistDialog);
-        ipcMain.on('minimize', () => mainWindow.minimize())
+        ipcMain.handle('createLyricWindow', createLyricWindow);
+        ipcMain.handle('closeLyricWindow', () => lyricWindow.close());
+        ipcMain.handle('toggleLyricWindow', () => {
+            if (lyricWindow) {
+                if (lyricWindow.isVisible()) {
+                    lyricWindow.hide();
+                } else {
+                    lyricWindow.show();
+                    lyricWindow.webContents.send('unlock');
+                }
+            } else {
+                createLyricWindow();
+            }
+        });
+        ipcMain.handle('sendLyric', (_, lyric) => lyricWindow?.webContents.send('lyric', lyric))
+        ipcMain.handle('setIgnoreMouseEvents', (_, ignore) => {
+            if (lyricWindow) {
+                lyricWindow.setIgnoreMouseEvents(ignore, { forward: true });
+            }
+        });
+        ipcMain.on('minimize', () => mainWindow.minimize());
         ipcMain.on('exit', () => {
             const config = getConfig();
             try {
@@ -120,6 +141,12 @@ if (!gotTheLock) {
             }
         })
         mainWindow.on('restore', () => mainWindow.webContents.send('restore'))
+        
+        mainWindow.on('closed', () => {
+            if (lyricWindow && !lyricWindow.isDestroyed()) {
+                lyricWindow.close();
+            }
+        })
 
         initTray(mainWindow, app, __dirname)
 
@@ -127,6 +154,41 @@ if (!gotTheLock) {
             mainWindow.loadFile(path.resolve(__dirname, './dist', 'index.html'))
         }else {
             mainWindow.loadURL('http://localhost:5201')
+        }
+    }
+
+    const createLyricWindow = () => {
+        if (lyricWindow) {
+            lyricWindow.show();
+            return;
+        }
+        
+        lyricWindow = new BrowserWindow({
+            menuBarVisible: false,
+            titleBarStyle: 'hidden',
+            frame: false,
+            transparent: true,
+            height: 180,
+            width: 1000,
+            alwaysOnTop: true,
+            maximizable: false,
+            minimizable: false,
+            skipTaskbar: true,
+            webPreferences: {
+                preload: path.resolve(__dirname, './lyric/preload.js'),
+                webSecurity: false,
+            },
+            resizable: false,
+        })
+        
+        lyricWindow.on('closed', () => {
+            lyricWindow = null;
+        });
+        
+        if (app.isPackaged) {
+            lyricWindow.loadFile(path.resolve(__dirname, './dist', 'lyric.html'))
+        }else {
+            lyricWindow.loadURL('http://localhost:5201/lyric.html')
         }
     }
 
