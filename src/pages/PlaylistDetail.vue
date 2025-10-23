@@ -82,25 +82,49 @@ import {showMessage} from "@/utils/message";
 import {showDialog} from "@/utils/dialog";
 import {useRuntimeDataStore} from "@/stores/modules/runtimeData";
 import {refreshPlaylists} from "@/utils/Toolkit";
+import { pinyin } from 'pinyin-pro';
 const router = useRouter();
 const {writePlaylistFile} = window.ymkAPI;
 const runtimeData = useRuntimeDataStore()
 const player = usePlayerStore()
 let filter = ref('');
-let FuseVal = ref(new Fuse(runtimeData.playlist.songs, {
-  keys: ['title', 'singer']
+
+const songsWithPinyin = computed(() => {
+  return runtimeData.playlist.songs.map(song => ({
+    ...song,
+    titlePinyin: pinyin(song.title || '', { toneType: 'none', type: 'array' }).join(''),
+    singerPinyin: pinyin(song.singer || '', { toneType: 'none', type: 'array' }).join('')
+  }));
+});
+
+let FuseVal = ref(new Fuse(songsWithPinyin.value, {
+  keys: ['title', 'singer', 'titlePinyin', 'singerPinyin'],
+  threshold: 0.3
 }))
+
 watch(() => runtimeData.playlist, (nv) => {
-  FuseVal.value = new Fuse(nv.songs, {
-    keys: ['title', 'singer']
+  FuseVal.value = new Fuse(songsWithPinyin.value, {
+    keys: ['title', 'singer', 'titlePinyin', 'singerPinyin'],
+    threshold: 0.3
   })
 }, {deep: true})
 let showingSonglist = computed(() => {
   nextTick(() => emitter.emit('virtualList-refresh'))
   if (!filter.value) {
     return runtimeData.playlist.songs.map((element, index) => ({item: element, refIndex: index}))
-  }else {
-    return FuseVal.value.search(filter.value)
+  } else {
+    // 使用拼音搜索
+    const searchResults = FuseVal.value.search(filter.value);
+    // 将搜索结果映射回原始歌曲列表
+    return searchResults.map(result => {
+      const originalIndex = runtimeData.playlist.songs.findIndex(song => 
+        song.title === result.item.title && song.singer === result.item.singer
+      );
+      return {
+        item: runtimeData.playlist.songs[originalIndex],
+        refIndex: originalIndex
+      };
+    });
   }
 })
 function tryShowMenu(a: any) {

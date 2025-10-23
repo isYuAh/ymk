@@ -68,6 +68,7 @@ import {useRuntimeDataStore} from "@/stores/modules/runtimeData";
 import {neteaseAxios} from "@/utils/axiosInstances";
 import { showDialog } from "@/utils/dialog";
 import CollectDialog from "@/components/Dialogs/CollectDialog.vue";
+import { pinyin } from 'pinyin-pro';
 
 const router = useRouter();
 const runtimeData = useRuntimeDataStore()
@@ -77,21 +78,43 @@ let loading = ref(false);
 let hasMore = ref(false);
 let offset = ref(0);
 
-let FuseVal = ref(new Fuse(runtimeData.artistPreview.songs, {
-  keys: ['title', 'singer']
+// 创建带有拼音数据的歌曲列表
+const songsWithPinyin = computed(() => {
+  return runtimeData.artistPreview.songs.map(song => ({
+    ...song,
+    titlePinyin: pinyin(song.title || '', { toneType: 'none', type: 'array' }).join(''),
+    singerPinyin: pinyin(song.singer || '', { toneType: 'none', type: 'array' }).join('')
+  }));
+});
+
+let FuseVal = ref(new Fuse(songsWithPinyin.value, {
+  keys: ['title', 'singer', 'titlePinyin', 'singerPinyin'],
+  threshold: 0.3
 }))
 
 watch(() => runtimeData.artistPreview, (nv) => {
-  FuseVal.value = new Fuse(nv.songs, {
-    keys: ['title', 'singer']
+  FuseVal.value = new Fuse(songsWithPinyin.value, {
+    keys: ['title', 'singer', 'titlePinyin', 'singerPinyin'],
+    threshold: 0.3
   })
 }, {deep: true})
 
 let showingSonglist = computed(() => {
   if (!filter.value) {
     return runtimeData.artistPreview.songs.map((element, index) => ({item: element, refIndex: index}))
-  }else {
-    return FuseVal.value.search(filter.value)
+  } else {
+    // 使用拼音搜索
+    const searchResults = FuseVal.value.search(filter.value);
+    // 将搜索结果映射回原始歌曲列表
+    return searchResults.map(result => {
+      const originalIndex = runtimeData.artistPreview.songs.findIndex(song => 
+        song.title === result.item.title && song.singer === result.item.singer
+      );
+      return {
+        item: runtimeData.artistPreview.songs[originalIndex],
+        refIndex: originalIndex
+      };
+    });
   }
 })
 
@@ -356,4 +379,4 @@ function playSong_withCheck(song: song) {
 .container.scrollable {
   overflow-y: auto
 }
-</style> 
+</style>
