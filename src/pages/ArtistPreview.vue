@@ -80,21 +80,30 @@ let offset = ref(0);
 
 // 创建带有拼音数据的歌曲列表
 const songsWithPinyin = computed(() => {
-  return runtimeData.artistPreview.songs.map(song => ({
-    ...song,
-    titlePinyin: pinyin(song.title || '', { toneType: 'none', type: 'array' }).join(''),
-    singerPinyin: pinyin(song.singer || '', { toneType: 'none', type: 'array' }).join('')
-  }));
+  return runtimeData.artistPreview.songs.map(song => {
+    const titlePinyinFull = pinyin(song.title || '', { toneType: 'none', type: 'array' }).join('');
+    const singerPinyinFull = pinyin(song.singer || '', { toneType: 'none', type: 'array' }).join('');
+    const titlePinyinInitial = pinyin(song.title || '', { toneType: 'none', type: 'array', pattern: 'initial' }).join('');
+    const singerPinyinInitial = pinyin(song.singer || '', { toneType: 'none', type: 'array', pattern: 'initial' }).join('');
+    
+    return {
+      ...song,
+      titlePinyin: titlePinyinFull,
+      singerPinyin: singerPinyinFull,
+      titlePinyinInitial: titlePinyinInitial,
+      singerPinyinInitial: singerPinyinInitial
+    };
+  });
 });
 
 let FuseVal = ref(new Fuse(songsWithPinyin.value, {
-  keys: ['title', 'singer', 'titlePinyin', 'singerPinyin'],
+  keys: ['title', 'singer', 'titlePinyin', 'singerPinyin', 'titlePinyinInitial', 'singerPinyinInitial'],
   threshold: 0.3
 }))
 
 watch(() => runtimeData.artistPreview, (nv) => {
   FuseVal.value = new Fuse(songsWithPinyin.value, {
-    keys: ['title', 'singer', 'titlePinyin', 'singerPinyin'],
+    keys: ['title', 'singer', 'titlePinyin', 'singerPinyin', 'titlePinyinInitial', 'singerPinyinInitial'],
     threshold: 0.3
   })
 }, {deep: true})
