@@ -5,7 +5,7 @@ import type {
     list_trace_siren,
     playlistComponent,
 } from "@/types";
-import type {song, SongTypes} from '@/types/song'
+import type {song, song_bilibili, SongTypes} from '@/types/song'
 import {getBilibiliFav} from '@/utils/bilibiliAPI';
 import axios, {type AxiosResponse} from "axios";
 import {kugouAxios, neteaseAxios} from "@/utils/axiosInstances";
@@ -65,9 +65,9 @@ function PlaylistHandlerBilibili({component, parseComponent, components, comInde
                     }
                 }
             }else {
-                runtimeData.playlist.songs.push(...res.data.medias.map((m: any) => ({
+              runtimeData.playlist.songs.push(...res.data.medias.map((m: any) => (<song_bilibili>{
                     type: 'bilibili',
-                    BV: m.bvid,
+                    symbol: m.bvid,
                     title: m.title,
                     pic: m.cover,
                     singer: m.upper.name})))

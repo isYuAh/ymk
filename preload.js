@@ -74,7 +74,7 @@ const apis = {
     exit,
     getConfig,
     isMinimized,
-    onRestore: callback => ipcRenderer.on('resize', (_event, value) => callback(value)),
+    onRestore: callback => ipcRenderer.on('restore', (_event, value) => callback(value)),
     onRefreshPlaylists: callback => ipcRenderer.on('refreshPlaylists', (_event) => callback()),
     onShowMessage: callback => ipcRenderer.on('showMessage', (_event, m) => callback(m)),
     offRestore: callback => ipcRenderer.off('restore', callback),

@@ -171,7 +171,7 @@ function changeVolumeInfo() {
 function playEnded() {
   const noEffectWhenNotPlayable = false;
     if (playerStore.config.mode === 'pause') {
-        
+
     }else if (!playerStore.playlist.length) {
       songSource.value!.currentTime = 0;
       songSource.value!.play();
@@ -307,13 +307,15 @@ async function playSong({song, justtry = false, noEffectWhenNotPlayable = true}:
     }
     if (songSource.value) {
       songSource.value.src = tmpSong.url;
-      songSource.value.addEventListener('loadedmetadata', () => {
+      const listener = () => {
         if (songSource.value) {
           playerStore.config.duration = songSource.value.duration;
           playerStore.config.durationTime = secondsToMmss(songSource.value.duration)
           playerStore.config.status = 'play';
         }
-      })
+        songSource.value?.removeEventListener('loadedmetadata', listener)
+      }
+      songSource.value.addEventListener('loadedmetadata', listener)
     }
   }).catch((err) => {
     console.log(err, song);
@@ -423,7 +425,7 @@ function keyDownEvent(e: KeyboardEvent) {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
     return;
   }
-  
+
   if (!songSource.value || !playerStore.song.title) return;
   if (e.key === ' ') {
     e.preventDefault()

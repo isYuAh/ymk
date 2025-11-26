@@ -3,6 +3,7 @@ import path from 'path';
 import {fileURLToPath} from 'url';
 import {checkFolders, checkResources, startKugouServer, startNcmServer} from "./utils/utils.js";
 import express from "express";
+import process from 'process';
 import axios from "axios";
 import {initTray} from "./utils/tray.js";
 import {
@@ -45,6 +46,10 @@ if (!gotTheLock) {
             app.setAsDefaultProtocolClient('yumuzk')
         }
     }
+    // 三个服务：
+    // 35651: 网易云API
+    // 35652: 代理
+    // 35653: 酷狗
     startNcmServer()
     startKugouServer()
     const proxyServer = express()
@@ -141,7 +146,7 @@ if (!gotTheLock) {
             }
         })
         mainWindow.on('restore', () => mainWindow.webContents.send('restore'))
-        
+
         mainWindow.on('closed', () => {
             if (lyricWindow && !lyricWindow.isDestroyed()) {
                 lyricWindow.close();
@@ -162,7 +167,7 @@ if (!gotTheLock) {
             lyricWindow.show();
             return;
         }
-        
+
         lyricWindow = new BrowserWindow({
             menuBarVisible: false,
             titleBarStyle: 'hidden',
@@ -180,11 +185,11 @@ if (!gotTheLock) {
             },
             resizable: false,
         })
-        
+
         lyricWindow.on('closed', () => {
             lyricWindow = null;
         });
-        
+
         if (app.isPackaged) {
             lyricWindow.loadFile(path.resolve(__dirname, './dist', 'lyric.html'))
         }else {
@@ -241,5 +246,5 @@ function getCursorPos() {
     };
 }
 } catch(err) {
-    exit(1)
+    process.exit(1)
 }
