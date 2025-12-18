@@ -249,10 +249,10 @@ export async function refreshPlaylists({notReset}: {notReset: boolean}) {
     playlistTasks.push(kugouPlaylistTask);
   }
   
-  const results = await Promise.all(playlistTasks);
-  const validResults = results.filter(result => result !== null) as PlaylistPartArg[];
+  const results = await Promise.allSettled(playlistTasks);
+  const validResults = results.filter(result => result.status === "fulfilled" && result.value !== null) as PromiseFulfilledResult<PlaylistPartArg>[];
   if (validResults.length > 0) {
-    pushPlaylistPart(...validResults);
+    pushPlaylistPart(...validResults.map(r => r.value!));
   }
 }
 
