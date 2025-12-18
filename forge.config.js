@@ -3,7 +3,42 @@ export default {
     appBundleId: "top.isyuah.dev",
     name: 'Yumuzk',
     icon: "./logo",
-    ignore: [],
+    ignore: (filePath) => {
+      const normalized = String(filePath).replace(/\\/g, '/');
+      const ignorePatterns = [
+        // VCS / tooling directories (should never be shipped)
+        /(^|\/)\.git(\/|$)/,
+        /(^|\/)\.trae(\/|$)/,
+
+        // Directories (mirrors release/clean.js)
+        /(^|\/)src(\/|$)/,
+        /(^|\/)public(\/|$)/,
+        /(^|\/)\.github(\/|$)/,
+        /(^|\/)\.idea(\/|$)/,
+        /(^|\/)\.vscode(\/|$)/,
+        /(^|\/)ignoreFolder(\/|$)/,
+        /(^|\/)res(\/|$)/,
+
+        // Root files (mirrors release/clean.js)
+        /(^|\/)\.gitignore$/,
+        /(^|\/)tsconfig\.app\.json$/,
+        /(^|\/)tsconfig\.node\.json$/,
+        /(^|\/)tsconfig\.json$/,
+        /(^|\/)README\.md$/,
+        /(^|\/)pnpm-lock\.yaml$/,
+        /(^|\/)env\.d\.ts$/,
+        /(^|\/)\.npmrc$/,
+        /(^|\/)\.hintrc$/,
+        /(^|\/)vite\.config\.ts$/,
+        /(^|\/)vite\.config\.ts\.timestamp-[^/]+\.mjs$/,
+        /(^|\/)index\.html$/,
+        /(^|\/)forge\.config\.js$/,
+
+        // Optional assets removed by clean.js
+      ];
+
+      return ignorePatterns.some((re) => re.test(normalized));
+    },
   },
   makers: [
     {
