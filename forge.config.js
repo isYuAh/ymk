@@ -5,13 +5,16 @@ export default {
     icon: "./logo",
     ignore: (filePath) => {
       const normalized = String(filePath).replace(/\\/g, '/');
+      if (normalized.includes('/node_modules/')) {
+        return false;
+      }
       const ignorePatterns = [
         // VCS / tooling directories (should never be shipped)
         /(^|\/)\.git(\/|$)/,
         /(^|\/)\.trae(\/|$)/,
 
         // Directories (mirrors release/clean.js)
-        /(^|\/)src(\/|$)/,
+        /^\/src(\/|$)/,
         /(^|\/)public(\/|$)/,
         /(^|\/)\.github(\/|$)/,
         /(^|\/)\.idea(\/|$)/,
