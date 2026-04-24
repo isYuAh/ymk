@@ -34,3 +34,6 @@ vite.config.ts.timestamp-*
 # 项目排除路径
 /release/
 *.md
+.trae
+.vscode
+.zread
