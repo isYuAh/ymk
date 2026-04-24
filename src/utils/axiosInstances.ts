@@ -13,7 +13,7 @@ neteaseAxios.interceptors.request.use((config) => {
     const userStore = useUserStore()
     const configStore = useConfigStore();
     if (!config.params) config.params = {};
-    config.baseURL = configStore.api.neteaseApi.url;
+    config.baseURL = "http://localhost:35651/";
     config.params['cookie'] = userStore.neteaseUser.auth;
     return config;
 })
